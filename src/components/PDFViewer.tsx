@@ -16,6 +16,7 @@ export interface PDFViewerRef {
 const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted, highlightText }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
+  const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [pdf, setPdf] = useState<unknown>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -110,18 +111,34 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
   const renderPage = useCallback(async (pageNum: number) => {
     if (!pdf || !pdfjsLib) return;
-    await renderPageWithPDF(pdf, pageNum);
+    
+    // Clear any pending render timeout
+    if (renderTimeoutRef.current) {
+      clearTimeout(renderTimeoutRef.current);
+    }
+    
+    // Debounce rendering to avoid rapid successive calls
+    renderTimeoutRef.current = setTimeout(async () => {
+      await renderPageWithPDF(pdf, pageNum);
+    }, 50);
   }, [pdf, pdfjsLib]);
 
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
     
     try {
-      // Cancel previous render task
+      // Cancel previous render task and wait for it to complete
       if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
+        try {
+          renderTaskRef.current.cancel();
+        } catch {
+          // Ignore cancellation errors
+        }
         renderTaskRef.current = null;
       }
+      
+      // Wait a bit to ensure previous task is fully cancelled
+      await new Promise(resolve => setTimeout(resolve, 10));
       
       const page = await pdfDoc.getPage(pageNum);
       const viewport = page.getViewport({ scale: 1.5 });
@@ -130,11 +147,17 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
         
-        // Clear canvas
-        context?.clearRect(0, 0, canvas.width, canvas.height);
+        if (!context) return;
         
+        // Clear canvas completely
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Set new dimensions
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+        
+        // Clear again after resizing
+        context.clearRect(0, 0, canvas.width, canvas.height);
         
         const renderContext = {
           canvasContext: context,
@@ -149,7 +172,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         renderTaskRef.current = null;
         
         // If there's highlight text, add highlight after rendering
-        if (highlightText && highlightText.trim() && context) {
+        if (highlightText && highlightText.trim()) {
           await highlightTextOnPage(page, viewport, context, highlightText);
         }
       }
@@ -209,8 +232,19 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
   // Clean up render task when component unmounts
   useEffect(() => {
     return () => {
+      // Clear timeout
+      if (renderTimeoutRef.current) {
+        clearTimeout(renderTimeoutRef.current);
+        renderTimeoutRef.current = null;
+      }
+      
+      // Cancel render task
       if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
+        try {
+          renderTaskRef.current.cancel();
+        } catch {
+          // Ignore cancellation errors during cleanup
+        }
         renderTaskRef.current = null;
       }
     };
