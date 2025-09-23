@@ -89,7 +89,7 @@ export default function Home() {
       {/* 主要内容 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* 顶部工具栏 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* PDF选择器 */}
             <div className="flex-1 max-w-md">
@@ -114,113 +114,80 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-          {/* Left: Search Area */}
-          <div className="xl:col-span-1">
-            <div className="sticky top-6 space-y-4">
-              {/* Search Area */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <Search className="h-5 w-5 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Smart Search</h2>
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                <SmartSearchBox
-                  onSearchResults={handleSearchResults}
-                  onClearSearch={handleClearSearch}
-                  onPageJump={handlePageJump}
-                  onSectionChange={handleSectionChange}
-                  currentSection={selectedSectionName}
-                />
-                </div>
-              </div>
-
-              {/* Usage Guide */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                  <BookOpen className="h-4 w-4 mr-2 text-gray-600" />
-                  Usage Guide
-                </h3>
-                <ul className="text-xs text-gray-600 space-y-2">
-                  <li className="flex items-start">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                    Click quick search keywords to search directly
-                  </li>
-                  <li className="flex items-start">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                    Supports current section and global search modes
-                  </li>
-                  <li className="flex items-start">
-                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                    Click search results to automatically jump to the corresponding page
-                  </li>
-                  <li className="flex items-start">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                    Use Ctrl+Enter for quick search
-                  </li>
-                </ul>
+        {/* Search Area - Compact */}
+        <div className="mb-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <Search className="h-4 w-4 text-blue-600" />
+                <h2 className="text-base font-semibold text-gray-900">Smart Search</h2>
               </div>
             </div>
+            
+            <div className="p-4">
+              <SmartSearchBox
+                onSearchResults={handleSearchResults}
+                onClearSearch={handleClearSearch}
+                onPageJump={handlePageJump}
+                onSectionChange={handleSectionChange}
+                currentSection={selectedSectionName}
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Right: PDF Viewer */}
-          <div className="xl:col-span-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              {/* PDF Viewer Header */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        {selectedSectionName}
-                      </h2>
-                      <p className="text-sm text-gray-500">
-                        IMPA Marine Stores Guide - 8th Edition 2023
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Section Statistics */}
-                  <div className="hidden lg:flex items-center space-x-6 text-sm text-gray-600">
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.startPage || 0}
-                      </div>
-                      <div className="text-xs">Start Page</div>
-                    </div>
-                    <div className="text-gray-300">|</div>
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.endPage || 0}
-                      </div>
-                      <div className="text-xs">End Page</div>
-                    </div>
-                    <div className="text-gray-300">|</div>
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.size || '0MB'}
-                      </div>
-                      <div className="text-xs">File Size</div>
-                    </div>
-                  </div>
+        {/* PDF Viewer - Full Width */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {/* PDF Viewer Header */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="bg-blue-100 p-1.5 rounded-md">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">
+                    {selectedSectionName}
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    IMPA Marine Stores Guide - 8th Edition 2023
+                  </p>
                 </div>
               </div>
               
-              {/* PDF Content Area */}
-              <div className="p-4">
-                <PDFViewer
-                  ref={pdfViewerRef}
-                  pdfUrl={selectedPDF}
-                  onTextExtracted={handleTextExtracted}
-                />
+              {/* Section Statistics */}
+              <div className="hidden lg:flex items-center space-x-4 text-xs text-gray-600">
+                <div className="text-center">
+                  <div className="font-semibold text-gray-900">
+                    {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.startPage || 0}
+                  </div>
+                  <div className="text-xs">Start Page</div>
+                </div>
+                <div className="text-gray-300">|</div>
+                <div className="text-center">
+                  <div className="font-semibold text-gray-900">
+                    {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.endPage || 0}
+                  </div>
+                  <div className="text-xs">End Page</div>
+                </div>
+                <div className="text-gray-300">|</div>
+                <div className="text-center">
+                  <div className="font-semibold text-gray-900">
+                    {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.size || '0MB'}
+                  </div>
+                  <div className="text-xs">File Size</div>
+                </div>
               </div>
             </div>
+          </div>
+          
+          {/* PDF Content Area */}
+          <div className="p-2">
+            <PDFViewer
+              ref={pdfViewerRef}
+              pdfUrl={selectedPDF}
+              onTextExtracted={handleTextExtracted}
+            />
           </div>
         </div>
       </main>
