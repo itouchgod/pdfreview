@@ -244,7 +244,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-6 text-xs text-gray-500">
-              <span>Built with Next.js and PDF.js</span>
+              <span>This page is for internal use only.</span>
               <span>•</span>
               <span>© 2024 IMPA Search Platform</span>
             </div>
