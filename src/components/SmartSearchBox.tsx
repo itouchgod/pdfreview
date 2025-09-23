@@ -19,11 +19,11 @@ interface SmartSearchBoxProps {
   onClearSearch: () => void;
   onPageJump?: (pageNumber: number) => void;
   onSectionChange?: (sectionPath: string) => void;
-  onHighlightText?: (text: string) => void;
+  // Highlight functionality removed
   currentSection?: string;
 }
 
-export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJump, onSectionChange, onHighlightText, currentSection }: SmartSearchBoxProps) {
+export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJump, onSectionChange, currentSection }: SmartSearchBoxProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SmartSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -178,18 +178,14 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
     if (!searchTerm.trim()) {
       setResults([]);
       onSearchResults([]);
-      if (onHighlightText) {
-        onHighlightText('');
-      }
+      // Highlight functionality removed
       return;
     }
     
     setIsSearching(true);
     
     // Set highlight text
-    if (onHighlightText) {
-      onHighlightText(searchTerm);
-    }
+    // Highlight functionality removed
     
     setTimeout(() => {
       const searchResults = searchMode === 'global' 
@@ -201,16 +197,14 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
       onSearchResults(searchResults);
       setIsSearching(false);
     }, 100);
-  }, [searchTerm, searchMode, onSearchResults, onHighlightText, searchInAllSections, searchInCurrentSection]);
+  }, [searchTerm, searchMode, onSearchResults, searchInAllSections, searchInCurrentSection]);
 
   const handleClear = () => {
     setSearchTerm('');
     setResults([]);
     setHighlightIndex(0);
     onSearchResults([]);
-    if (onHighlightText) {
-      onHighlightText('');
-    }
+    // Highlight functionality removed
     onClearSearch();
   };
 

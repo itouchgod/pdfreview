@@ -12,7 +12,7 @@ export default function Home() {
   const [, setShowSearchResults] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
-  const [highlightText, setHighlightText] = useState<string>('');
+  // Highlight functionality removed
   const pdfViewerRef = useRef<PDFViewerRef>(null);
 
   const handleTextExtracted = () => {
@@ -26,12 +26,9 @@ export default function Home() {
 
   const handleClearSearch = () => {
     setShowSearchResults(false);
-    setHighlightText('');
   };
 
-  const handleHighlightText = (text: string) => {
-    setHighlightText(text);
-  };
+  // Highlight functionality removed
 
   const handleSelectPDF = (pdfPath: string, sectionName: string) => {
     setSelectedPDF(pdfPath);
@@ -136,7 +133,6 @@ export default function Home() {
                   onClearSearch={handleClearSearch}
                   onPageJump={handlePageJump}
                   onSectionChange={handleSectionChange}
-                  onHighlightText={handleHighlightText}
                   currentSection={selectedSectionName}
                 />
                 </div>
@@ -222,7 +218,6 @@ export default function Home() {
                   ref={pdfViewerRef}
                   pdfUrl={selectedPDF}
                   onTextExtracted={handleTextExtracted}
-                  highlightText={highlightText}
                 />
               </div>
             </div>

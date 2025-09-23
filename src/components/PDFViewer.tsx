@@ -6,14 +6,13 @@ import { FileText, Loader2 } from 'lucide-react';
 interface PDFViewerProps {
   pdfUrl: string;
   onTextExtracted?: (text: string) => void;
-  highlightText?: string; // Text to highlight
 }
 
 export interface PDFViewerRef {
   jumpToPage: (pageNumber: number) => void;
 }
 
-const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted, highlightText }, ref) => {
+const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -171,50 +170,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         await renderTask.promise;
         renderTaskRef.current = null;
         
-        // If there's highlight text, add highlight after rendering
-        if (highlightText && highlightText.trim()) {
-          await highlightTextOnPage(page, viewport, context, highlightText);
-        }
+        // Highlight functionality removed
       }
     } catch (err: any) {
       if (err.name !== 'RenderingCancelledException') {
         console.error('Failed to render page:', err);
       }
     }
-  }, [pdfjsLib, highlightText]);
+  }, [pdfjsLib]);
 
-  const highlightTextOnPage = async (page: any, viewport: any, context: CanvasRenderingContext2D, searchText: string) => {
-    try {
-      const textContent = await page.getTextContent();
-      const textItems = textContent.items;
-      
-      // Create regex to match search text (case insensitive)
-      const regex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      
-      // Iterate through all text items
-      for (const item of textItems) {
-        if (item.str && regex.test(item.str)) {
-          // Get text transformation matrix
-          const transform = item.transform;
-          const x = transform[4];
-          const y = transform[5];
-          const width = item.width;
-          const height = item.height;
-          
-          // Set highlight style
-          context.save();
-          context.globalAlpha = 0.3;
-          context.fillStyle = '#ffff00'; // Yellow highlight
-          
-          // Draw highlight rectangle
-          context.fillRect(x, viewport.height - y - height, width, height);
-          context.restore();
-        }
-      }
-    } catch (err) {
-      console.error('Failed to highlight text:', err);
-    }
-  };
+  // Highlight functionality removed
 
   useEffect(() => {
     if (pdf && currentPage && !loading) {
@@ -222,12 +187,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     }
   }, [pdf, currentPage, loading, renderPage]);
 
-  // Re-render current page when highlight text changes
-  useEffect(() => {
-    if (pdf && currentPage && !loading) {
-      renderPage(currentPage);
-    }
-  }, [highlightText, pdf, currentPage, loading, renderPage]);
+  // Highlight functionality removed
 
   // Clean up render task when component unmounts
   useEffect(() => {
