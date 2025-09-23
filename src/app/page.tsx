@@ -246,7 +246,7 @@ export default function Home() {
             <div className="flex items-center space-x-6 text-xs text-gray-500">
               <span>This page is for internal use only.</span>
               <span>•</span>
-              <span>© 2024 IMPA Search Platform</span>
+              <span>© 2025 IMPA Search Platform</span>
             </div>
           </div>
         </div>
