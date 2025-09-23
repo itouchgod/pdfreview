@@ -19,11 +19,15 @@ interface SmartSearchBoxProps {
   onClearSearch: () => void;
   onPageJump?: (pageNumber: number) => void;
   onSectionChange?: (sectionPath: string) => void;
+  onSelectPDF?: (pdfPath: string, sectionName: string) => void;
+  onLoadingStatusChange?: (isLoading: boolean, loaded: number, total: number) => void;
+  onUpdateURL?: (params: { query?: string; section?: string; page?: number }) => void;
   // Highlight functionality removed
   currentSection?: string;
+  selectedPDF?: string;
 }
 
-export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJump, onSectionChange, currentSection }: SmartSearchBoxProps) {
+export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJump, onSectionChange, onSelectPDF, onLoadingStatusChange, onUpdateURL, currentSection, selectedPDF }: SmartSearchBoxProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SmartSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -33,10 +37,12 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
   const [isLoadingText, setIsLoadingText] = useState(true);
   const [loadedSections, setLoadedSections] = useState(0);
 
-  // Common search keywords
+  // Common search keywords - optimized for marine industry
   const commonKeywords = [
     'safety', 'equipment', 'tools', 'valves', 'pipes', 'electrical',
-    'marine', 'deck', 'engine', 'pump', 'cable', 'rope', 'paint'
+    'marine', 'deck', 'engine', 'pump', 'cable', 'rope', 'paint',
+    'anchor', 'winch', 'chain', 'wire', 'hose', 'coupling', 'fitting',
+    'bearing', 'seal', 'gasket', 'bolt', 'nut', 'screw', 'washer'
   ];
 
   // Load text content from all sections
@@ -63,7 +69,8 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
                 const pageText = textContent.items
                   .map((item: any) => item.str)
                   .join(' ');
-                fullText += `\n--- 第 ${pageNum} 页 ---\n${pageText}\n`;
+                const actualPageNum = section.startPage + pageNum - 1; // 转换为实际页码
+                fullText += `\n--- 第 ${actualPageNum} 页 ---\n${pageText}\n`;
               } catch (err) {
                 console.error(`提取章节 ${section.name} 第 ${pageNum} 页文本失败:`, err);
               }
@@ -82,7 +89,15 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
     };
 
     loadAllSections();
-  }, []);
+  }, []); // 移除onLoadingStatusChange依赖，避免无限循环
+
+  // 监听loadedSections变化，更新加载状态
+  useEffect(() => {
+    if (onLoadingStatusChange) {
+      const isComplete = loadedSections >= PDF_CONFIG.sections.length;
+      onLoadingStatusChange(!isComplete, loadedSections, PDF_CONFIG.sections.length);
+    }
+  }, [loadedSections, onLoadingStatusChange]);
 
   const searchInAllSections = (term: string): SmartSearchResult[] => {
     if (!term.trim()) return [];
@@ -114,7 +129,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
           const context = pageText.substring(start, end);
           
           results.push({
-            page: pageNum,
+            page: pageNum, // 现在pageNum已经是实际页码
             text: match[0],
             index: match.index,
             context: context,
@@ -196,6 +211,14 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
       setHighlightIndex(0);
       onSearchResults(searchResults);
       setIsSearching(false);
+      
+      // 更新URL参数
+      if (onUpdateURL) {
+        onUpdateURL({
+          query: searchTerm,
+          section: searchMode === 'current' ? selectedPDF : undefined
+        });
+      }
     }, 100);
   }, [searchTerm, searchMode, onSearchResults, searchInAllSections, searchInCurrentSection]);
 
@@ -206,6 +229,11 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
     onSearchResults([]);
     // Highlight functionality removed
     onClearSearch();
+    
+    // 清除URL参数
+    if (onUpdateURL) {
+      onUpdateURL({});
+    }
   };
 
   const handleKeywordClick = (keyword: string) => {
@@ -221,6 +249,13 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
       setHighlightIndex(index);
       const result = results[index];
       
+      // Find the section to get startPage for relative page calculation
+      const section = PDF_CONFIG.sections.find(s => s.filePath === result.sectionPath);
+      if (!section) return;
+      
+      // Convert actual page number to relative page number
+      const relativePage = result.page - section.startPage + 1;
+      
       // Switch to corresponding section
       if (onSectionChange && result.sectionPath !== currentSection) {
         onSectionChange(result.sectionPath);
@@ -228,13 +263,29 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
         // If section is switched, delay page jump to wait for PDF loading
         setTimeout(() => {
           if (onPageJump) {
-            onPageJump(result.page);
+            onPageJump(relativePage);
+          }
+          // 更新URL参数
+          if (onUpdateURL) {
+            onUpdateURL({
+              query: searchTerm,
+              section: result.sectionPath,
+              page: result.page
+            });
           }
         }, 1000); // 1 second delay to ensure PDF is loaded
       } else {
         // If no section change needed, jump to page directly
         if (onPageJump) {
-          onPageJump(result.page);
+          onPageJump(relativePage);
+        }
+        // 更新URL参数
+        if (onUpdateURL) {
+          onUpdateURL({
+            query: searchTerm,
+            section: searchMode === 'current' ? selectedPDF : result.sectionPath,
+            page: result.page
+          });
         }
       }
     }
@@ -279,9 +330,33 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
         </button>
       </div>
 
-      {/* Search Input */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex items-center space-x-2">
+      {/* Search Input with Section Selector */}
+      <div className="bg-white p-3 sm:p-4 rounded-lg shadow">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+          {/* Section Selector for Current Section Mode */}
+          {searchMode === 'current' && onSelectPDF && (
+            <div className="flex items-center space-x-2 min-w-0 flex-shrink-0">
+              <FileText className="h-4 w-4 text-gray-600" />
+              <select
+                value={selectedPDF || ''}
+                onChange={(e) => {
+                  const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
+                  if (section && onSelectPDF) {
+                    onSelectPDF(section.filePath, section.name);
+                  }
+                }}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:min-w-48"
+              >
+                {PDF_CONFIG.sections.map((section) => (
+                  <option key={section.name} value={section.filePath}>
+                    {section.title || section.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {/* Search Input */}
           <div className="relative flex-1">
             {searchMode === 'global' ? (
               <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500" />
@@ -308,38 +383,27 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
               </button>
             )}
           </div>
+          
+          {/* Search Button */}
           <button
             onClick={handleSearch}
             disabled={isSearching || !searchTerm.trim() || isLoadingText}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex-shrink-0"
           >
             {isLoadingText ? 'Loading...' : isSearching ? 'Searching...' : 'Search'}
           </button>
         </div>
         
-        {/* Loading Status */}
-        {isLoadingText && (
-          <div className="mt-2 text-sm text-gray-600">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span>Loading text content... ({loadedSections}/{PDF_CONFIG.sections.length})</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Common Search Keywords */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-          <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-          Quick Search
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-white p-3 rounded-lg shadow">
+        <div className="flex flex-wrap gap-1.5">
           {commonKeywords.map((keyword) => (
             <button
               key={keyword}
               onClick={() => handleKeywordClick(keyword)}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-700 rounded-full transition-colors"
+              className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-700 rounded-full transition-colors"
             >
               {keyword}
             </button>
@@ -369,7 +433,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
                 <button
                   onClick={() => goToResult(highlightIndex - 1)}
                   disabled={highlightIndex <= 0}
-                  className="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded disabled:bg-gray-50 disabled:text-gray-400"
+                  className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
                 >
                   Previous
                 </button>
@@ -379,7 +443,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
                 <button
                   onClick={() => goToResult(highlightIndex + 1)}
                   disabled={highlightIndex >= results.length - 1}
-                  className="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded disabled:bg-gray-50 disabled:text-gray-400"
+                  className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
                 >
                   Next
                 </button>

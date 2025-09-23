@@ -6,13 +6,14 @@ import { FileText, Loader2 } from 'lucide-react';
 interface PDFViewerProps {
   pdfUrl: string;
   onTextExtracted?: (text: string) => void;
+  onPageChange?: (currentPage: number, totalPages: number) => void;
 }
 
 export interface PDFViewerRef {
   jumpToPage: (pageNumber: number) => void;
 }
 
-const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted }, ref) => {
+const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted, onPageChange }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -232,6 +233,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+      onPageChange?.(page, totalPages);
     }
   };
 
@@ -265,46 +267,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
   }
 
   return (
-    <div className="space-y-4">
-      {/* Page Controls */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300"
-          >
-            Next
-          </button>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <input
-            type="number"
-            min="1"
-            max={totalPages}
-            value={currentPage}
-            onChange={(e) => goToPage(parseInt(e.target.value) || 1)}
-            className="w-20 px-2 py-1 border rounded text-center"
-          />
-          <span className="text-sm text-gray-500">Go to</span>
-        </div>
-      </div>
-
-      {/* PDF Canvas */}
-      <div className="bg-white rounded-lg shadow overflow-auto">
-        <canvas ref={canvasRef} className="w-full h-auto" />
-      </div>
+    <div className="bg-white rounded-lg shadow overflow-auto">
+      <canvas ref={canvasRef} className="w-full h-auto" />
     </div>
   );
 });
