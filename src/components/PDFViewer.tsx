@@ -140,7 +140,11 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       await new Promise(resolve => setTimeout(resolve, 10));
       
       const page = await pdfDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1.5 });
+      // Calculate scale to fit container width
+      const containerWidth = canvasRef.current?.parentElement?.clientWidth || 800;
+      const viewport = page.getViewport({ scale: 1.0 });
+      const scale = Math.min(containerWidth / viewport.width, 2.0); // Max scale of 2.0
+      const scaledViewport = page.getViewport({ scale });
       
       if (canvasRef.current) {
         const canvas = canvasRef.current;
@@ -151,16 +155,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         // Clear canvas completely
         context.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Set new dimensions
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        // Set new dimensions based on scaled viewport
+        canvas.height = scaledViewport.height;
+        canvas.width = scaledViewport.width;
         
         // Clear again after resizing
         context.clearRect(0, 0, canvas.width, canvas.height);
         
         const renderContext = {
           canvasContext: context,
-          viewport: viewport,
+          viewport: scaledViewport,
         };
         
         // Create new render task and save reference
@@ -189,9 +193,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
   // Highlight functionality removed
 
-  // Clean up render task when component unmounts
+  // Handle window resize to recalculate PDF scale
   useEffect(() => {
+    const handleResize = () => {
+      if (pdf && currentPage && !loading) {
+        // Debounce resize events
+        if (renderTimeoutRef.current) {
+          clearTimeout(renderTimeoutRef.current);
+        }
+        renderTimeoutRef.current = setTimeout(() => {
+          renderPage(currentPage);
+        }, 250);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
     return () => {
+      window.removeEventListener('resize', handleResize);
       // Clear timeout
       if (renderTimeoutRef.current) {
         clearTimeout(renderTimeoutRef.current);
@@ -208,7 +226,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         renderTaskRef.current = null;
       }
     };
-  }, []);
+  }, [pdf, currentPage, loading, renderPage]);
 
 
   const goToPage = (page: number) => {
@@ -285,7 +303,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
       {/* PDF Canvas */}
       <div className="bg-white rounded-lg shadow overflow-auto">
-        <canvas ref={canvasRef} className="max-w-full" />
+        <canvas ref={canvasRef} className="w-full h-auto" />
       </div>
     </div>
   );

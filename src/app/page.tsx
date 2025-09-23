@@ -114,7 +114,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Left: Search Area */}
           <div className="xl:col-span-1">
             <div className="sticky top-6 space-y-4">
@@ -167,7 +167,7 @@ export default function Home() {
           </div>
 
           {/* Right: PDF Viewer */}
-          <div className="xl:col-span-3">
+          <div className="xl:col-span-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               {/* PDF Viewer Header */}
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
@@ -213,7 +213,7 @@ export default function Home() {
               </div>
               
               {/* PDF Content Area */}
-              <div className="p-6">
+              <div className="p-4">
                 <PDFViewer
                   ref={pdfViewerRef}
                   pdfUrl={selectedPDF}
