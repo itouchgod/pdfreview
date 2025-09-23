@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, X, FileText, Globe } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, FileText, Globe } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
 interface GlobalSearchResult {
@@ -44,7 +44,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
           const response = await fetch(section.filePath);
           if (response.ok) {
             const arrayBuffer = await response.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            const pdf = await (pdfjsLib as any).getDocument(arrayBuffer).promise;
             
             let fullText = '';
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -121,7 +121,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
     return results;
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!searchTerm.trim()) {
       setResults([]);
       onSearchResults([]);
@@ -137,7 +137,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
       onSearchResults(searchResults);
       setIsSearching(false);
     }, 100);
-  };
+  }, [searchTerm, onSearchResults, searchInAllSections]);
 
   const handleClear = () => {
     setSearchTerm('');
@@ -173,7 +173,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
     
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [searchTerm]);
+  }, [searchTerm, handleSearch]);
 
   return (
     <div className="space-y-4">
@@ -281,7 +281,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
                       ...{result.context}...
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
-                      匹配文本: "{result.text}"
+                      Matched text: &quot;{result.text}&quot;
                     </div>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export default function GlobalSearchBox({ onSearchResults, onClearSearch, onPage
           <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">未找到匹配结果</h3>
           <p className="text-gray-500">
-            在所有章节中都没有找到包含 "{searchTerm}" 的内容，请尝试其他关键词
+            No content containing &quot;{searchTerm}&quot; found in all sections, please try other keywords
           </p>
         </div>
       )}

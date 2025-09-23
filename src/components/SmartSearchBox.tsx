@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, X, FileText, Globe, Zap } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
@@ -53,7 +53,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
           const response = await fetch(section.filePath);
           if (response.ok) {
             const arrayBuffer = await response.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            const pdf = await (pdfjsLib as any).getDocument(arrayBuffer).promise;
             
             let fullText = '';
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -174,7 +174,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
     return results;
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!searchTerm.trim()) {
       setResults([]);
       onSearchResults([]);
@@ -201,7 +201,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
       onSearchResults(searchResults);
       setIsSearching(false);
     }, 100);
-  };
+  }, [searchTerm, searchMode, onSearchResults, onHighlightText, searchInAllSections, searchInCurrentSection]);
 
   const handleClear = () => {
     setSearchTerm('');
@@ -255,7 +255,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
     
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [searchTerm, searchMode]);
+  }, [searchTerm, searchMode, handleSearch]);
 
   return (
     <div className="space-y-4">
@@ -420,7 +420,7 @@ export default function SmartSearchBox({ onSearchResults, onClearSearch, onPageJ
                       ...{result.context}...
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
-                      Matched text: "{result.text}"
+                      Matched text: &quot;{result.text}&quot;
                     </div>
                   </div>
                 </div>

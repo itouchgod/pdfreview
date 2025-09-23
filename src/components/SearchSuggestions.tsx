@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, ArrowRight, FileText } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
@@ -10,7 +10,7 @@ interface SearchSuggestionsProps {
   currentSection?: string;
 }
 
-export default function SearchSuggestions({ searchTerm, onSelectSection, currentSection }: SearchSuggestionsProps) {
+export default function SearchSuggestions({ searchTerm, onSelectSection }: SearchSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<Array<{
     section: typeof PDF_CONFIG.sections[0];
     relevance: number;
@@ -18,7 +18,7 @@ export default function SearchSuggestions({ searchTerm, onSelectSection, current
   }>>([]);
 
   // 搜索建议的关键词映射
-  const keywordMappings = {
+  const keywordMappings = useMemo(() => ({
     // 工具相关
     'tool': ['59', '61', '63', '65'],
     'tools': ['59', '61', '63', '65'],
@@ -139,7 +139,7 @@ export default function SearchSuggestions({ searchTerm, onSelectSection, current
     'provision': ['00_10'],
     'food': ['00_10'],
     'slop': ['00_10']
-  };
+  }), []);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -174,7 +174,7 @@ export default function SearchSuggestions({ searchTerm, onSelectSection, current
     newSuggestions.sort((a, b) => b.relevance - a.relevance);
     setSuggestions(newSuggestions.slice(0, 5)); // 最多显示5个建议
 
-  }, [searchTerm]);
+  }, [searchTerm, keywordMappings]);
 
   if (suggestions.length === 0) {
     return null;

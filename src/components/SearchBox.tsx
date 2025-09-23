@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, X, FileText } from 'lucide-react';
 import SearchSuggestions from './SearchSuggestions';
 
@@ -62,7 +62,7 @@ export default function SearchBox({ fullText, onSearchResults, onClearSearch, on
     return results;
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!searchTerm.trim()) {
       setResults([]);
       onSearchResults([]);
@@ -79,7 +79,7 @@ export default function SearchBox({ fullText, onSearchResults, onClearSearch, on
       onSearchResults(searchResults);
       setIsSearching(false);
     }, 100);
-  };
+  }, [searchTerm, fullText, onSearchResults]);
 
   const handleClear = () => {
     setSearchTerm('');
@@ -109,7 +109,7 @@ export default function SearchBox({ fullText, onSearchResults, onClearSearch, on
     
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [searchTerm, fullText]);
+  }, [searchTerm, fullText, handleSearch]);
 
   return (
     <div className="space-y-4">
@@ -221,7 +221,7 @@ export default function SearchBox({ fullText, onSearchResults, onClearSearch, on
                       ...{result.context}...
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
-                      匹配文本: "{result.text}"
+                      Matched text: &quot;{result.text}&quot;
                     </div>
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export default function SearchBox({ fullText, onSearchResults, onClearSearch, on
           <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">未找到匹配结果</h3>
           <p className="text-gray-500">
-            没有找到包含 "{searchTerm}" 的内容，请尝试其他关键词
+            No content containing &quot;{searchTerm}&quot; found, please try other keywords
           </p>
         </div>
       )}

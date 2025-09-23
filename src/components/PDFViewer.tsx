@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { Search, FileText, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { FileText, Loader2 } from 'lucide-react';
 
 interface PDFViewerProps {
   pdfUrl: string;
@@ -16,12 +16,11 @@ export interface PDFViewerRef {
 const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted, highlightText }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
-  const [pdf, setPdf] = useState<any>(null);
+  const [pdf, setPdf] = useState<unknown>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [extractedText, setExtractedText] = useState<string>('');
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
 
   // Dynamically load PDF.js
@@ -50,18 +49,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     loadPdfjs();
   }, []);
 
-  useEffect(() => {
-    if (pdfjsLib && pdfUrl) {
-      // Reset state
-      setPdf(null);
-      setCurrentPage(1);
-      setTotalPages(0);
-      setExtractedText('');
-      loadPDF();
-    }
-  }, [pdfjsLib, pdfUrl]);
-
-  const loadPDF = async () => {
+  const loadPDF = useCallback(async () => {
     if (!pdfjsLib) return;
     
     try {
@@ -89,9 +77,19 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     } finally {
       setLoading(false);
     }
-  };
+  }, [pdfjsLib, pdfUrl]);
 
-  const extractAllText = async (pdfDoc: any) => {
+  useEffect(() => {
+    if (pdfjsLib && pdfUrl) {
+      // Reset state
+      setPdf(null);
+      setCurrentPage(1);
+      setTotalPages(0);
+      loadPDF();
+    }
+  }, [pdfjsLib, pdfUrl, loadPDF]);
+
+  const extractAllText = useCallback(async (pdfDoc: any) => {
     let fullText = '';
     
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
@@ -107,16 +105,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       }
     }
     
-    setExtractedText(fullText);
     onTextExtracted?.(fullText);
-  };
+  }, [onTextExtracted]);
 
-  const renderPage = async (pageNum: number) => {
+  const renderPage = useCallback(async (pageNum: number) => {
     if (!pdf || !pdfjsLib) return;
     await renderPageWithPDF(pdf, pageNum);
-  };
+  }, [pdf, pdfjsLib]);
 
-  const renderPageWithPDF = async (pdfDoc: any, pageNum: number) => {
+  const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
     
     try {
@@ -152,18 +149,18 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         renderTaskRef.current = null;
         
         // If there's highlight text, add highlight after rendering
-        if (highlightText && highlightText.trim()) {
+        if (highlightText && highlightText.trim() && context) {
           await highlightTextOnPage(page, viewport, context, highlightText);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       if (err.name !== 'RenderingCancelledException') {
         console.error('Failed to render page:', err);
       }
     }
-  };
+  }, [pdfjsLib, highlightText]);
 
-  const highlightTextOnPage = async (page: any, viewport: any, context: any, searchText: string) => {
+  const highlightTextOnPage = async (page: any, viewport: any, context: CanvasRenderingContext2D, searchText: string) => {
     try {
       const textContent = await page.getTextContent();
       const textItems = textContent.items;
@@ -200,14 +197,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     if (pdf && currentPage && !loading) {
       renderPage(currentPage);
     }
-  }, [pdf, currentPage, loading]);
+  }, [pdf, currentPage, loading, renderPage]);
 
   // Re-render current page when highlight text changes
   useEffect(() => {
     if (pdf && currentPage && !loading) {
       renderPage(currentPage);
     }
-  }, [highlightText]);
+  }, [highlightText, pdf, currentPage, loading, renderPage]);
 
   // Clean up render task when component unmounts
   useEffect(() => {

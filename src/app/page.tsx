@@ -4,23 +4,22 @@ import { useState, useRef } from 'react';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import PDFSelector from '@/components/PDFSelector';
-import { FileText, Search, BookOpen, Globe } from 'lucide-react';
+import { FileText, Search, BookOpen } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
 export default function Home() {
-  const [extractedText, setExtractedText] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [, setSearchResults] = useState<unknown[]>([]);
+  const [, setShowSearchResults] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   const [highlightText, setHighlightText] = useState<string>('');
   const pdfViewerRef = useRef<PDFViewerRef>(null);
 
-  const handleTextExtracted = (text: string) => {
-    setExtractedText(text);
+  const handleTextExtracted = () => {
+    // Text extracted for search functionality
   };
 
-  const handleSearchResults = (results: any[]) => {
+  const handleSearchResults = (results: unknown[]) => {
     setSearchResults(results);
     setShowSearchResults(results.length > 0);
   };
@@ -38,7 +37,6 @@ export default function Home() {
     setSelectedPDF(pdfPath);
     setSelectedSectionName(sectionName);
     // 清空之前的搜索结果
-    setExtractedText('');
     setSearchResults([]);
     setShowSearchResults(false);
   };
@@ -112,7 +110,7 @@ export default function Home() {
                 <span className="font-medium text-gray-900">{selectedSectionName}</span>
               </div>
               <div className="hidden md:flex items-center space-x-4 text-xs text-gray-500">
-                <span>Pages: {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.endPage - PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.startPage + 1 || 0}</span>
+                <span>Pages: {(PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.endPage || 0) - (PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.startPage || 0) + 1}</span>
                 <span>Category: {PDF_CONFIG.sections.find(s => s.filePath === selectedPDF)?.category || 'Other'}</span>
               </div>
             </div>

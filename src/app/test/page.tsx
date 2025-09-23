@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { FileText, Search, CheckCircle, XCircle } from 'lucide-react';
 
 export default function TestPage() {
@@ -111,7 +112,7 @@ export default function TestPage() {
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">使用说明</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• 点击"运行测试"按钮检查系统状态</li>
+              <li>• Click &quot;Run Test&quot; button to check system status</li>
               <li>• 绿色勾号表示测试通过</li>
               <li>• 红色叉号表示测试失败</li>
               <li>• 所有测试通过后可以正常使用搜索功能</li>
@@ -119,12 +120,12 @@ export default function TestPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <a
+            <Link
               href="/"
               className="text-blue-600 hover:text-blue-800 underline"
             >
-              返回主页面
-            </a>
+              Back to Main Page
+            </Link>
           </div>
         </div>
       </div>
