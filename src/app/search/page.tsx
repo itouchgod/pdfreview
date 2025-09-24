@@ -306,9 +306,8 @@ function SearchContent() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              {/* PDF Viewer Header with Navigation - Google Style */}
-              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            {/* PDF Viewer Header with Navigation - Google Style */}
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                 <div className="flex items-center justify-between">
                   {/* Left: Chapter Selector */}
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
@@ -320,7 +319,7 @@ function SearchContent() {
                           handleSelectPDF(section.filePath, section.name, true, false);
                         }
                       }}
-                      className="text-xs sm:text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full truncate"
+                      className="text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full truncate font-medium"
                     >
                       {PDF_CONFIG.sections.map((section) => (
                         <option key={section.name} value={section.filePath}>
@@ -335,9 +334,9 @@ function SearchContent() {
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
@@ -355,17 +354,17 @@ function SearchContent() {
                             pdfViewerRef.current.jumpToPage(relativePage);
                           }
                         }}
-                        className="w-10 sm:w-16 px-1 sm:px-2 py-1 text-xs sm:text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-12 sm:w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">of {startPage + totalPages - 1}</span>
+                      <span className="text-sm text-gray-500 hidden sm:inline">of {startPage + totalPages - 1}</span>
                     </div>
                     
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -373,38 +372,37 @@ function SearchContent() {
                 </div>
               </div>
               
-              {/* PDF Content Area */}
-              <div className="p-1 flex justify-center">
-                {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
-                  // 当搜索激活且有搜索词但没有结果时，显示无结果提示
-                  <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      </div>
-                      <p className="text-base text-gray-600 font-medium mb-1">No results found</p>
-                      <p className="text-sm text-gray-500">Try different keywords</p>
+            {/* PDF Content Area */}
+            <div className="p-1 flex justify-center">
+              {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
+                // 当搜索激活且有搜索词但没有结果时，显示无结果提示
+                <div className="flex flex-col items-center justify-center h-96">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
                     </div>
+                    <p className="text-base text-gray-600 font-medium mb-1">No results found</p>
+                    <p className="text-sm text-gray-500">Try different keywords</p>
                   </div>
-                ) : (
-                  // 正常显示PDF
-                  <PDFViewer
-                    ref={pdfViewerRef}
-                    pdfUrl={selectedPDF}
-                    initialPage={targetPage || 1}
-                    onTextExtracted={handleTextExtracted}
-                    onPageChange={handlePageChange}
-                  />
-                )}
-              </div>
+                </div>
+              ) : (
+                // 正常显示PDF
+                <PDFViewer
+                  ref={pdfViewerRef}
+                  pdfUrl={selectedPDF}
+                  initialPage={targetPage || 1}
+                  onTextExtracted={handleTextExtracted}
+                  onPageChange={handlePageChange}
+                />
+              )}
             </div>
           </div>
 
           {/* 搜索结果 - 在移动端显示在PDF下方，桌面端显示在右侧 */}
           <div className="w-full lg:w-80 xl:w-96 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
-            <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="h-full flex flex-col">
               <div className="flex-1 overflow-y-auto p-3">
                 <SearchResultsOnly
                   onPageJump={handlePageJump}

@@ -159,7 +159,7 @@ export default function SmartSearchBox({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-        placeholder={`Search in all ${PDF_CONFIG.sections.length} sections...`}
+        placeholder="Search marine equipment, tools, code..."
         className="w-full pl-4 pr-20 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
             />
             {searchTerm && (
