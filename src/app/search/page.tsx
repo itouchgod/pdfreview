@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
@@ -16,7 +16,7 @@ function SearchContent() {
   const [, setShowSearchResults] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
-  const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
+  // const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   
   // 用于在header和sidebar之间共享搜索结果

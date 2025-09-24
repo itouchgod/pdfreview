@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
@@ -72,7 +72,7 @@ export default function SearchResultsOnly({
   }, [results]);
 
   // 跳转到指定结果
-  const goToResult = (index: number) => {
+  const goToResult = useCallback((index: number) => {
     if (index < 0 || index >= groupedResults.length) return;
     
     console.log('goToResult called:', { index, totalResults: groupedResults.length });
@@ -118,7 +118,7 @@ export default function SearchResultsOnly({
         onPageJump(relativePage);
       }
     }
-  };
+  }, [groupedResults, selectedPDF, onSectionChange, onPageJump]);
 
   // 导航到上一个/下一个结果
   const goToPrevious = () => {
