@@ -140,10 +140,24 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       await new Promise(resolve => setTimeout(resolve, 10));
       
       const page = await pdfDoc.getPage(pageNum);
-      // Calculate scale to fit container width
+      // Calculate scale to fit container width with better mobile support
       const containerWidth = canvasRef.current?.parentElement?.clientWidth || 800;
       const viewport = page.getViewport({ scale: 1.0 });
-      const scale = Math.min(containerWidth / viewport.width, 2.0); // Max scale of 2.0
+      
+      // Get device pixel ratio for high-DPI displays
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      
+      // Calculate base scale to fit container
+      let scale = containerWidth / viewport.width;
+      
+      // For mobile devices, use higher scale for better readability
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        scale = Math.min(scale * 1.5, 3.0); // Higher scale for mobile, max 3.0
+      } else {
+        scale = Math.min(scale, 2.0); // Desktop max scale 2.0
+      }
+      
       const scaledViewport = page.getViewport({ scale });
       
       if (canvasRef.current) {
@@ -155,12 +169,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         // Clear canvas completely
         context.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Set new dimensions based on scaled viewport
-        canvas.height = scaledViewport.height;
-        canvas.width = scaledViewport.width;
+        // Set new dimensions based on scaled viewport with high-DPI support
+        const displayWidth = scaledViewport.width;
+        const displayHeight = scaledViewport.height;
         
-        // Clear again after resizing
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        // Set the actual canvas size in device pixels (for high-DPI)
+        canvas.width = displayWidth * devicePixelRatio;
+        canvas.height = displayHeight * devicePixelRatio;
+        
+        // Set the CSS size in logical pixels
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
+        
+        // Scale the drawing context to match device pixel ratio
+        context.scale(devicePixelRatio, devicePixelRatio);
+        
+        // Clear canvas
+        context.clearRect(0, 0, displayWidth, displayHeight);
         
         const renderContext = {
           canvasContext: context,
@@ -270,7 +295,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
   return (
     <div className="bg-white rounded-lg shadow overflow-auto">
-      <canvas ref={canvasRef} className="w-full h-auto" />
+      <canvas 
+        ref={canvasRef} 
+        className="w-full h-auto max-w-full"
+        style={{ 
+          imageRendering: 'crisp-edges',
+          WebkitImageRendering: 'crisp-edges'
+        }}
+      />
     </div>
   );
 });

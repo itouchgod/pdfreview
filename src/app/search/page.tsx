@@ -319,7 +319,7 @@ function SearchContent() {
               </div>
               
               {/* PDF Content Area */}
-              <div className="p-2">
+              <div className="p-1 sm:p-2">
                 <PDFViewer
                   ref={pdfViewerRef}
                   pdfUrl={selectedPDF}
