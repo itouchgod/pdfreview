@@ -16,18 +16,26 @@ interface SmartSearchResult {
 
 interface SearchResultsOnlyProps {
   onPageJump?: (pageNumber: number) => void;
-  onSectionChange?: (sectionPath: string) => void;
+  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
+  currentSection?: string;
   selectedPDF?: string;
+  initialSearchTerm?: string;
+  preloadedTextData?: any;
   sharedSearchResults?: SmartSearchResult[];
   sharedSearchTerm?: string;
+  sharedSearchMode?: 'current' | 'global';
 }
 
 export default function SearchResultsOnly({ 
   onPageJump, 
   onSectionChange, 
+  currentSection,
   selectedPDF, 
+  initialSearchTerm,
+  preloadedTextData,
   sharedSearchResults = [],
-  sharedSearchTerm = ''
+  sharedSearchTerm = '',
+  sharedSearchMode
 }: SearchResultsOnlyProps) {
   const [highlightIndex, setHighlightIndex] = useState(0);
   
