@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
-import { ArrowLeft, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -268,11 +268,10 @@ function SearchContent() {
     <div className="min-h-screen bg-white">
       {/* 头部 - Google风格，响应式布局 */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0">
-            {/* Logo和返回链接 */}
-            <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-1.5 sm:p-2 rounded-lg transition-colors">
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+        <div className="max-w-full mx-auto px-4 py-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Logo - 保留点击返回功能，移除返回箭头 */}
+            <Link href="/home" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
                 <Image 
                   src="/brand-icon.svg" 
                   alt="IMPA Logo" 
@@ -283,7 +282,7 @@ function SearchContent() {
             </Link>
             
             {/* 搜索框 - 紧跟在logo后面 */}
-            <div className="flex-1 w-full sm:max-w-2xl sm:ml-4">
+            <div className="w-full max-w-2xl">
               <SmartSearchBox
                 onSearchResults={handleSearchResults}
                 onClearSearch={handleClearSearch}
@@ -303,13 +302,13 @@ function SearchContent() {
       </header>
 
       {/* 主要内容 - 响应式布局 */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
+      <main className="max-w-full mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
-            <div className="overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               {/* PDF Viewer Header with Navigation - Google Style */}
-              <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                 <div className="flex items-center justify-between">
                   {/* Left: Chapter Selector */}
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
@@ -375,18 +374,18 @@ function SearchContent() {
               </div>
               
               {/* PDF Content Area */}
-              <div className="p-2 sm:p-4">
+              <div className="p-1 flex justify-center">
                 {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                   // 当搜索激活且有搜索词但没有结果时，显示无结果提示
-                  <div className="flex flex-col items-center justify-center h-96">
+                  <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
                     <div className="text-center">
-                      <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
-                      <p className="text-lg text-gray-700 font-medium mb-2">No results found, please try different keywords</p>
-                      <p className="text-sm text-gray-500">Search term: &ldquo;{sharedSearchTerm}&rdquo;</p>
+                      <p className="text-base text-gray-600 font-medium mb-1">No results found</p>
+                      <p className="text-sm text-gray-500">Try different keywords</p>
                     </div>
                   </div>
                 ) : (
@@ -404,9 +403,9 @@ function SearchContent() {
           </div>
 
           {/* 搜索结果 - 在移动端显示在PDF下方，桌面端显示在右侧 */}
-          <div className="w-full lg:w-80 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
-            <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto p-1 sm:p-2">
+          <div className="w-full lg:w-80 xl:w-96 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
+            <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="flex-1 overflow-y-auto p-3">
                 <SearchResultsOnly
                   onPageJump={handlePageJump}
                   onSectionChange={handleSectionChange}
@@ -425,21 +424,23 @@ function SearchContent() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
-        <div className="flex justify-center items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Image 
-              src="/brand-icon.svg" 
-              alt="IMPA Logo" 
-              width={12}
-              height={16}
-            />
-            <span>Marine Stores Guide</span>
+      <footer className="mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
+        <div className="max-w-full mx-auto px-4">
+          <div className="flex justify-center items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Image 
+                src="/brand-icon.svg" 
+                alt="IMPA Logo" 
+                width={16}
+                height={20}
+              />
+              <span>Marine Stores Guide</span>
+            </div>
+            <span>•</span>
+            <span>8th Edition 2023</span>
+            <span>•</span>
+            <span>Internal Use Only</span>
           </div>
-          <span>•</span>
-          <span>8th Edition 2023</span>
-          <span>•</span>
-          <span>Internal Use Only</span>
         </div>
       </footer>
     </div>

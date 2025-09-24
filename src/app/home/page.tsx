@@ -38,18 +38,18 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white flex flex-col px-4">
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-4xl">
           {/* Logo and Search Box */}
-          <div className="mb-8">
-            <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
-              <div className="flex items-center space-x-3">
+          <div className="mb-12">
+            <form onSubmit={handleSearch} className="relative max-w-3xl mx-auto">
+              <div className="flex items-center space-x-4">
                 <Image 
                   src="/brand-icon.svg" 
                   alt="IMPA Logo" 
-                  width={24}
-                  height={32}
+                  width={32}
+                  height={42}
                   className="flex-shrink-0"
                 />
                 <div className="relative flex-1">
@@ -58,13 +58,13 @@ export default function HomePage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search marine equipment, tools, code..."
-                    className="w-full pl-4 pr-12 py-3 text-base bg-white rounded-full border border-gray-200 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
+                    className="w-full pl-6 pr-14 py-4 text-lg bg-white rounded-full border border-gray-300 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
                   />
                   <button
                     type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 transition-all duration-200"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2 transition-all duration-200"
                   >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-6 w-6" />
                   </button>
                 </div>
               </div>
@@ -75,12 +75,12 @@ export default function HomePage() {
 
           {/* Common Keywords */}
           <div className="text-center">
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
               {commonKeywords.map((keyword, index) => (
                 <button
                   key={index}
                   onClick={() => handleKeywordClick(keyword)}
-                  className="px-3 py-1 text-xs bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-600 rounded-full transition-colors border border-gray-200"
+                  className="px-4 py-2 text-sm bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-600 rounded-full transition-colors border border-gray-200 hover:border-blue-200"
                 >
                   {keyword}
                 </button>
@@ -108,21 +108,23 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
-        <div className="flex justify-center items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Image 
-              src="/brand-icon.svg" 
-              alt="IMPA Logo" 
-              width={12}
-              height={16}
-            />
-            <span>Marine Stores Guide</span>
+      <footer className="mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex justify-center items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Image 
+                src="/brand-icon.svg" 
+                alt="IMPA Logo" 
+                width={16}
+                height={20}
+              />
+              <span>Marine Stores Guide</span>
+            </div>
+            <span>•</span>
+            <span>8th Edition 2023</span>
+            <span>•</span>
+            <span>Internal Use Only</span>
           </div>
-          <span>•</span>
-          <span>8th Edition 2023</span>
-          <span>•</span>
-          <span>Internal Use Only</span>
         </div>
       </footer>
     </div>

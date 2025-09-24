@@ -33,6 +33,17 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  // Handle window resize for responsive PDF scaling
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Dynamically load PDF.js
   useEffect(() => {
@@ -104,21 +115,24 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       
       const page = await pdfDoc.getPage(pageNum);
       // Calculate scale to fit container width with better mobile support
-      const containerWidth = canvasRef.current?.parentElement?.clientWidth || 800;
+      const containerWidth = canvasRef.current?.parentElement?.clientWidth || 
+                           canvasRef.current?.parentElement?.parentElement?.clientWidth || 
+                           800;
       const viewport = page.getViewport({ scale: 1.0 });
       
       // Get device pixel ratio for high-DPI displays
       const devicePixelRatio = window.devicePixelRatio || 1;
       
-      // Calculate base scale to fit container
+      // Calculate base scale to fit container width while maintaining aspect ratio
       let scale = containerWidth / viewport.width;
       
-      // For mobile devices, use higher scale for better readability
-      const isMobile = window.innerWidth < 768;
+      // Apply reasonable scaling limits to prevent distortion
+      const isMobile = windowWidth < 768;
       if (isMobile) {
-        scale = Math.min(scale * 1.5, 3.0); // Higher scale for mobile, max 3.0
+        scale = Math.min(scale * 1.2, 2.5); // Moderate scale for mobile
       } else {
-        scale = Math.min(scale, 2.0); // Desktop max scale 2.0
+        // For desktop, use moderate scaling to maintain readability
+        scale = Math.min(scale * 1.3, 3.0); // Moderate scale for desktop
       }
       
       const scaledViewport = page.getViewport({ scale });
@@ -297,6 +311,13 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     }
   }));
 
+  // Re-render PDF when window width changes
+  useEffect(() => {
+    if (pdf && currentPage) {
+      renderPage(currentPage);
+    }
+  }, [windowWidth, pdf, currentPage, renderPage]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
@@ -320,12 +341,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-auto">
+    <div className="w-full overflow-auto flex justify-center">
       <canvas 
         ref={canvasRef} 
-        className="w-full h-auto max-w-full"
+        className="h-auto"
         style={{ 
-          imageRendering: 'crisp-edges'
+          imageRendering: 'crisp-edges',
+          maxWidth: '100%',
+          height: 'auto',
+          display: 'block'
         } as React.CSSProperties}
       />
     </div>
