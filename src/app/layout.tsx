@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   title: "IMPA",
   description: "IMPA Marine Stores Guide 8th Edition 2023 - Smart Search Platform",
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: '/brand-icon.svg',
+    shortcut: '/brand-icon.svg',
+    apple: '/brand-icon.svg',
   },
 };
 

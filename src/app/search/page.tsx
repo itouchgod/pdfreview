@@ -265,20 +265,19 @@ function SearchContent() {
       {/* 头部 - Google风格，响应式布局 */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-            {/* 左侧：Logo和返回链接 */}
-            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
-              <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-1.5 sm:p-2 rounded-lg transition-colors">
-                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 sm:p-2 rounded-lg">
-                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                </div>
-                <span className="text-base sm:text-lg font-medium text-gray-900">IMPA Search</span>
-              </Link>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0">
+            {/* Logo和返回链接 */}
+            <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-1.5 sm:p-2 rounded-lg transition-colors">
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+              <img 
+                src="/brand-icon.svg" 
+                alt="IMPA Logo" 
+                className="h-6 w-4 sm:h-7 sm:w-5"
+              />
+            </Link>
             
-            {/* 中间：搜索框 */}
-            <div className="flex-1 w-full sm:max-w-2xl sm:mx-4 lg:mx-8">
+            {/* 搜索框 - 紧跟在logo后面 */}
+            <div className="flex-1 w-full sm:max-w-2xl sm:ml-4">
               <SmartSearchBox
                 onSearchResults={handleSearchResults}
                 onClearSearch={handleClearSearch}
@@ -292,11 +291,6 @@ function SearchContent() {
                 preloadedTextData={textData}
                 onSearchResultsUpdate={handleSearchResultsUpdate}
               />
-            </div>
-            
-            {/* 右侧：状态信息 */}
-            <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500 w-full sm:w-auto justify-end">
-              {/* 加载状态已移除，因为数据在首页已预加载 */}
             </div>
           </div>
         </div>
@@ -425,24 +419,20 @@ function SearchContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-8 sm:mt-16">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 sm:p-2 rounded-lg">
-                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-900">IMPA Marine Stores Guide</p>
-                <p className="text-xs text-gray-500 hidden sm:block">8th Edition 2023 - Smart Search Platform</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-6 text-xs text-gray-500">
-              <span>This page is for internal use only.</span>
-              <span className="hidden sm:inline">•</span>
-              <span>© 2025 IMPA Search Platform</span>
-            </div>
+      <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
+        <div className="flex justify-center items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <img 
+              src="/brand-icon.svg" 
+              alt="IMPA Logo" 
+              className="h-4 w-3"
+            />
+            <span>Marine Stores Guide</span>
           </div>
+          <span>•</span>
+          <span>8th Edition 2023</span>
+          <span>•</span>
+          <span>Internal Use Only</span>
         </div>
       </footer>
     </div>
