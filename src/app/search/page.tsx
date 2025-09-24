@@ -331,29 +331,36 @@ function SearchContent() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
-            {/* PDF Viewer Header with Navigation - Google Style */}
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            {/* PDF Viewer Header - Google Style */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-white">
                 <div className="flex items-center">
-                  {/* Chapter Selector */}
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <select
-                      value={selectedPDF || ''}
-                      onChange={(e) => {
-                        const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
-                        if (section) {
-                          handleSelectPDF(section.filePath, section.name, true, false);
-                        }
-                      }}
-                      className="text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full truncate font-medium"
-                    >
-                      {PDF_CONFIG.sections.map((section) => (
-                        <option key={section.name} value={section.filePath}>
-                          {section.title || section.name}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Chapter Selector - Google Style */}
+                  <div className="flex items-center">
+                    <div className="relative">
+                      <select
+                        value={selectedPDF || ''}
+                        onChange={(e) => {
+                          const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
+                          if (section) {
+                            handleSelectPDF(section.filePath, section.name, true, false);
+                          }
+                        }}
+                        className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
+                      >
+                        {PDF_CONFIG.sections.map((section) => (
+                          <option key={section.name} value={section.filePath}>
+                            {section.title || section.name}
+                          </option>
+                        ))}
+                      </select>
+                      {/* Custom dropdown arrow */}
+                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-
                 </div>
               </div>
               
