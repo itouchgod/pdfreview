@@ -82,9 +82,9 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
     
-    // Validate page number
-    if (pageNum < 1 || pageNum > totalPages) {
-      console.log('Invalid page number:', { pageNum, totalPages });
+    // Validate page number using actual PDF document pages
+    if (pageNum < 1 || pageNum > pdfDoc.numPages) {
+      console.log('Invalid page number:', { pageNum, totalPages: pdfDoc.numPages });
       return;
     }
     
@@ -211,6 +211,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // Reset state but don't reset currentPage to avoid jumping to first page
       setPdf(null);
       setTotalPages(0);
+      setError(null);
+      setLoading(true);
       loadPDF();
     }
   }, [pdfjsLib, pdfUrl, loadPDF]);

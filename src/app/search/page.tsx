@@ -54,8 +54,8 @@ function SearchContent() {
     setHasSearchResults(false);
   };
 
-  const handleSelectPDF = (pdfPath: string, sectionName: string, resetToFirstPage: boolean = true) => {
-    console.log('handleSelectPDF called:', { pdfPath, sectionName, resetToFirstPage });
+  const handleSelectPDF = (pdfPath: string, sectionName: string, resetToFirstPage: boolean = true, clearSearch: boolean = false) => {
+    console.log('handleSelectPDF called:', { pdfPath, sectionName, resetToFirstPage, clearSearch });
     setSelectedPDF(pdfPath);
     setSelectedSectionName(sectionName);
     // 更新总页数和起始页
@@ -67,12 +67,15 @@ function SearchContent() {
     // 只有在明确要求时才重置当前页为第一页
     if (resetToFirstPage) {
       setCurrentPage(1);
+      setTargetPage(1); // 同时重置targetPage
     }
-    // 不清空搜索结果，保持搜索结果状态
     
-    // 如果是手动切换章节（resetToFirstPage为true），重置搜索状态
-    if (resetToFirstPage) {
+    // 只有在明确要求时才清空搜索状态
+    if (clearSearch) {
       setIsSearchActive(false);
+      setSharedSearchResults([]);
+      setSharedSearchTerm('');
+      setHasSearchResults(false);
     }
   };
 
@@ -97,7 +100,7 @@ function SearchContent() {
   const handleSectionChange = (sectionPath: string, resetToFirstPage: boolean = true) => {
     const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
     if (section) {
-      handleSelectPDF(section.filePath, section.name, resetToFirstPage);
+      handleSelectPDF(section.filePath, section.name, resetToFirstPage, false);
     }
   };
 
@@ -174,7 +177,7 @@ function SearchContent() {
         const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
         if (section) {
           console.log('Switching section for search result:', firstResult.sectionPath);
-          handleSelectPDF(section.filePath, section.name, false);
+          handleSelectPDF(section.filePath, section.name, false, false);
         }
       }
     }
@@ -312,7 +315,7 @@ function SearchContent() {
                       onChange={(e) => {
                         const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
                         if (section) {
-                          handleSelectPDF(section.filePath, section.name);
+                          handleSelectPDF(section.filePath, section.name, true, false);
                         }
                       }}
                       className="text-xs sm:text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full truncate"
