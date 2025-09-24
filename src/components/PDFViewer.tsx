@@ -120,7 +120,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     renderTimeoutRef.current = setTimeout(async () => {
       await renderPageWithPDF(pdf, pageNum);
     }, 50);
-  }, [pdf, pdfjsLib, renderPageWithPDF]);
+  }, [pdf, pdfjsLib]);
 
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
