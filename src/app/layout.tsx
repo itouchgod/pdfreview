@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PDFTextProvider } from "@/contexts/PDFTextContext";
 
 // 过滤浏览器扩展相关的错误
 if (typeof window !== 'undefined') {
@@ -46,7 +47,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <PDFTextProvider>
+          {children}
+        </PDFTextProvider>
       </body>
     </html>
   );

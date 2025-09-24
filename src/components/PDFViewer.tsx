@@ -68,7 +68,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       
       setPdf(pdfDoc);
       setTotalPages(pdfDoc.numPages);
-      setCurrentPage(1); // Reset to first page
+      // Don't reset currentPage to avoid jumping to first page when switching sections
       
       // Extract text from all pages
       await extractAllText(pdfDoc);
@@ -82,9 +82,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
   useEffect(() => {
     if (pdfjsLib && pdfUrl) {
-      // Reset state
+      // Reset state but don't reset currentPage to avoid jumping to first page
       setPdf(null);
-      setCurrentPage(1);
       setTotalPages(0);
       loadPDF();
     }
@@ -231,9 +230,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
 
 
   const goToPage = (page: number) => {
+    console.log('PDFViewer goToPage called:', { page, totalPages, isValid: page >= 1 && page <= totalPages });
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
       onPageChange?.(page, totalPages);
+    } else {
+      console.log('Invalid page number:', { page, totalPages });
     }
   };
 
@@ -249,7 +251,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading PDF...</p>
+          <p className="text-gray-600">Loading IMPA data...</p>
         </div>
       </div>
     );
