@@ -383,23 +383,23 @@ function SearchContent() {
                     onPageChange={handlePageChange}
                   />
                   
-                  {/* 悬浮翻页按钮 */}
-                  <div className="fixed right-6 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-2 z-50">
+                  {/* 悬浮翻页按钮 - Google风格 */}
+                  <div className="fixed right-4 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-3 z-50">
                     {/* 上一页按钮 */}
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-2xl backdrop-blur-sm"
-                      title="上一页"
+                      className="w-11 h-11 bg-white/90 hover:bg-white border-0 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-md hover:scale-105 active:scale-95"
+                      title="上一页 (↑ 或 ←)"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     
                     {/* 页码显示 */}
-                    <div className="w-12 h-8 bg-white border border-gray-200 rounded-lg shadow-xl flex items-center justify-center backdrop-blur-sm">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="w-11 h-7 bg-white/90 border-0 rounded-full shadow-lg flex items-center justify-center backdrop-blur-md">
+                      <span className="text-xs font-semibold text-gray-700 tracking-tight">
                         {startPage + currentPage - 1}
                       </span>
                     </div>
@@ -408,11 +408,11 @@ function SearchContent() {
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-2xl backdrop-blur-sm"
-                      title="下一页"
+                      className="w-11 h-11 bg-white/90 hover:bg-white border-0 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-md hover:scale-105 active:scale-95"
+                      title="下一页 (↓ 或 →)"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                   </div>
