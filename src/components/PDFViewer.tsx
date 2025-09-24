@@ -5,6 +5,7 @@ import { FileText, Loader2 } from 'lucide-react';
 
 interface PDFViewerProps {
   pdfUrl: string;
+  initialPage?: number;
   onTextExtracted?: (text: string) => void;
   onPageChange?: (currentPage: number, totalPages: number) => void;
 }
@@ -13,12 +14,21 @@ export interface PDFViewerRef {
   jumpToPage: (pageNumber: number) => void;
 }
 
-const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtracted, onPageChange }, ref) => {
+const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPage = 1, onTextExtracted, onPageChange }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [pdf, setPdf] = useState<unknown>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialPage); // 使用传入的初始页面
+  
+  // 当initialPage变化时，更新currentPage
+  const lastInitialPageRef = useRef(initialPage);
+  useEffect(() => {
+    if (initialPage && initialPage !== lastInitialPageRef.current) {
+      lastInitialPageRef.current = initialPage;
+      setCurrentPage(initialPage);
+    }
+  }, [initialPage]);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,8 +235,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
   useEffect(() => {
     if (pdf && currentPage && !loading) {
       renderPage(currentPage);
+      // 通知父组件页面变化
+      onPageChange?.(currentPage, totalPages);
     }
-  }, [pdf, currentPage, loading, renderPage]);
+  }, [pdf, currentPage, loading, renderPage, onPageChange, totalPages]);
 
   // Highlight functionality removed
 

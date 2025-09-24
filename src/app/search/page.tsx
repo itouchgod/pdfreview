@@ -23,10 +23,11 @@ function SearchContent() {
   const [sharedSearchMode, setSharedSearchMode] = useState<'current' | 'global'>('global');
   const [hasSearchResults, setHasSearchResults] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
   
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1); // 初始化为1，显示第1页
   const [totalPages, setTotalPages] = useState(() => {
     const section = PDF_CONFIG.sections.find(s => s.filePath === PDF_CONFIG.sections[0].filePath);
     return section ? (section.endPage - section.startPage + 1) : 1;
@@ -76,8 +77,20 @@ function SearchContent() {
   };
 
   const handlePageJump = (pageNumber: number) => {
+    console.log('handlePageJump called:', { 
+      pageNumber, 
+      hasPdfViewerRef: !!pdfViewerRef.current,
+      currentPage,
+      totalPages,
+      selectedPDF
+    });
     if (pdfViewerRef.current) {
+      // 同时更新本地状态和PDF组件
+      setCurrentPage(pageNumber);
+      console.log('Calling pdfViewerRef.current.jumpToPage with:', pageNumber);
       pdfViewerRef.current.jumpToPage(pageNumber);
+    } else {
+      console.log('PDF viewer ref is null, cannot jump to page');
     }
   };
 
@@ -133,35 +146,35 @@ function SearchContent() {
     setHasSearchResults(results.length > 0);
     setIsSearchActive(true); // 标记搜索已激活
     
-    // 如果有搜索结果，自动跳转到第一个结果
+    // 如果有搜索结果，设置目标页面为第一个结果的页面
     if (results.length > 0) {
       const firstResult = results[0];
       const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
       if (section) {
-        // 计算相对页码
         const relativePage = firstResult.page - section.startPage + 1;
-        
-        // 验证页码有效性
-        if (relativePage < 1 || relativePage > (section.endPage - section.startPage + 1)) {
-          console.log('Invalid relative page:', { 
-            relativePage, 
-            actualPage: firstResult.page, 
-            startPage: section.startPage, 
-            endPage: section.endPage 
-          });
-          return;
+        // 只在目标页面真正变化时才更新
+        if (targetPage !== relativePage) {
+          console.log('Setting target page:', relativePage);
+          setTargetPage(relativePage);
+          // 同时更新当前页面状态
+          setCurrentPage(relativePage);
         }
-        
-        // 如果需要切换章节
-        if (firstResult.sectionPath !== selectedPDF) {
+      }
+    } else {
+      // 只在目标页面不为undefined时才更新
+      if (targetPage !== undefined) {
+        setTargetPage(undefined);
+      }
+    }
+    
+    // 如果需要切换章节，直接切换（PDFViewer会使用initialPage显示正确页面）
+    if (results.length > 0) {
+      const firstResult = results[0];
+      if (firstResult.sectionPath !== selectedPDF) {
+        const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
+        if (section) {
+          console.log('Switching section for search result:', firstResult.sectionPath);
           handleSelectPDF(section.filePath, section.name, false);
-          // 延迟跳转页面，等待PDF加载
-          setTimeout(() => {
-            handlePageJump(relativePage);
-          }, 500);
-        } else {
-          // 直接跳转页面
-          handlePageJump(relativePage);
         }
       }
     }
@@ -174,7 +187,7 @@ function SearchContent() {
   useEffect(() => {
     if (searchQuery && textData && Object.keys(textData).length > 0) {
       console.log('Auto search from URL:', { searchQuery, textDataCount: Object.keys(textData).length });
-      // 模拟搜索执行
+      // 数据已加载完成，直接执行搜索
       const searchResults = searchInAllSections(searchQuery, textData);
       console.log('Auto search results:', { count: searchResults.length });
       handleSearchResultsUpdate(searchResults, searchQuery, 'global');
@@ -381,6 +394,7 @@ function SearchContent() {
                   <PDFViewer
                     ref={pdfViewerRef}
                     pdfUrl={selectedPDF}
+                    initialPage={targetPage || 1}
                     onTextExtracted={handleTextExtracted}
                     onPageChange={handlePageChange}
                   />
