@@ -50,45 +50,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     loadPdfjs();
   }, []);
 
-  const loadPDF = useCallback(async () => {
-    if (!pdfjsLib) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Cancel previous render task
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
-      
-      const loadingTask = pdfjsLib.getDocument(pdfUrl);
-      const pdfDoc = await loadingTask.promise;
-      
-      setPdf(pdfDoc);
-      setTotalPages(pdfDoc.numPages);
-      // Don't reset currentPage to avoid jumping to first page when switching sections
-      
-      // Extract text from all pages
-      await extractAllText(pdfDoc);
-      
-    } catch (err) {
-      setError('Failed to load PDF: ' + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [pdfjsLib, pdfUrl]);
-
-  useEffect(() => {
-    if (pdfjsLib && pdfUrl) {
-      // Reset state but don't reset currentPage to avoid jumping to first page
-      setPdf(null);
-      setTotalPages(0);
-      loadPDF();
-    }
-  }, [pdfjsLib, pdfUrl, loadPDF]);
-
   const extractAllText = useCallback(async (pdfDoc: any) => {
     let fullText = '';
     
@@ -107,20 +68,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     
     onTextExtracted?.(fullText);
   }, [onTextExtracted]);
-
-  const renderPage = useCallback(async (pageNum: number) => {
-    if (!pdf || !pdfjsLib) return;
-    
-    // Clear any pending render timeout
-    if (renderTimeoutRef.current) {
-      clearTimeout(renderTimeoutRef.current);
-    }
-    
-    // Debounce rendering to avoid rapid successive calls
-    renderTimeoutRef.current = setTimeout(async () => {
-      await renderPageWithPDF(pdf, pageNum);
-    }, 50);
-  }, [pdf, pdfjsLib]);
 
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
@@ -202,11 +149,63 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         // Highlight functionality removed
       }
     } catch (err: any) {
-      if (err.name !== 'RenderingCancelledException') {
-        console.error('Failed to render page:', err);
-      }
+      console.error('渲染页面失败:', err);
     }
   }, [pdfjsLib]);
+
+  const loadPDF = useCallback(async () => {
+    if (!pdfjsLib) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Cancel previous render task
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+      
+      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      const pdfDoc = await loadingTask.promise;
+      
+      setPdf(pdfDoc);
+      setTotalPages(pdfDoc.numPages);
+      // Don't reset currentPage to avoid jumping to first page when switching sections
+      
+      // Extract text from all pages
+      await extractAllText(pdfDoc);
+      
+    } catch (err) {
+      setError('Failed to load PDF: ' + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [pdfjsLib, pdfUrl, extractAllText]);
+
+  useEffect(() => {
+    if (pdfjsLib && pdfUrl) {
+      // Reset state but don't reset currentPage to avoid jumping to first page
+      setPdf(null);
+      setTotalPages(0);
+      loadPDF();
+    }
+  }, [pdfjsLib, pdfUrl, loadPDF]);
+
+  const renderPage = useCallback(async (pageNum: number) => {
+    if (!pdf || !pdfjsLib) return;
+    
+    // Clear any pending render timeout
+    if (renderTimeoutRef.current) {
+      clearTimeout(renderTimeoutRef.current);
+    }
+    
+    // Debounce rendering to avoid rapid successive calls
+    renderTimeoutRef.current = setTimeout(async () => {
+      await renderPageWithPDF(pdf, pageNum);
+    }, 50);
+  }, [pdf, pdfjsLib, renderPageWithPDF]);
+
 
   // Highlight functionality removed
 

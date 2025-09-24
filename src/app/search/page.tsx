@@ -199,7 +199,7 @@ function SearchContent() {
         }, 1000);
       }
     }
-  }, []); // 空依赖数组，只在挂载时执行一次
+  }, [searchParams]); // 包含searchParams依赖
 
   return (
     <div className="min-h-screen bg-gray-50">
