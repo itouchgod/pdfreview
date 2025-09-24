@@ -203,23 +203,23 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 头部 - Google风格 */}
+      {/* 头部 - Google风格，响应式布局 */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
             {/* 左侧：Logo和返回链接 */}
-            <div className="flex items-center space-x-4">
-              <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded-lg transition-colors">
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
-                  <BookOpen className="h-5 w-5 text-white" />
+            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+              <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-1.5 sm:p-2 rounded-lg transition-colors">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 sm:p-2 rounded-lg">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <span className="text-lg font-medium text-gray-900">IMPA Search</span>
+                <span className="text-base sm:text-lg font-medium text-gray-900">IMPA Search</span>
               </Link>
             </div>
             
             {/* 中间：搜索框 */}
-            <div className="flex-1 max-w-2xl mx-8">
+            <div className="flex-1 w-full sm:max-w-2xl sm:mx-4 lg:mx-8">
               <SmartSearchBox
                 onSearchResults={handleSearchResults}
                 onClearSearch={handleClearSearch}
@@ -236,24 +236,24 @@ function SearchContent() {
             </div>
             
             {/* 右侧：状态信息 */}
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500 w-full sm:w-auto justify-end">
               {/* 加载状态已移除，因为数据在首页已预加载 */}
             </div>
           </div>
         </div>
       </header>
 
-      {/* 主要内容 - 左右分栏布局 */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          {/* 左侧：PDF查看器 */}
-          <div className="flex-1 min-w-0">
+      {/* 主要内容 - 响应式布局 */}
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-6">
+          {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
+          <div className="flex-1 min-w-0 order-1 lg:order-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               {/* PDF Viewer Header with Navigation - Google Style */}
-              <div className="bg-white px-4 py-3 border-b border-gray-200">
+              <div className="bg-white px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   {/* Left: Chapter Selector */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                     <select
                       value={selectedPDF || ''}
                       onChange={(e) => {
@@ -262,7 +262,7 @@ function SearchContent() {
                           handleSelectPDF(section.filePath, section.name);
                         }
                       }}
-                      className="text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-xs truncate"
+                      className="text-xs sm:text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full truncate"
                     >
                       {PDF_CONFIG.sections.map((section) => (
                         <option key={section.name} value={section.filePath}>
@@ -272,19 +272,19 @@ function SearchContent() {
                     </select>
                   </div>
 
-                  {/* Center: Page Navigation */}
-                  <div className="flex items-center space-x-4">
+                  {/* Center: Page Navigation - 在移动端简化 */}
+                  <div className="flex items-center space-x-2 sm:space-x-4">
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
                       <input
                         type="number"
                         min={startPage}
@@ -297,24 +297,21 @@ function SearchContent() {
                             pdfViewerRef.current.jumpToPage(relativePage);
                           }
                         }}
-                        className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-10 sm:w-16 px-1 sm:px-2 py-1 text-xs sm:text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      <span className="text-sm text-gray-500">of {startPage + totalPages - 1}</span>
+                      <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">of {startPage + totalPages - 1}</span>
                     </div>
                     
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </div>
-
-                  {/* Right: Empty space for balance */}
-                  <div className="w-20"></div>
                 </div>
               </div>
               
@@ -330,10 +327,10 @@ function SearchContent() {
             </div>
           </div>
 
-          {/* 右侧：搜索结果 */}
-          <div className="w-80 flex-shrink-0 h-screen overflow-hidden">
+          {/* 搜索结果 - 在移动端显示在PDF下方，桌面端显示在右侧 */}
+          <div className="w-full lg:w-80 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
             <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                 <SearchResultsOnly
                   onPageJump={handlePageJump}
                   onSectionChange={handleSectionChange}
