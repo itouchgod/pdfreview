@@ -12,8 +12,6 @@ import { usePDFText } from '@/contexts/PDFTextContext';
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const [, setSearchResults] = useState<unknown[]>([]);
-  const [, setShowSearchResults] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   // const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
@@ -23,6 +21,8 @@ function SearchContent() {
   const [sharedSearchResults, setSharedSearchResults] = useState<any[]>([]);
   const [sharedSearchTerm, setSharedSearchTerm] = useState('');
   const [sharedSearchMode, setSharedSearchMode] = useState<'current' | 'global'>('global');
+  const [hasSearchResults, setHasSearchResults] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
   
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
@@ -41,12 +41,16 @@ function SearchContent() {
   };
 
   const handleSearchResults = (results: unknown[]) => {
-    setSearchResults(results);
-    setShowSearchResults(results.length > 0);
+    // 这个函数现在不需要做任何事情，因为SmartSearchBox会直接调用onSearchResultsUpdate
+    console.log('handleSearchResults called with:', results.length, 'results');
   };
 
   const handleClearSearch = () => {
-    setShowSearchResults(false);
+    // 清除搜索状态
+    setSharedSearchResults([]);
+    setSharedSearchTerm('');
+    setIsSearchActive(false);
+    setHasSearchResults(false);
   };
 
   const handleSelectPDF = (pdfPath: string, sectionName: string, resetToFirstPage: boolean = true) => {
@@ -64,11 +68,14 @@ function SearchContent() {
       setCurrentPage(1);
     }
     // 不清空搜索结果，保持搜索结果状态
-    setShowSearchResults(false);
+    
+    // 如果是手动切换章节（resetToFirstPage为true），重置搜索状态
+    if (resetToFirstPage) {
+      setIsSearchActive(false);
+    }
   };
 
   const handlePageJump = (pageNumber: number) => {
-    console.log('handlePageJump called:', { pageNumber, hasPdfViewerRef: !!pdfViewerRef.current });
     if (pdfViewerRef.current) {
       pdfViewerRef.current.jumpToPage(pageNumber);
     }
@@ -115,10 +122,49 @@ function SearchContent() {
   // };
 
   const handleSearchResultsUpdate = (results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
-    console.log('handleSearchResultsUpdate called:', { resultsCount: results.length, searchTerm, searchMode });
+    console.log('handleSearchResultsUpdate called:', { 
+      resultsCount: results.length, 
+      searchTerm, 
+      searchMode
+    });
     setSharedSearchResults(results);
     setSharedSearchTerm(searchTerm);
     setSharedSearchMode(searchMode);
+    setHasSearchResults(results.length > 0);
+    setIsSearchActive(true); // 标记搜索已激活
+    
+    // 如果有搜索结果，自动跳转到第一个结果
+    if (results.length > 0) {
+      const firstResult = results[0];
+      const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
+      if (section) {
+        // 计算相对页码
+        const relativePage = firstResult.page - section.startPage + 1;
+        
+        // 验证页码有效性
+        if (relativePage < 1 || relativePage > (section.endPage - section.startPage + 1)) {
+          console.log('Invalid relative page:', { 
+            relativePage, 
+            actualPage: firstResult.page, 
+            startPage: section.startPage, 
+            endPage: section.endPage 
+          });
+          return;
+        }
+        
+        // 如果需要切换章节
+        if (firstResult.sectionPath !== selectedPDF) {
+          handleSelectPDF(section.filePath, section.name, false);
+          // 延迟跳转页面，等待PDF加载
+          setTimeout(() => {
+            handlePageJump(relativePage);
+          }, 500);
+        } else {
+          // 直接跳转页面
+          handlePageJump(relativePage);
+        }
+      }
+    }
   };
 
   // 从URL参数获取搜索词
@@ -317,12 +363,28 @@ function SearchContent() {
               
               {/* PDF Content Area */}
               <div className="p-1 sm:p-2">
-                <PDFViewer
-                  ref={pdfViewerRef}
-                  pdfUrl={selectedPDF}
-                  onTextExtracted={handleTextExtracted}
-                  onPageChange={handlePageChange}
-                />
+                {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
+                  // 当搜索激活且有搜索词但没有结果时，显示无结果提示
+                  <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-lg text-gray-700 font-medium mb-2">No results found, please try different keywords</p>
+                      <p className="text-sm text-gray-500">Search term: &ldquo;{sharedSearchTerm}&rdquo;</p>
+                    </div>
+                  </div>
+                ) : (
+                  // 正常显示PDF
+                  <PDFViewer
+                    ref={pdfViewerRef}
+                    pdfUrl={selectedPDF}
+                    onTextExtracted={handleTextExtracted}
+                    onPageChange={handlePageChange}
+                  />
+                )}
               </div>
             </div>
           </div>

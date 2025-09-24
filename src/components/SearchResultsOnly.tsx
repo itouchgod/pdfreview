@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
@@ -43,11 +43,7 @@ export default function SearchResultsOnly({
   const results = sharedSearchResults;
   const searchTerm = sharedSearchTerm;
   
-  console.log('SearchResultsOnly props:', { 
-    resultsCount: results.length, 
-    searchTerm, 
-    hasResults: results.length > 0 
-  });
+  // 调试信息已移除，避免循环渲染
 
   // 按页面分组搜索结果
   const groupedResults = useMemo(() => {
@@ -71,50 +67,54 @@ export default function SearchResultsOnly({
     }));
   }, [results]);
 
-  // 跳转到指定结果
+  // 当搜索结果更新时，自动选中第一个结果
+  const lastSearchTermRef = useRef<string>('');
+  useEffect(() => {
+    if (searchTerm && searchTerm !== lastSearchTermRef.current) {
+      console.log('Auto-selecting first result for new search term:', searchTerm);
+      lastSearchTermRef.current = searchTerm;
+      setHighlightIndex(0); // 重置为第一个结果
+    }
+  }, [searchTerm]);
+
+  // 跳转到指定结果（仅用于点击跳转）
   const goToResult = useCallback((index: number) => {
     if (index < 0 || index >= groupedResults.length) return;
-    
-    console.log('goToResult called:', { index, totalResults: groupedResults.length });
     
     setHighlightIndex(index);
     const result = groupedResults[index];
     const firstResult = result.results[0];
     
-    console.log('Result details:', {
-      sectionPath: firstResult.sectionPath,
-      page: firstResult.page,
-      selectedPDF,
-      needsSectionChange: firstResult.sectionPath !== selectedPDF
-    });
-    
     // 查找对应的章节配置
     const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
-    if (!section) {
-      console.log('Section not found for:', firstResult.sectionPath);
-      return;
-    }
+    if (!section) return;
     
     // 计算相对页码
     const relativePage = firstResult.page - section.startPage + 1;
-    console.log('Calculated relative page:', relativePage, 'from actual page:', firstResult.page, 'start page:', section.startPage);
+    
+    // 验证页码有效性
+    if (relativePage < 1 || relativePage > (section.endPage - section.startPage + 1)) {
+      console.log('Invalid relative page in SearchResultsOnly:', { 
+        relativePage, 
+        actualPage: firstResult.page, 
+        startPage: section.startPage, 
+        endPage: section.endPage 
+      });
+      return;
+    }
     
     // 如果需要切换章节
     if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
-      console.log('Switching section to:', firstResult.sectionPath);
-      // 切换章节时不重置到第一页，让后续的页面跳转生效
       onSectionChange(firstResult.sectionPath, false);
       // 延迟跳转页面，等待PDF加载
       setTimeout(() => {
         if (onPageJump) {
-          console.log('Jumping to page after section change:', relativePage);
           onPageJump(relativePage);
         }
       }, 500);
     } else {
       // 直接跳转页面
       if (onPageJump) {
-        console.log('Jumping to page directly:', relativePage);
         onPageJump(relativePage);
       }
     }
@@ -133,12 +133,7 @@ export default function SearchResultsOnly({
     }
   };
 
-  // 当搜索结果更新时，自动跳转到第一条结果
-  useEffect(() => {
-    if (groupedResults.length > 0 && searchTerm) {
-      goToResult(0);
-    }
-  }, [searchTerm, groupedResults.length, goToResult]);
+  // 去除自动跳转逻辑，只保留手动点击跳转功能
 
   // 如果没有搜索词，显示提示信息
   if (!searchTerm) {
@@ -163,8 +158,8 @@ export default function SearchResultsOnly({
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="h-8 w-8 text-red-400" />
           </div>
-          <p className="text-sm text-gray-700 font-medium">No results found</p>
-          <p className="text-xs text-gray-500 mt-1">Try different keywords for &ldquo;{searchTerm}&rdquo;</p>
+          <p className="text-sm text-gray-700 font-medium">No results found, please try different keywords</p>
+          <p className="text-xs text-gray-500 mt-1">Search term: &ldquo;{searchTerm}&rdquo;</p>
         </div>
       </div>
     );

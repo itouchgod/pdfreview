@@ -18,7 +18,7 @@ interface SmartSearchBoxProps {
   onSearchResults: (results: SmartSearchResult[]) => void;
   onClearSearch: () => void;
   onPageJump?: (pageNumber: number) => void;
-  onSectionChange?: (sectionPath: string) => void;
+  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
   onLoadingStatusChange?: (status: { isLoading: boolean; progress: number }) => void;
   onUpdateURL?: (params: { query?: string; section?: string; page?: number }) => void;
   currentSection?: string;
@@ -49,6 +49,11 @@ export default function SmartSearchBox({
   useEffect(() => {
     setAllSectionsText(preloadedTextData);
   }, [preloadedTextData]);
+
+  // 同步初始搜索词
+  useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+  }, [initialSearchTerm]);
 
   // 搜索所有章节
   const searchInAllSections = (query: string): SmartSearchResult[] => {
@@ -91,7 +96,12 @@ export default function SmartSearchBox({
   };
 
   const handleSearch = () => {
-    console.log('handleSearch called:', { searchTerm, textDataCount: Object.keys(allSectionsText).length });
+    console.log('handleSearch called:', { 
+      searchTerm, 
+      textDataCount: Object.keys(allSectionsText).length,
+      hasOnSearchResults: !!onSearchResults,
+      hasOnSearchResultsUpdate: !!onSearchResultsUpdate
+    });
     if (!searchTerm.trim() || Object.keys(allSectionsText).length === 0) {
       console.log('Search skipped:', { hasSearchTerm: !!searchTerm.trim(), hasTextData: Object.keys(allSectionsText).length > 0 });
       return;
@@ -106,12 +116,19 @@ export default function SmartSearchBox({
     
     setTimeout(() => {
       const searchResults = searchInAllSections(searchTerm);
-      console.log('Search results:', { count: searchResults.length, searchTerm });
+      console.log('Search results:', { 
+        count: searchResults.length, 
+        searchTerm,
+        results: searchResults.slice(0, 3) // 显示前3个结果用于调试
+      });
       onSearchResults(searchResults);
       
       // 通知父组件搜索结果更新
       if (onSearchResultsUpdate) {
+        console.log('Calling onSearchResultsUpdate with:', searchResults.length, 'results');
         onSearchResultsUpdate(searchResults, searchTerm, 'global');
+      } else {
+        console.log('onSearchResultsUpdate is not available');
       }
       
       setIsSearching(false);

@@ -72,6 +72,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
     
+    // Validate page number
+    if (pageNum < 1 || pageNum > totalPages) {
+      console.log('Invalid page number:', { pageNum, totalPages });
+      return;
+    }
+    
     try {
       // Cancel previous render task and wait for it to complete
       if (renderTaskRef.current) {
@@ -149,9 +155,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         // Highlight functionality removed
       }
     } catch (err: any) {
-      console.error('渲染页面失败:', err);
+      // 忽略渲染取消异常，这是正常的
+      if (err.name !== 'RenderingCancelledException') {
+        console.error('渲染页面失败:', err);
+      }
     }
-  }, [pdfjsLib]);
+  }, [pdfjsLib, totalPages]);
 
   const loadPDF = useCallback(async () => {
     if (!pdfjsLib) return;
@@ -162,7 +171,11 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
       
       // Cancel previous render task
       if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
+        try {
+          renderTaskRef.current.cancel();
+        } catch {
+          // 忽略取消渲染时的错误
+        }
         renderTaskRef.current = null;
       }
       

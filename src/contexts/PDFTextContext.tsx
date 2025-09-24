@@ -74,8 +74,11 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
                 .join(' ');
               const actualPageNum = section.startPage + pageNum - 1;
               fullText += `\n--- 第 ${actualPageNum} 页 ---\n${pageText}\n`;
-            } catch (err) {
-              console.error(`提取章节 ${section.name} 第 ${pageNum} 页文本失败:`, err);
+            } catch (err: any) {
+              // 忽略渲染取消异常，这是正常的
+              if (err.name !== 'RenderingCancelledException') {
+                console.error(`提取章节 ${section.name} 第 ${pageNum} 页文本失败:`, err);
+              }
             }
           }
           

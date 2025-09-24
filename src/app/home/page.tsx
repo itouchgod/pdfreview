@@ -71,20 +71,6 @@ export default function HomePage() {
             </form>
           </div>
 
-          {/* Loading Progress */}
-          {loadingStatus.isLoading && !isReady && (
-            <div className="mb-8 w-full max-w-md mx-auto">
-              <div className="bg-gray-200 rounded-full h-2 mb-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${loadingStatus.progress}%` }}
-                ></div>
-              </div>
-              <p className="text-center text-sm text-gray-600">
-                Loading IMPA data... {Math.round(loadingStatus.progress)}%
-              </p>
-            </div>
-          )}
 
 
           {/* Common Keywords */}
@@ -104,6 +90,23 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Loading Progress - 放在页脚上边框 */}
+      {loadingStatus.isLoading && !isReady && (
+        <div className="w-full px-4 py-2 bg-gray-50 border-t border-gray-200">
+          <div className="max-w-md mx-auto">
+            <div className="bg-gray-200 rounded-full h-2 mb-1">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${loadingStatus.progress}%` }}
+              ></div>
+            </div>
+            <p className="text-center text-xs text-gray-600">
+              Loading IMPA data... {Math.round(loadingStatus.progress)}%
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
