@@ -261,7 +261,7 @@ function SearchContent() {
   }, [searchParams]); // 包含searchParams依赖
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* 头部 - Google风格，响应式布局 */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3">
@@ -297,13 +297,13 @@ function SearchContent() {
       </header>
 
       {/* 主要内容 - 响应式布局 */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
-        <div className="flex flex-col lg:flex-row gap-3 sm:gap-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-hidden">
               {/* PDF Viewer Header with Navigation - Google Style */}
-              <div className="bg-white px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+              <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   {/* Left: Chapter Selector */}
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
@@ -369,10 +369,10 @@ function SearchContent() {
               </div>
               
               {/* PDF Content Area */}
-              <div className="p-1 sm:p-2">
+              <div className="p-2 sm:p-4">
                 {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                   // 当搜索激活且有搜索词但没有结果时，显示无结果提示
-                  <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col items-center justify-center h-96">
                     <div className="text-center">
                       <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,7 +400,7 @@ function SearchContent() {
           {/* 搜索结果 - 在移动端显示在PDF下方，桌面端显示在右侧 */}
           <div className="w-full lg:w-80 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
             <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+              <div className="flex-1 overflow-y-auto p-1 sm:p-2">
                 <SearchResultsOnly
                   onPageJump={handlePageJump}
                   onSectionChange={handleSectionChange}
