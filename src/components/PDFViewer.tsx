@@ -78,7 +78,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     } finally {
       setLoading(false);
     }
-  }, [pdfjsLib, pdfUrl, extractAllText]);
+  }, [pdfjsLib, pdfUrl]);
 
   useEffect(() => {
     if (pdfjsLib && pdfUrl) {
