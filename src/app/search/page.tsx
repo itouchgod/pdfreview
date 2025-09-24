@@ -8,6 +8,7 @@ import SearchResultsOnly from '@/components/SearchResultsOnly';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
 
 function SearchContent() {
@@ -272,11 +273,13 @@ function SearchContent() {
             {/* Logo和返回链接 */}
             <Link href="/home" className="flex items-center space-x-2 hover:bg-gray-100 p-1.5 sm:p-2 rounded-lg transition-colors">
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-              <img 
-                src="/brand-icon.svg" 
-                alt="IMPA Logo" 
-                className="h-6 w-4 sm:h-7 sm:w-5"
-              />
+                <Image 
+                  src="/brand-icon.svg" 
+                  alt="IMPA Logo" 
+                  width={20}
+                  height={28}
+                  className="sm:w-5 sm:h-7"
+                />
             </Link>
             
             {/* 搜索框 - 紧跟在logo后面 */}
@@ -425,10 +428,11 @@ function SearchContent() {
       <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
         <div className="flex justify-center items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <img 
+            <Image 
               src="/brand-icon.svg" 
               alt="IMPA Logo" 
-              className="h-4 w-3"
+              width={12}
+              height={16}
             />
             <span>Marine Stores Guide</span>
           </div>

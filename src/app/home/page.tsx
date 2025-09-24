@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
+import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
 
 export default function HomePage() {
@@ -44,17 +45,19 @@ export default function HomePage() {
           <div className="mb-8">
             <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
               <div className="flex items-center space-x-3">
-                <img 
+                <Image 
                   src="/brand-icon.svg" 
                   alt="IMPA Logo" 
-                  className="h-8 w-6 flex-shrink-0"
+                  width={24}
+                  height={32}
+                  className="flex-shrink-0"
                 />
                 <div className="relative flex-1">
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search marine equipment, tools, supplies..."
+                    placeholder="Search marine equipment, tools, code..."
                     className="w-full pl-4 pr-12 py-3 text-base bg-white rounded-full border border-gray-200 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
                   />
                   <button
@@ -108,10 +111,11 @@ export default function HomePage() {
       <footer className="mt-auto p-4 text-center text-sm text-gray-500 border-t border-gray-200">
         <div className="flex justify-center items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <img 
+            <Image 
               src="/brand-icon.svg" 
               alt="IMPA Logo" 
-              className="h-4 w-3"
+              width={12}
+              height={16}
             />
             <span>Marine Stores Guide</span>
           </div>
