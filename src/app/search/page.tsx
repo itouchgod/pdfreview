@@ -264,6 +264,31 @@ function SearchContent() {
     }
   }, [searchParams]); // 包含searchParams依赖
 
+  // 键盘快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 只在没有输入框聚焦时响应快捷键
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (currentPage > 1) {
+          pdfViewerRef.current?.jumpToPage(currentPage - 1);
+        }
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        if (currentPage < totalPages) {
+          pdfViewerRef.current?.jumpToPage(currentPage + 1);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPage, totalPages]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* 头部 - Google风格，响应式布局 */}
@@ -308,9 +333,9 @@ function SearchContent() {
           <div className="flex-1 min-w-0 order-1 lg:order-1">
             {/* PDF Viewer Header with Navigation - Google Style */}
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  {/* Left: Chapter Selector */}
-                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <div className="flex items-center">
+                  {/* Chapter Selector */}
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     <select
                       value={selectedPDF || ''}
                       onChange={(e) => {
@@ -329,51 +354,11 @@ function SearchContent() {
                     </select>
                   </div>
 
-                  {/* Center: Page Navigation - 在移动端简化 */}
-                  <div className="flex items-center space-x-2 sm:space-x-4">
-                    <button
-                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
-                      disabled={currentPage <= 1}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    
-                    <div className="flex items-center space-x-1 sm:space-x-2">
-                      <input
-                        type="number"
-                        min={startPage}
-                        max={startPage + totalPages - 1}
-                        value={startPage + currentPage - 1}
-                        onChange={(e) => {
-                          const pageNum = parseInt(e.target.value);
-                          if (pageNum && pdfViewerRef.current) {
-                            const relativePage = pageNum - startPage + 1;
-                            pdfViewerRef.current.jumpToPage(relativePage);
-                          }
-                        }}
-                        className="w-12 sm:w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                      <span className="text-sm text-gray-500 hidden sm:inline">of {startPage + totalPages - 1}</span>
-                    </div>
-                    
-                    <button
-                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
               </div>
               
             {/* PDF Content Area */}
-            <div className="p-1 flex justify-center">
+            <div className="p-1 flex justify-center relative">
               {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                 // 当搜索激活且有搜索词但没有结果时，显示无结果提示
                 <div className="flex flex-col items-center justify-center h-96">
@@ -389,13 +374,49 @@ function SearchContent() {
                 </div>
               ) : (
                 // 正常显示PDF
-                <PDFViewer
-                  ref={pdfViewerRef}
-                  pdfUrl={selectedPDF}
-                  initialPage={targetPage || 1}
-                  onTextExtracted={handleTextExtracted}
-                  onPageChange={handlePageChange}
-                />
+                <>
+                  <PDFViewer
+                    ref={pdfViewerRef}
+                    pdfUrl={selectedPDF}
+                    initialPage={targetPage || 1}
+                    onTextExtracted={handleTextExtracted}
+                    onPageChange={handlePageChange}
+                  />
+                  
+                  {/* 悬浮翻页按钮 */}
+                  <div className="fixed right-6 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-2 z-50">
+                    {/* 上一页按钮 */}
+                    <button
+                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                      className="w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-2xl backdrop-blur-sm"
+                      title="上一页"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    
+                    {/* 页码显示 */}
+                    <div className="w-12 h-8 bg-white border border-gray-200 rounded-lg shadow-xl flex items-center justify-center backdrop-blur-sm">
+                      <span className="text-sm font-medium text-gray-700">
+                        {startPage + currentPage - 1}
+                      </span>
+                    </div>
+                    
+                    {/* 下一页按钮 */}
+                    <button
+                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                      className="w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-2xl backdrop-blur-sm"
+                      title="下一页"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
