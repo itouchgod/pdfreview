@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
-import { FileText, Search, BookOpen, ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
@@ -25,7 +25,7 @@ function SearchContent() {
   const [sharedSearchMode, setSharedSearchMode] = useState<'current' | 'global'>('global');
   
   // 使用全局PDF文本数据
-  const { textData, isReady } = usePDFText();
+  const { textData } = usePDFText();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(() => {
     const section = PDF_CONFIG.sections.find(s => s.filePath === PDF_CONFIG.sections[0].filePath);
@@ -110,9 +110,9 @@ function SearchContent() {
     setTotalPages(total);
   };
 
-  const handleToggleSearchCollapse = () => {
-    setIsSearchCollapsed(!isSearchCollapsed);
-  };
+  // const handleToggleSearchCollapse = () => {
+  //   setIsSearchCollapsed(!isSearchCollapsed);
+  // };
 
   const handleSearchResultsUpdate = (results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
     console.log('handleSearchResultsUpdate called:', { resultsCount: results.length, searchTerm, searchMode });
@@ -133,7 +133,7 @@ function SearchContent() {
       console.log('Auto search results:', { count: searchResults.length });
       handleSearchResultsUpdate(searchResults, searchQuery, 'global');
     }
-  }, [searchQuery, textData]);
+  }, [searchQuery, textData, searchParams]);
 
   // 搜索函数
   const searchInAllSections = (query: string, sectionsText: Record<string, string>) => {

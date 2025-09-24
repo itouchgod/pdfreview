@@ -78,7 +78,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     } finally {
       setLoading(false);
     }
-  }, [pdfjsLib, pdfUrl]);
+  }, [pdfjsLib, pdfUrl, extractAllText]);
 
   useEffect(() => {
     if (pdfjsLib && pdfUrl) {
@@ -120,7 +120,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
     renderTimeoutRef.current = setTimeout(async () => {
       await renderPageWithPDF(pdf, pageNum);
     }, 50);
-  }, [pdf, pdfjsLib]);
+  }, [pdf, pdfjsLib, renderPageWithPDF]);
 
   const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
     if (!pdfDoc || !pdfjsLib) return;
@@ -299,9 +299,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, onTextExtr
         ref={canvasRef} 
         className="w-full h-auto max-w-full"
         style={{ 
-          imageRendering: 'crisp-edges',
-          WebkitImageRendering: 'crisp-edges'
-        }}
+          imageRendering: 'crisp-edges'
+        } as React.CSSProperties}
       />
     </div>
   );

@@ -29,13 +29,13 @@ interface SearchResultsOnlyProps {
 export default function SearchResultsOnly({ 
   onPageJump, 
   onSectionChange, 
-  currentSection,
+  // currentSection, // eslint-disable-line @typescript-eslint/no-unused-vars
   selectedPDF, 
-  initialSearchTerm,
-  preloadedTextData,
+  // initialSearchTerm, // eslint-disable-line @typescript-eslint/no-unused-vars
+  // preloadedTextData, // eslint-disable-line @typescript-eslint/no-unused-vars
   sharedSearchResults = [],
   sharedSearchTerm = '',
-  sharedSearchMode
+  // sharedSearchMode // eslint-disable-line @typescript-eslint/no-unused-vars
 }: SearchResultsOnlyProps) {
   const [highlightIndex, setHighlightIndex] = useState(0);
   
@@ -138,7 +138,7 @@ export default function SearchResultsOnly({
     if (groupedResults.length > 0 && searchTerm) {
       goToResult(0);
     }
-  }, [searchTerm]);
+  }, [searchTerm, groupedResults.length, goToResult]);
 
   // 如果没有搜索词，显示提示信息
   if (!searchTerm) {
@@ -164,7 +164,7 @@ export default function SearchResultsOnly({
             <Search className="h-8 w-8 text-red-400" />
           </div>
           <p className="text-sm text-gray-700 font-medium">No results found</p>
-          <p className="text-xs text-gray-500 mt-1">Try different keywords for "{searchTerm}"</p>
+          <p className="text-xs text-gray-500 mt-1">Try different keywords for &ldquo;{searchTerm}&rdquo;</p>
         </div>
       </div>
     );

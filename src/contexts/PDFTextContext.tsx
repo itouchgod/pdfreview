@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { PDF_CONFIG } from '@/config/pdf';
 
 export interface PDFTextData {
@@ -100,7 +100,7 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
     setTextData(sectionsText);
     setIsLoading(false);
     setHasLoaded(true);
-  }, []); // 空依赖数组，避免重新创建
+  }, [isLoading, hasLoaded, hasStartedLoading]); // 包含所有使用的状态变量
 
   const isReady = !loadingStatus.isLoading && loadingStatus.loadedSections > 0;
 
