@@ -404,17 +404,9 @@ function SearchContent() {
                       </svg>
                     </button>
                     
-                    {/* 页码显示 - 更显眼的样式 */}
-                    <div className="w-14 h-8 bg-blue-600 hover:bg-blue-700 border-0 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 cursor-pointer group" onClick={() => {
-                      const page = prompt(`跳转到页面 (${startPage}-${startPage + totalPages - 1}):`, (startPage + currentPage - 1).toString());
-                      if (page && !isNaN(Number(page))) {
-                        const targetPage = Number(page);
-                        if (targetPage >= startPage && targetPage <= startPage + totalPages - 1) {
-                          pdfViewerRef.current?.jumpToPage(targetPage - startPage + 1);
-                        }
-                      }
-                    }}>
-                      <span className="text-xs font-bold text-white tracking-wide group-hover:scale-105 transition-transform duration-200">
+                    {/* 页码显示 - 仅显示，不可点击 */}
+                    <div className="w-14 h-8 bg-blue-600 border-0 rounded-xl shadow-lg flex items-center justify-center">
+                      <span className="text-xs font-bold text-white tracking-wide">
                         {startPage + currentPage - 1}
                       </span>
                     </div>
@@ -433,7 +425,7 @@ function SearchContent() {
                     
                     {/* 添加一个小的提示文字 */}
                     <div className="text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                      点击页码跳转<br/>↑↓ 或 ←→ 翻页
+                      ↑↓ 或 ←→ 翻页
                     </div>
                   </div>
                 </>
