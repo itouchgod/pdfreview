@@ -30,6 +30,7 @@ export default function HomePage() {
   };
 
 
+
   const commonKeywords = [
     'safety', 'equipment', 'tools', 'valves', 'pipes', 'electrical',
     'marine', 'deck', 'engine', 'pump', 'cable', 'rope', 'paint',
@@ -87,6 +88,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+
         </div>
       </div>
 

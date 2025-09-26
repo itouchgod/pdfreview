@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { PDF_CONFIG } from '@/config/pdf';
 
 export interface PDFTextData {
@@ -14,15 +14,74 @@ export interface LoadingStatus {
   progress: number;
 }
 
+interface CachedData {
+  textData: PDFTextData;
+  timestamp: number;
+  version: string;
+}
+
 interface PDFTextContextType {
   textData: PDFTextData;
   loadingStatus: LoadingStatus;
   isReady: boolean;
   startLoading: () => void;
   hasStartedLoading: boolean;
+  clearCache: () => void;
 }
 
 const PDFTextContext = createContext<PDFTextContextType | undefined>(undefined);
+
+// 缓存配置
+const CACHE_KEY = 'impa_pdf_text_cache';
+const CACHE_VERSION = '1.0.0';
+const CACHE_EXPIRY_DAYS = 7; // 缓存7天
+
+// 缓存工具函数
+const getCachedData = (): CachedData | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    
+    const data: CachedData = JSON.parse(cached);
+    
+    // 检查版本和过期时间
+    const now = Date.now();
+    const expiryTime = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 转换为毫秒
+    
+    if (data.version !== CACHE_VERSION || (now - data.timestamp) > expiryTime) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.warn('Failed to parse cached PDF data:', error);
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
+};
+
+const setCachedData = (textData: PDFTextData): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const data: CachedData = {
+      textData,
+      timestamp: Date.now(),
+      version: CACHE_VERSION
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to cache PDF data:', error);
+  }
+};
+
+const clearCachedData = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CACHE_KEY);
+};
 
 export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [textData, setTextData] = useState<PDFTextData>({});
@@ -36,7 +95,38 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
 
+  // 初始化时检查缓存
+  useEffect(() => {
+    const cachedData = getCachedData();
+    if (cachedData && Object.keys(cachedData.textData).length > 0) {
+      setTextData(cachedData.textData);
+      setHasLoaded(true);
+      setLoadingStatus({
+        isLoading: false,
+        loadedSections: PDF_CONFIG.sections.length,
+        totalSections: PDF_CONFIG.sections.length,
+        progress: 100
+      });
+      // PDF数据已从缓存加载
+    }
+  }, []);
+
   const startLoading = useCallback(async () => {
+    // 检查是否已有缓存数据
+    const cachedData = getCachedData();
+    if (cachedData && Object.keys(cachedData.textData).length > 0) {
+      setTextData(cachedData.textData);
+      setHasLoaded(true);
+      setLoadingStatus({
+        isLoading: false,
+        loadedSections: PDF_CONFIG.sections.length,
+        totalSections: PDF_CONFIG.sections.length,
+        progress: 100
+      });
+      // PDF数据已从缓存加载，跳过重新加载
+      return;
+    }
+
     if (isLoading || hasLoaded || hasStartedLoading) {
       return; // 已经在加载或已经加载过或已经开始过
     }
@@ -103,9 +193,26 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
     setTextData(sectionsText);
     setIsLoading(false);
     setHasLoaded(true);
+    
+    // 保存到缓存
+    setCachedData(sectionsText);
   }, [isLoading, hasLoaded, hasStartedLoading]); // 包含所有使用的状态变量
 
   const isReady = !loadingStatus.isLoading && loadingStatus.loadedSections > 0;
+
+  const clearCache = useCallback(() => {
+    clearCachedData();
+    setTextData({});
+    setHasLoaded(false);
+    setHasStartedLoading(false);
+    setLoadingStatus({
+      isLoading: false,
+      loadedSections: 0,
+      totalSections: PDF_CONFIG.sections.length,
+      progress: 0
+    });
+    // 缓存已清除
+  }, []);
 
   return (
     <PDFTextContext.Provider value={{
@@ -113,7 +220,8 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
       loadingStatus,
       isReady,
       startLoading,
-      hasStartedLoading
+      hasStartedLoading,
+      clearCache
     }}>
       {children}
     </PDFTextContext.Provider>

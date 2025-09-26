@@ -123,17 +123,29 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // Get device pixel ratio for high-DPI displays
       const devicePixelRatio = window.devicePixelRatio || 1;
       
-      // Calculate base scale to fit container width while maintaining aspect ratio
+      // Calculate scale to fit container width while maintaining aspect ratio
+      // This ensures the PDF maintains its original proportions
       let scale = containerWidth / viewport.width;
       
       // Apply reasonable scaling limits to prevent distortion
       const isMobile = windowWidth < 768;
+      const isTablet = windowWidth >= 768 && windowWidth < 1024;
+      
       if (isMobile) {
-        scale = Math.min(scale * 1.2, 2.5); // Moderate scale for mobile
+        // For mobile, use a more conservative scale to prevent stretching
+        scale = Math.min(scale, 1.2);
+      } else if (isTablet) {
+        // For tablet, moderate scale
+        scale = Math.min(scale, 1.5);
       } else {
-        // For desktop, use moderate scaling to maintain readability
-        scale = Math.min(scale * 1.3, 3.0); // Moderate scale for desktop
+        // For desktop, allow larger scale but still maintain proportions
+        scale = Math.min(scale, 2.0);
       }
+      
+      // Ensure minimum scale for readability
+      scale = Math.max(scale, 0.3);
+      
+      // Debug logging removed for production
       
       const scaledViewport = page.getViewport({ scale });
       
@@ -341,15 +353,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }
 
   return (
-    <div className="w-full overflow-auto flex justify-center">
+    <div className="w-full overflow-auto flex justify-center bg-gray-50">
       <canvas 
         ref={canvasRef} 
-        className="h-auto"
+        className="h-auto shadow-lg"
         style={{ 
           imageRendering: 'crisp-edges',
           maxWidth: '100%',
           height: 'auto',
-          display: 'block'
+          display: 'block',
+          objectFit: 'contain' // 确保保持宽高比
         } as React.CSSProperties}
       />
     </div>

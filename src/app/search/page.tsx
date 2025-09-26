@@ -365,7 +365,7 @@ function SearchContent() {
               </div>
               
             {/* PDF Content Area */}
-            <div className="p-1 flex justify-center relative">
+            <div className="p-1 flex justify-center relative bg-white">
               {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                 // 当搜索激活且有搜索词但没有结果时，显示无结果提示
                 <div className="flex flex-col items-center justify-center h-96">
@@ -390,23 +390,31 @@ function SearchContent() {
                     onPageChange={handlePageChange}
                   />
                   
-                  {/* 悬浮翻页按钮 - Google风格 */}
-                  <div className="fixed right-4 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-3 z-50">
+                  {/* 悬浮翻页按钮 - Google Material Design风格 */}
+                  <div className="fixed right-6 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-4 z-50 animate-fade-in">
                     {/* 上一页按钮 */}
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="w-11 h-11 bg-white/90 hover:bg-white border-0 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-md hover:scale-105 active:scale-95"
+                      className="group w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
                       title="上一页 (↑ 或 ←)"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     
-                    {/* 页码显示 */}
-                    <div className="w-11 h-7 bg-white/90 border-0 rounded-full shadow-lg flex items-center justify-center backdrop-blur-md">
-                      <span className="text-xs font-semibold text-gray-700 tracking-tight">
+                    {/* 页码显示 - 更显眼的样式 */}
+                    <div className="w-14 h-8 bg-blue-600 hover:bg-blue-700 border-0 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 cursor-pointer group" onClick={() => {
+                      const page = prompt(`跳转到页面 (${startPage}-${startPage + totalPages - 1}):`, (startPage + currentPage - 1).toString());
+                      if (page && !isNaN(Number(page))) {
+                        const targetPage = Number(page);
+                        if (targetPage >= startPage && targetPage <= startPage + totalPages - 1) {
+                          pdfViewerRef.current?.jumpToPage(targetPage - startPage + 1);
+                        }
+                      }
+                    }}>
+                      <span className="text-xs font-bold text-white tracking-wide group-hover:scale-105 transition-transform duration-200">
                         {startPage + currentPage - 1}
                       </span>
                     </div>
@@ -415,13 +423,18 @@ function SearchContent() {
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="w-11 h-11 bg-white/90 hover:bg-white border-0 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-md hover:scale-105 active:scale-95"
+                      className="group w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
                       title="下一页 (↓ 或 →)"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
+                    
+                    {/* 添加一个小的提示文字 */}
+                    <div className="text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                      点击页码跳转<br/>↑↓ 或 ←→ 翻页
+                    </div>
                   </div>
                 </>
               )}
