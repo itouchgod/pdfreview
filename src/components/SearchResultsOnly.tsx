@@ -24,6 +24,8 @@ interface SearchResultsOnlyProps {
   sharedSearchResults?: SmartSearchResult[];
   sharedSearchTerm?: string;
   sharedSearchMode?: 'current' | 'global';
+  currentResultIndex?: number;
+  onResultIndexChange?: (index: number) => void;
 }
 
 export default function SearchResultsOnly({ 
@@ -35,9 +37,13 @@ export default function SearchResultsOnly({
   // preloadedTextData, // eslint-disable-line @typescript-eslint/no-unused-vars
   sharedSearchResults = [],
   sharedSearchTerm = '',
-  // sharedSearchMode // eslint-disable-line @typescript-eslint/no-unused-vars
+  // sharedSearchMode, // eslint-disable-line @typescript-eslint/no-unused-vars
+  currentResultIndex = 0,
+  onResultIndexChange
 }: SearchResultsOnlyProps) {
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  // 使用外部传入的当前结果索引，如果没有则使用内部状态
+  const [internalHighlightIndex, setInternalHighlightIndex] = useState(0);
+  const highlightIndex = currentResultIndex !== undefined ? currentResultIndex : internalHighlightIndex;
   
   // 使用共享的搜索结果
   const results = sharedSearchResults;
@@ -73,15 +79,26 @@ export default function SearchResultsOnly({
     if (searchTerm && searchTerm !== lastSearchTermRef.current) {
       console.log('Auto-selecting first result for new search term:', searchTerm);
       lastSearchTermRef.current = searchTerm;
-      setHighlightIndex(0); // 重置为第一个结果
+      // 重置为第一个结果
+      if (onResultIndexChange) {
+        onResultIndexChange(0);
+      } else {
+        setInternalHighlightIndex(0);
+      }
     }
-  }, [searchTerm]);
+  }, [searchTerm, onResultIndexChange]);
 
   // 跳转到指定结果（仅用于点击跳转）
   const goToResult = useCallback((index: number) => {
     if (index < 0 || index >= groupedResults.length) return;
     
-    setHighlightIndex(index);
+    // 更新外部状态或内部状态
+    if (onResultIndexChange) {
+      onResultIndexChange(index);
+    } else {
+      setInternalHighlightIndex(index);
+    }
+    
     const result = groupedResults[index];
     const firstResult = result.results[0];
     
@@ -118,7 +135,7 @@ export default function SearchResultsOnly({
         onPageJump(relativePage);
       }
     }
-  }, [groupedResults, selectedPDF, onSectionChange, onPageJump]);
+  }, [groupedResults, selectedPDF, onSectionChange, onPageJump, onResultIndexChange]);
 
   // 导航到上一个/下一个结果
   const goToPrevious = () => {
@@ -167,8 +184,8 @@ export default function SearchResultsOnly({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* 导航控制 */}
-      <div className="flex items-center justify-center px-4 py-3 bg-gray-50 border-b border-gray-200">
+      {/* 导航控制 - 桌面端显示，手机端隐藏（因为手机端有专门的标题栏） */}
+      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <button
             onClick={goToPrevious}
@@ -190,7 +207,7 @@ export default function SearchResultsOnly({
         </div>
       </div>
 
-      {/* 搜索结果列表 */}
+      {/* 搜索结果列表 - 手机端优化布局 */}
       <div className="flex-1 overflow-y-auto">
         {groupedResults.map((result, index) => (
           <div
@@ -202,11 +219,11 @@ export default function SearchResultsOnly({
                 : 'hover:bg-gray-50 border-l-4 border-l-transparent'
             }`}
           >
-            <div className="px-4 py-3">
-              <div className="flex items-center space-x-3">
-                {/* 页码标签 */}
+            <div className="px-3 sm:px-4 py-2 sm:py-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                {/* 页码标签 - 手机端更紧凑 */}
                 <div className="flex-shrink-0">
-                  <span className={`inline-flex items-center justify-center w-14 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  <span className={`inline-flex items-center justify-center w-10 h-6 sm:w-14 sm:h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
                     index === highlightIndex 
                       ? 'bg-blue-600 text-white shadow-md' 
                       : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600'
@@ -215,21 +232,30 @@ export default function SearchResultsOnly({
                   </span>
                 </div>
                 
-                {/* 章节信息 */}
+                {/* 章节信息 - 手机端优化文本显示 */}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium truncate transition-colors duration-200 ${
+                  <div className={`text-xs sm:text-sm font-medium transition-colors duration-200 ${
                     index === highlightIndex 
                       ? 'text-blue-900' 
                       : 'text-gray-900 group-hover:text-gray-700'
                   }`}>
-                    {result.sectionName}
+                    {/* 手机端显示更紧凑的章节名称 */}
+                    <div className="block sm:hidden">
+                      {result.sectionName.length > 25 
+                        ? `${result.sectionName.substring(0, 25)}...` 
+                        : result.sectionName}
+                    </div>
+                    {/* 桌面端显示完整章节名称 */}
+                    <div className="hidden sm:block truncate">
+                      {result.sectionName}
+                    </div>
                   </div>
                 </div>
                 
-                {/* 匹配数量 */}
+                {/* 匹配数量 - 手机端更小 */}
                 {result.count > 1 && (
                   <div className="flex-shrink-0">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium transition-all duration-200 ${
+                    <span className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs font-medium transition-all duration-200 ${
                       index === highlightIndex 
                         ? 'bg-blue-200 text-blue-800' 
                         : 'bg-gray-200 text-gray-600 group-hover:bg-green-200 group-hover:text-green-800'

@@ -25,6 +25,37 @@ function SearchContent() {
   const [hasSearchResults, setHasSearchResults] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0); // 跟踪当前选中的结果索引
+  
+  // 计算搜索结果区域的动态高度
+  const getSearchResultsHeight = () => {
+    if (!sharedSearchResults || sharedSearchResults.length === 0) {
+      return 'h-48'; // 无结果时较小高度
+    }
+    
+    // 根据结果数量计算基础高度
+    const resultCount = sharedSearchResults.length;
+    let baseHeight = 'h-64'; // 默认高度
+    
+    // 考虑搜索结果的内容长度
+    const hasLongContent = sharedSearchResults.some(result => 
+      result.sectionName && result.sectionName.length > 30
+    );
+    
+    if (resultCount <= 2) {
+      baseHeight = hasLongContent ? 'h-60' : 'h-56'; // 很少结果
+    } else if (resultCount <= 5) {
+      baseHeight = hasLongContent ? 'h-76' : 'h-72'; // 少量结果
+    } else if (resultCount <= 10) {
+      baseHeight = hasLongContent ? 'h-84' : 'h-80'; // 中等数量结果
+    } else if (resultCount <= 20) {
+      baseHeight = hasLongContent ? 'h-[26rem]' : 'h-96'; // 大量结果
+    } else {
+      baseHeight = hasLongContent ? 'h-[32rem]' : 'h-[28rem]'; // 超大量结果
+    }
+    
+    return baseHeight;
+  };
   
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
@@ -53,6 +84,57 @@ function SearchContent() {
     setSharedSearchTerm('');
     setIsSearchActive(false);
     setHasSearchResults(false);
+    setCurrentResultIndex(0);
+  };
+
+  // 导航到上一个搜索结果
+  const goToPreviousResult = () => {
+    if (currentResultIndex > 0) {
+      const newIndex = currentResultIndex - 1;
+      setCurrentResultIndex(newIndex);
+      jumpToResult(newIndex);
+    }
+  };
+
+  // 导航到下一个搜索结果
+  const goToNextResult = () => {
+    if (currentResultIndex < sharedSearchResults.length - 1) {
+      const newIndex = currentResultIndex + 1;
+      setCurrentResultIndex(newIndex);
+      jumpToResult(newIndex);
+    }
+  };
+
+  // 跳转到指定结果
+  const jumpToResult = (index: number) => {
+    if (index < 0 || index >= sharedSearchResults.length) return;
+    
+    const result = sharedSearchResults[index];
+    const section = PDF_CONFIG.sections.find(s => s.filePath === result.sectionPath);
+    if (!section) return;
+    
+    // 计算相对页码
+    const relativePage = result.page - section.startPage + 1;
+    
+    // 如果需要切换章节
+    if (result.sectionPath !== selectedPDF) {
+      handleSelectPDF(section.filePath, section.name, false, false);
+      // 延迟跳转页面，等待PDF加载
+      setTimeout(() => {
+        setCurrentPage(relativePage);
+        setTargetPage(relativePage);
+        if (pdfViewerRef.current) {
+          pdfViewerRef.current.jumpToPage(relativePage);
+        }
+      }, 500);
+    } else {
+      // 直接跳转页面
+      setCurrentPage(relativePage);
+      setTargetPage(relativePage);
+      if (pdfViewerRef.current) {
+        pdfViewerRef.current.jumpToPage(relativePage);
+      }
+    }
   };
 
   const handleSelectPDF = (pdfPath: string, sectionName: string, resetToFirstPage: boolean = true, clearSearch: boolean = false) => {
@@ -149,6 +231,7 @@ function SearchContent() {
     setSharedSearchMode(searchMode);
     setHasSearchResults(results.length > 0);
     setIsSearchActive(true); // 标记搜索已激活
+    setCurrentResultIndex(0); // 重置为第一个结果
     
     // 如果有搜索结果，设置目标页面为第一个结果的页面
     if (results.length > 0) {
@@ -328,9 +411,12 @@ function SearchContent() {
 
       {/* 主要内容 - 响应式布局 */}
       <main className="max-w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className={`flex flex-col lg:flex-row gap-6 ${
+          // 手机端：根据搜索结果数量调整布局
+          sharedSearchResults.length <= 2 ? 'lg:gap-6' : 'lg:gap-6'
+        }`}>
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
-          <div className="flex-1 min-w-0 order-1 lg:order-1">
+          <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
             {/* PDF Viewer Header - Google Style */}
             <div className="px-6 py-4 border-b border-gray-100 bg-white">
                 <div className="flex items-center">
@@ -484,10 +570,47 @@ function SearchContent() {
             </div>
           </div>
 
-          {/* 搜索结果 - 在移动端显示在PDF下方，桌面端显示在右侧 */}
-          <div className="w-full lg:w-80 xl:w-96 lg:flex-shrink-0 h-96 lg:h-screen overflow-hidden order-2 lg:order-2">
+          {/* 搜索结果 - 响应式布局优化 */}
+          <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out ${getSearchResultsHeight()}`}>
             <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto p-3">
+              {/* 搜索结果标题 - 仅在手机端显示 */}
+              <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-700">
+                    Search Results {sharedSearchResults.length > 0 && `(${sharedSearchResults.length})`}
+                  </h3>
+                  {/* 手机端导航按钮 */}
+                  {sharedSearchResults.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={goToPreviousResult}
+                        disabled={currentResultIndex === 0}
+                        className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        title="Previous result"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-xs text-gray-500 px-2 py-1 bg-white rounded-full">
+                        {currentResultIndex + 1} / {sharedSearchResults.length}
+                      </span>
+                      <button
+                        onClick={goToNextResult}
+                        disabled={currentResultIndex === sharedSearchResults.length - 1}
+                        className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        title="Next result"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-2 sm:p-3">
                 <SearchResultsOnly
                   onPageJump={handlePageJump}
                   onSectionChange={handleSectionChange}
@@ -498,6 +621,8 @@ function SearchContent() {
                   sharedSearchResults={sharedSearchResults}
                   sharedSearchTerm={sharedSearchTerm}
                   sharedSearchMode={sharedSearchMode}
+                  currentResultIndex={currentResultIndex}
+                  onResultIndexChange={setCurrentResultIndex}
                 />
               </div>
             </div>
