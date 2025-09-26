@@ -58,7 +58,7 @@ export default function HomePage() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search marine equipment, tools, code..."
+                    placeholder="Search name, code..."
                     className="w-full pl-6 pr-14 py-4 text-lg bg-white rounded-full border border-gray-300 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
                   />
                   <button
