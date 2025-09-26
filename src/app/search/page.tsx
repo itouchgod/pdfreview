@@ -327,7 +327,7 @@ function SearchContent() {
       </header>
 
       {/* 主要内容 - 响应式布局 */}
-      <main className="max-w-full mx-auto px-4 py-6">
+      <main className="max-w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1">
@@ -390,42 +390,93 @@ function SearchContent() {
                     onPageChange={handlePageChange}
                   />
                   
-                  {/* 悬浮翻页按钮 - Google Material Design风格 */}
-                  <div className="fixed right-6 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-4 z-50 animate-fade-in">
-                    {/* 上一页按钮 */}
+                  {/* Floating Navigation Buttons - Responsive Design, Hidden on Mobile */}
+                  <div className="hidden sm:flex fixed right-2 sm:right-4 lg:right-6 top-1/2 transform -translate-y-1/2 flex-col items-center space-y-2 sm:space-y-3 lg:space-y-4 z-50 animate-fade-in">
+                    {/* Previous Page Button - Smaller on Mobile */}
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="group w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
-                      title="上一页 (↑ 或 ←)"
+                      className="group w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+                      title="Previous Page (↑ or ←)"
                     >
-                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     
-                    {/* 页码显示 - 仅显示，不可点击 */}
-                    <div className="w-14 h-8 bg-blue-600 border-0 rounded-xl shadow-lg flex items-center justify-center">
-                      <span className="text-xs font-bold text-white tracking-wide">
+                    {/* Page Number Display - More Compact on Mobile */}
+                    <div className="w-10 h-6 sm:w-12 sm:h-7 lg:w-14 lg:h-8 bg-blue-600 border-0 rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center">
+                      <span className="text-xs sm:text-xs lg:text-xs font-bold text-white tracking-wide">
                         {startPage + currentPage - 1}
                       </span>
                     </div>
                     
-                    {/* 下一页按钮 */}
+                    {/* Next Page Button - Smaller on Mobile */}
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="group w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
-                      title="下一页 (↓ 或 →)"
+                      className="group w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+                      title="Next Page (↓ or →)"
                     >
-                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     
-                    {/* 添加一个小的提示文字 */}
-                    <div className="text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                      ↑↓ 或 ←→ 翻页
+                    {/* Hint Text - Desktop Only */}
+                    <div className="hidden lg:block text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                      ↑↓ or ←→ to navigate
+                    </div>
+                  </div>
+                  
+                  {/* Mobile Bottom Navigation - Mobile Only */}
+                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 sm:hidden">
+                    {/* Navigation Controls */}
+                    <div className="flex items-center justify-between px-4 py-3">
+                      {/* Previous Page Button */}
+                      <button
+                        onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                        className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span className="text-sm font-medium">Prev</span>
+                      </button>
+                      
+                      {/* Page Info */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Page</span>
+                        <span className="px-3 py-1 bg-blue-600 text-white text-sm font-bold rounded-lg">
+                          {startPage + currentPage - 1}
+                        </span>
+                      </div>
+                      
+                      {/* Next Page Button */}
+                      <button
+                        onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                        className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200"
+                      >
+                        <span className="text-sm font-medium">Next</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Mobile Footer Info */}
+                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                      <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
+                        <Image 
+                          src="/brand-icon.svg" 
+                          alt="IMPA Logo" 
+                          width={12}
+                          height={16}
+                        />
+                        <span>IMPA Marine Stores Guide • 8th Edition 2023</span>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -454,8 +505,8 @@ function SearchContent() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
+      {/* Footer - Hidden on mobile to avoid conflict with bottom navigation */}
+      <footer className="hidden sm:block mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
         <div className="max-w-full mx-auto px-4">
           <div className="flex justify-center items-center space-x-4">
             <div className="flex items-center space-x-2">
