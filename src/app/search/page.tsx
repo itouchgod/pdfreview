@@ -360,7 +360,8 @@ function SearchContent() {
                       onChange={(e) => {
                         const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
                         if (section) {
-                          navigateToPDF(section.filePath);
+                          // 切换章节时总是从第一页开始
+                          navigateToPDF(section.filePath, 1);
                         }
                       }}
                       className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"

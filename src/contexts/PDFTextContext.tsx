@@ -221,11 +221,11 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
             // 每完成一个章节就保存一次缓存
             setCachedData(sectionsText);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Failed to load section ${section.name}:`, error);
           setLoadingStatus(prev => ({
             ...prev,
-            error: `加载章节 ${section.name} 失败: ${error.message}`
+            error: `加载章节 ${section.name} 失败: ${error?.message || '未知错误'}`
           }));
           // 继续加载其他章节
         }
@@ -235,11 +235,11 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setHasLoaded(true);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to initialize PDF.js:', error);
       setLoadingStatus(prev => ({
         ...prev,
-        error: `初始化失败: ${error.message}`
+        error: `初始化失败: ${error?.message || '未知错误'}`
       }));
     }
   }, [isLoading, hasLoaded, hasStartedLoading]);
