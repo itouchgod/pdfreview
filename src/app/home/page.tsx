@@ -35,8 +35,6 @@ export default function HomePage() {
     router.push(`/search?q=${encodeURIComponent(keyword)}`);
   };
 
-
-
   const commonKeywords = [
     'safety', 'equipment', 'tools', 'valves', 'pipes', 'electrical',
     'marine', 'deck', 'engine', 'pump', 'cable', 'rope', 'paint',
@@ -113,8 +111,6 @@ export default function HomePage() {
             </form>
           </div>
 
-
-
           {/* Common Keywords */}
           <div className="text-center">
             <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
@@ -135,17 +131,27 @@ export default function HomePage() {
 
       {/* Loading Progress - 放在页脚上边框 */}
       {loadingStatus.isLoading && !isReady && (
-        <div className="w-full px-4 py-2 bg-gray-50 border-t border-gray-200">
-          <div className="max-w-md mx-auto">
-            <div className="bg-gray-200 rounded-full h-2 mb-1">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                {loadingStatus.currentSection ? `加载章节: ${loadingStatus.currentSection}` : '准备加载...'}
+              </span>
+              <span className="text-sm text-gray-500">
+                {loadingStatus.loadedSections} / {loadingStatus.totalSections}
+              </span>
+            </div>
+            <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${loadingStatus.progress}%` }}
               ></div>
             </div>
-            <p className="text-center text-xs text-gray-600">
-              Loading IMPA data... {Math.round(loadingStatus.progress)}%
-            </p>
+            {loadingStatus.error && (
+              <p className="mt-2 text-xs text-red-500">
+                {loadingStatus.error}
+              </p>
+            )}
           </div>
         </div>
       )}

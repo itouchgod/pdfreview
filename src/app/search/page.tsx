@@ -14,7 +14,6 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
-  // const [isSearchCollapsed, setIsSearchCollapsed] = useState(false);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   
   // 用于在header和sidebar之间共享搜索结果
@@ -24,41 +23,11 @@ function SearchContent() {
   const [hasSearchResults, setHasSearchResults] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
-  const [currentResultIndex, setCurrentResultIndex] = useState(0); // 跟踪当前选中的结果索引
-  
-  // 计算搜索结果区域的动态高度
-  const getSearchResultsHeight = () => {
-    if (!sharedSearchResults || sharedSearchResults.length === 0) {
-      return 'h-48'; // 无结果时较小高度
-    }
-    
-    // 根据结果数量计算基础高度
-    const resultCount = sharedSearchResults.length;
-    let baseHeight = 'h-64'; // 默认高度
-    
-    // 考虑搜索结果的内容长度
-    const hasLongContent = sharedSearchResults.some(result => 
-      result.sectionName && result.sectionName.length > 30
-    );
-    
-    if (resultCount <= 2) {
-      baseHeight = hasLongContent ? 'h-60' : 'h-56'; // 很少结果
-    } else if (resultCount <= 5) {
-      baseHeight = hasLongContent ? 'h-76' : 'h-72'; // 少量结果
-    } else if (resultCount <= 10) {
-      baseHeight = hasLongContent ? 'h-84' : 'h-80'; // 中等数量结果
-    } else if (resultCount <= 20) {
-      baseHeight = hasLongContent ? 'h-[26rem]' : 'h-96'; // 大量结果
-    } else {
-      baseHeight = hasLongContent ? 'h-[32rem]' : 'h-[28rem]'; // 超大量结果
-    }
-    
-    return baseHeight;
-  };
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
   
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
-  const [currentPage, setCurrentPage] = useState(1); // 初始化为1，显示第1页
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(() => {
     const section = PDF_CONFIG.sections.find(s => s.filePath === PDF_CONFIG.sections[0].filePath);
     return section ? (section.endPage - section.startPage + 1) : 1;
@@ -73,12 +42,10 @@ function SearchContent() {
   };
 
   const handleSearchResults = (results: unknown[]) => {
-    // 这个函数现在不需要做任何事情，因为SmartSearchBox会直接调用onSearchResultsUpdate
     console.log('handleSearchResults called with:', results.length, 'results');
   };
 
   const handleClearSearch = () => {
-    // 清除搜索状态
     setSharedSearchResults([]);
     setSharedSearchTerm('');
     setIsSearchActive(false);
@@ -112,7 +79,6 @@ function SearchContent() {
     const section = PDF_CONFIG.sections.find(s => s.filePath === result.sectionPath);
     if (!section) return;
     
-    // 使用搜索结果中的相对页码
     const relativePage = result.relativePage;
     
     console.log('Jump To Result Debug:', {
@@ -123,10 +89,8 @@ function SearchContent() {
       sectionPath: section.filePath
     });
     
-    // 如果需要切换章节
     if (result.sectionPath !== selectedPDF) {
       handleSelectPDF(section.filePath, section.name, false, false);
-      // 延迟跳转页面，等待PDF加载
       setTimeout(() => {
         setCurrentPage(relativePage);
         setTargetPage(relativePage);
@@ -135,7 +99,6 @@ function SearchContent() {
         }
       }, 500);
     } else {
-      // 直接跳转页面
       setCurrentPage(relativePage);
       setTargetPage(relativePage);
       if (pdfViewerRef.current) {
@@ -144,88 +107,63 @@ function SearchContent() {
     }
   };
 
-  const handleSelectPDF = (pdfPath: string, sectionName: string, resetToFirstPage: boolean = true, clearSearch: boolean = false) => {
+  const handleSelectPDF = useCallback((pdfPath: string, sectionName: string, resetToFirstPage: boolean = true, clearSearch: boolean = false) => {
     console.log('handleSelectPDF called:', { pdfPath, sectionName, resetToFirstPage, clearSearch });
     setSelectedPDF(pdfPath);
     setSelectedSectionName(sectionName);
-    // 更新总页数和起始页
+    
     const section = PDF_CONFIG.sections.find(s => s.filePath === pdfPath);
     if (section) {
       setTotalPages(section.endPage - section.startPage + 1);
       setStartPage(section.startPage);
     }
-    // 只有在明确要求时才重置当前页为第一页
+    
     if (resetToFirstPage) {
       setCurrentPage(1);
-      setTargetPage(1); // 同时重置targetPage
+      setTargetPage(1);
     }
     
-    // 只有在明确要求时才清空搜索状态
     if (clearSearch) {
       setIsSearchActive(false);
       setSharedSearchResults([]);
       setSharedSearchTerm('');
       setHasSearchResults(false);
     }
-  };
+  }, []);
 
-  const handlePageJump = (pageNumber: number) => {
-    console.log('handlePageJump called:', { 
-      pageNumber, 
-      hasPdfViewerRef: !!pdfViewerRef.current,
-      currentPage,
-      totalPages,
-      selectedPDF
-    });
+  const handlePageJump = useCallback((pageNumber: number) => {
     if (pdfViewerRef.current) {
-      // 同时更新本地状态和PDF组件
       setCurrentPage(pageNumber);
-      console.log('Calling pdfViewerRef.current.jumpToPage with:', pageNumber);
       pdfViewerRef.current.jumpToPage(pageNumber);
-    } else {
-      console.log('PDF viewer ref is null, cannot jump to page');
     }
-  };
+  }, []);
 
-  const handleSectionChange = (sectionPath: string, resetToFirstPage: boolean = true) => {
+  const handleSectionChange = useCallback((sectionPath: string, resetToFirstPage: boolean = true) => {
     const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
     if (section) {
       handleSelectPDF(section.filePath, section.name, resetToFirstPage, false);
     }
-  };
+  }, [handleSelectPDF]);
 
-
-  const handleUpdateURL = (params: { query?: string; section?: string; page?: number }) => {
-    const url = new URL(window.location.href);
+  const handleUpdateURL = useCallback((params: { query?: string; section?: string; page?: number }) => {
+    if (typeof window === 'undefined') return;
     
-    // 清除现有参数
+    const url = new URL(window.location.href);
     url.searchParams.delete('q');
     url.searchParams.delete('section');
     url.searchParams.delete('page');
     
-    // 添加新参数
-    if (params.query) {
-      url.searchParams.set('q', params.query);
-    }
-    if (params.section) {
-      url.searchParams.set('section', params.section);
-    }
-    if (params.page) {
-      url.searchParams.set('page', params.page.toString());
-    }
+    if (params.query) url.searchParams.set('q', params.query);
+    if (params.section) url.searchParams.set('section', params.section);
+    if (params.page) url.searchParams.set('page', params.page.toString());
     
-    // 更新URL（不刷新页面）
     window.history.pushState({}, '', url.toString());
-  };
+  }, []);
 
-  const handlePageChange = (page: number, total: number) => {
+  const handlePageChange = useCallback((page: number, total: number) => {
     setCurrentPage(page);
     setTotalPages(total);
-  };
-
-  // const handleToggleSearchCollapse = () => {
-  //   setIsSearchCollapsed(!isSearchCollapsed);
-  // };
+  }, []);
 
   const handleSearchResultsUpdate = useCallback((results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
     console.log('handleSearchResultsUpdate called:', { 
@@ -233,112 +171,83 @@ function SearchContent() {
       searchTerm, 
       searchMode
     });
+
+    if (!results || !Array.isArray(results)) return;
+
     setSharedSearchResults(results);
     setSharedSearchTerm(searchTerm);
     setSharedSearchMode(searchMode);
     setHasSearchResults(results.length > 0);
-    setIsSearchActive(true); // 标记搜索已激活
-    setCurrentResultIndex(0); // 重置为第一个结果
+    setIsSearchActive(true);
+    setCurrentResultIndex(0);
     
-    // 如果有搜索结果，设置目标页面为第一个结果的页面
     if (results.length > 0) {
       const firstResult = results[0];
       const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
       if (section) {
-        console.log('First Search Result:', {
-          absolutePage: firstResult.page,
-          sectionStartPage: section.startPage,
-          sectionName: section.name,
-          sectionPath: section.filePath
-        });
-        
-        // 如果需要切换章节
         if (firstResult.sectionPath !== selectedPDF) {
           handleSelectPDF(section.filePath, section.name, false, false);
-          // 延迟跳转页面，等待PDF加载
           setTimeout(() => {
-            const relativePage = firstResult.page - section.startPage + 1;
-            if (targetPage !== relativePage) {
-              console.log('Setting target page (delayed):', relativePage);
-              setTargetPage(relativePage);
-              setCurrentPage(relativePage);
-              if (pdfViewerRef.current) {
-                pdfViewerRef.current.jumpToPage(relativePage);
-              }
-            }
-          }, 500);
-        } else {
-          // 直接跳转页面
-          const relativePage = firstResult.page - section.startPage + 1;
-          if (targetPage !== relativePage) {
-            console.log('Setting target page (immediate):', relativePage);
+            const relativePage = firstResult.relativePage || (firstResult.page - section.startPage + 1);
             setTargetPage(relativePage);
             setCurrentPage(relativePage);
             if (pdfViewerRef.current) {
               pdfViewerRef.current.jumpToPage(relativePage);
             }
+          }, 500);
+        } else {
+          const relativePage = firstResult.relativePage || (firstResult.page - section.startPage + 1);
+          setTargetPage(relativePage);
+          setCurrentPage(relativePage);
+          if (pdfViewerRef.current) {
+            pdfViewerRef.current.jumpToPage(relativePage);
           }
         }
       }
-    } else {
-      // 只在目标页面不为undefined时才更新
-      if (targetPage !== undefined) {
-        setTargetPage(undefined);
-      }
     }
-    
-    // 如果需要切换章节，直接切换（PDFViewer会使用initialPage显示正确页面）
-    if (results.length > 0) {
-      const firstResult = results[0];
-      if (firstResult.sectionPath !== selectedPDF) {
-        const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
-        if (section) {
-          console.log('Switching section for search result:', firstResult.sectionPath);
-          handleSelectPDF(section.filePath, section.name, false, false);
-        }
-      }
-    }
-  }, [handleSelectPDF, setSharedSearchResults, setSharedSearchTerm, setSharedSearchMode, setHasSearchResults, setIsSearchActive, setCurrentResultIndex, setTargetPage, selectedPDF, targetPage]);
+  }, [handleSelectPDF, selectedPDF]);
 
   // 从URL参数获取搜索词
-  const searchQuery = searchParams.get('q') || '';
+  const searchQuery = searchParams?.get('q') || '';
 
   // 当URL中的搜索词变化时，自动执行搜索
   useEffect(() => {
-    if (searchQuery && textData && Object.keys(textData).length > 0) {
-      console.log('Auto search from URL:', { searchQuery, textDataCount: Object.keys(textData).length });
-      // 数据已加载完成，直接执行搜索
-      const searchResults = searchInAllSections(searchQuery, textData);
-      console.log('Auto search results:', { count: searchResults.length });
+    if (!searchQuery || !textData || !Object.keys(textData).length) return;
+    
+    const searchResults = searchInAllSections(searchQuery, textData);
+    if (searchResults && searchResults.length > 0) {
       handleSearchResultsUpdate(searchResults, searchQuery, 'global');
     }
-  }, [searchQuery, textData, searchParams, handleSearchResultsUpdate]);
+  }, [searchQuery, textData, handleSearchResultsUpdate]);
 
   // 搜索函数
-  const searchInAllSections = (query: string, sectionsText: Record<string, string>) => {
+  const searchInAllSections = useCallback((query: string, sectionsText: Record<string, string>) => {
     const results: any[] = [];
     const searchTerm = query.toLowerCase();
+    const searchTerms = searchTerm.split(' ').filter(Boolean);
 
     Object.entries(sectionsText).forEach(([sectionPath, text]) => {
       const lines = text.split('\n');
       let pageNumber = 1;
       
       lines.forEach((line) => {
-        // 检查是否是页面分隔符
-        if (line.includes('--- 第') && line.includes('页 ---')) {
-          const pageMatch = line.match(/第 (\d+) 页/);
-          if (pageMatch) {
-            pageNumber = parseInt(pageMatch[1]);
-          }
+        const pageMatch = line.match(/--- 第 (\d+) 页 ---/);
+        if (pageMatch) {
+          pageNumber = parseInt(pageMatch[1]);
           return;
         }
         
-        // 搜索匹配
-        if (line.toLowerCase().includes(searchTerm)) {
+        const matches = searchTerms.every(term => 
+          line.toLowerCase().includes(term)
+        );
+        
+        if (matches) {
           const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
           if (section) {
+            const relativePage = pageNumber - section.startPage + 1;
             results.push({
               page: pageNumber,
+              relativePage,
               text: line.trim(),
               index: results.length,
               context: line.trim(),
@@ -352,38 +261,11 @@ function SearchContent() {
     });
     
     return results;
-  };
-
-  // 从URL参数初始化状态 - 只在组件挂载时执行一次
-  useEffect(() => {
-    const section = searchParams.get('section');
-    const page = searchParams.get('page');
-    
-    if (section) {
-      const foundSection = PDF_CONFIG.sections.find(s => s.filePath === section);
-      if (foundSection) {
-        setSelectedPDF(foundSection.filePath);
-        setSelectedSectionName(foundSection.name);
-      }
-    }
-    
-    if (page && pdfViewerRef.current) {
-      const pageNum = parseInt(page);
-      if (pageNum > 0) {
-        // 延迟跳转，确保PDF已加载
-        setTimeout(() => {
-          if (pdfViewerRef.current) {
-            pdfViewerRef.current.jumpToPage(pageNum);
-          }
-        }, 1000);
-      }
-    }
-  }, [searchParams]); // 包含searchParams依赖
+  }, []);
 
   // 键盘快捷键支持
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // 只在没有输入框聚焦时响应快捷键
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
         return;
       }
@@ -407,26 +289,23 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 头部 - Google风格，响应式布局 */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-full mx-auto px-4 py-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
-            {/* Logo - 保留点击返回功能，移除返回箭头 */}
             <Link href="/home" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
-                <div className="w-5 h-7 relative">
-                  <Image 
-                    src="/brand-icon.svg" 
-                    alt="IMPA Logo" 
-                    fill
-                    sizes="20px"
-                    className="object-contain"
-                    priority
-                    unoptimized
-                  />
-                </div>
+              <div className="w-5 h-7 relative">
+                <Image 
+                  src="/brand-icon.svg" 
+                  alt="IMPA Logo" 
+                  fill
+                  sizes="20px"
+                  className="object-contain"
+                  priority
+                  unoptimized
+                />
+              </div>
             </Link>
             
-            {/* 搜索框 - 紧跟在logo后面 */}
             <div className="w-full max-w-2xl">
               <SmartSearchBox
                 onSearchResults={handleSearchResults}
@@ -446,51 +325,43 @@ function SearchContent() {
         </div>
       </header>
 
-      {/* 主要内容 - 响应式布局 */}
       <main className="max-w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
         <div className={`flex flex-col lg:flex-row gap-6 ${
-          // 根据搜索结果调整布局
           isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-6' : ''
         }`}>
-          {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
-            {/* PDF Viewer Header - Google Style */}
             <div className="px-6 py-4 border-b border-gray-100 bg-white">
+              <div className="flex items-center">
                 <div className="flex items-center">
-                  {/* Chapter Selector - Google Style */}
-                  <div className="flex items-center">
-                    <div className="relative">
-                      <select
-                        value={selectedPDF || ''}
-                        onChange={(e) => {
-                          const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
-                          if (section) {
-                            handleSelectPDF(section.filePath, section.name, true, false);
-                          }
-                        }}
-                        className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
-                      >
-                        {PDF_CONFIG.sections.map((section) => (
-                          <option key={section.name} value={section.filePath}>
-                            {section.title || section.name}
-                          </option>
-                        ))}
-                      </select>
-                      {/* Custom dropdown arrow */}
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
+                  <div className="relative">
+                    <select
+                      value={selectedPDF || ''}
+                      onChange={(e) => {
+                        const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
+                        if (section) {
+                          handleSelectPDF(section.filePath, section.name, true, false);
+                        }
+                      }}
+                      className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
+                    >
+                      {PDF_CONFIG.sections.map((section) => (
+                        <option key={section.name} value={section.filePath}>
+                          {section.title || section.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
               
-            {/* PDF Content Area */}
             <div className="p-1 flex justify-center relative bg-white">
               {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
-                // 当搜索激活且有搜索词但没有结果时，显示无结果提示
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="text-center">
                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -503,7 +374,6 @@ function SearchContent() {
                   </div>
                 </div>
               ) : (
-                // 正常显示PDF
                 <>
                   <PDFViewer
                     ref={pdfViewerRef}
@@ -513,50 +383,42 @@ function SearchContent() {
                     onPageChange={handlePageChange}
                   />
                   
-                  {/* Floating Navigation Buttons - Responsive Design, Hidden on Mobile */}
-                  <div className="hidden sm:flex fixed right-2 sm:right-4 lg:right-6 top-1/2 transform -translate-y-1/2 flex-col items-center space-y-2 sm:space-y-3 lg:space-y-4 z-50 animate-fade-in">
-                    {/* Previous Page Button - Smaller on Mobile */}
+                  <div className="hidden sm:flex fixed right-4 sm:right-6 lg:right-8 xl:right-10 top-1/2 transform -translate-y-1/2 flex-col items-center space-y-3 sm:space-y-4 lg:space-y-5 z-50 animate-fade-in">
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="group w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/95 hover:bg-white border border-gray-100 hover:border-blue-200 rounded-2xl shadow-lg hover:shadow-blue-100/50 flex items-center justify-center text-gray-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
                       title="Previous Page (↑ or ←)"
                     >
-                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:-translate-y-1 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     
-                    {/* Page Number Display - More Compact on Mobile */}
-                    <div className="w-10 h-6 sm:w-12 sm:h-7 lg:w-14 lg:h-8 bg-blue-600 border-0 rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center">
+                    <div className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-blue-600/95 backdrop-blur-sm hover:bg-blue-700 rounded-2xl shadow-lg hover:shadow-blue-200/50 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-pointer">
                       <span className="text-xs sm:text-xs lg:text-xs font-bold text-white tracking-wide">
                         {startPage + currentPage - 1}
                       </span>
                     </div>
                     
-                    {/* Next Page Button - Smaller on Mobile */}
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="group w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center text-gray-700 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/95 hover:bg-white border border-gray-100 hover:border-blue-200 rounded-2xl shadow-lg hover:shadow-blue-100/50 flex items-center justify-center text-gray-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
                       title="Next Page (↓ or →)"
                     >
-                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:translate-y-1 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     
-                    {/* Hint Text - Desktop Only */}
                     <div className="hidden lg:block text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                       ↑↓ or ←→ to navigate
                     </div>
                   </div>
                   
-                  {/* Mobile Bottom Navigation - Mobile Only */}
                   <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 sm:hidden">
-                    {/* Navigation Controls */}
                     <div className="flex items-center justify-between px-4 py-3">
-                      {/* Previous Page Button */}
                       <button
                         onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                         disabled={currentPage <= 1}
@@ -568,7 +430,6 @@ function SearchContent() {
                         <span className="text-sm font-medium">Prev</span>
                       </button>
                       
-                      {/* Page Info */}
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-gray-600">Page</span>
                         <span className="px-3 py-1 bg-blue-600 text-white text-sm font-bold rounded-lg">
@@ -576,7 +437,6 @@ function SearchContent() {
                         </span>
                       </div>
                       
-                      {/* Next Page Button */}
                       <button
                         onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                         disabled={currentPage >= totalPages}
@@ -589,7 +449,6 @@ function SearchContent() {
                       </button>
                     </div>
                     
-                    {/* Mobile Footer Info */}
                     <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
                       <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
                         <Image 
@@ -607,17 +466,14 @@ function SearchContent() {
             </div>
           </div>
 
-          {/* 搜索结果 - 只在有搜索结果时显示 */}
           {(isSearchActive && sharedSearchResults.length > 0) && (
-            <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out ${getSearchResultsHeight()}`}>
+            <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[${getSearchResultsHeight()}]`}>
               <div className="h-full flex flex-col">
-                {/* 搜索结果标题 - 仅在手机端显示 */}
                 <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-gray-700">
                       Search Results ({sharedSearchResults.length})
                     </h3>
-                    {/* 手机端导航按钮 */}
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={goToPreviousResult}
@@ -667,7 +523,6 @@ function SearchContent() {
         </div>
       </main>
 
-      {/* Footer - Hidden on mobile to avoid conflict with bottom navigation */}
       <footer className="hidden sm:block mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
         <div className="max-w-full mx-auto px-4">
           <div className="flex justify-center items-center space-x-4">

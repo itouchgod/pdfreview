@@ -12,6 +12,8 @@ export interface LoadingStatus {
   loadedSections: number;
   totalSections: number;
   progress: number;
+  error?: string;
+  currentSection?: string;
 }
 
 interface CachedData {
@@ -83,6 +85,20 @@ const clearCachedData = (): void => {
   localStorage.removeItem(CACHE_KEY);
 };
 
+// 添加重试逻辑
+const fetchWithRetry = async (url: string, retries = 3): Promise<Response> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i))); // 指数退避
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} retries`);
+};
+
 export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [textData, setTextData] = useState<PDFTextData>({});
   const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>({
@@ -107,7 +123,6 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
         totalSections: PDF_CONFIG.sections.length,
         progress: 100
       });
-      // PDF数据已从缓存加载
     }
   }, []);
 
@@ -123,16 +138,14 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
         totalSections: PDF_CONFIG.sections.length,
         progress: 100
       });
-      // PDF数据已从缓存加载，跳过重新加载
       return;
     }
 
     if (isLoading || hasLoaded || hasStartedLoading) {
-      return; // 已经在加载或已经加载过或已经开始过
+      return;
     }
     
     setHasStartedLoading(true);
-
     setIsLoading(true);
     setLoadingStatus({
       isLoading: true,
@@ -149,60 +162,87 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Dynamically import PDF.js
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    
-    for (const section of PDF_CONFIG.sections) {
-      try {
-        const response = await fetch(section.filePath);
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer();
-          const pdf = await (pdfjsLib as any).getDocument(arrayBuffer).promise;
-          
-          let fullText = '';
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            try {
-              const page = await pdf.getPage(pageNum);
-              const textContent = await page.getTextContent();
-              const pageText = textContent.items
-                .map((item: any) => item.str)
-                .join(' ');
-              const actualPageNum = section.startPage + pageNum - 1;
-              fullText += `\n--- 第 ${actualPageNum} 页 ---\n${pageText}\n`;
-            } catch (err: any) {
-              // 忽略渲染取消异常，这是正常的
-              if (err.name !== 'RenderingCancelledException') {
-                console.error(`提取章节 ${section.name} 第 ${pageNum} 页文本失败:`, err);
+    try {
+      // 动态导入 PDF.js
+      const pdfjsLib = await import('pdfjs-dist/webpack');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+
+      // 按大小排序章节，先加载小文件
+      const sortedSections = [...PDF_CONFIG.sections].sort((a, b) => {
+        const sizeA = parseFloat(a.size.replace('MB', ''));
+        const sizeB = parseFloat(b.size.replace('MB', ''));
+        return sizeA - sizeB;
+      });
+      
+      for (const section of sortedSections) {
+        try {
+          setLoadingStatus(prev => ({
+            ...prev,
+            currentSection: section.name,
+            error: undefined
+          }));
+
+          const response = await fetchWithRetry(section.filePath);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            
+            let fullText = '';
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              try {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items
+                  .map((item: any) => item.str)
+                  .join(' ');
+                const actualPageNum = section.startPage + pageNum - 1;
+                fullText += `\n--- 第 ${actualPageNum} 页 ---\n${pageText}\n`;
+              } catch (err: any) {
+                if (err.name !== 'RenderingCancelledException') {
+                  console.error(`提取章节 ${section.name} 第 ${pageNum} 页文本失败:`, err);
+                }
               }
             }
+            
+            sectionsText[section.filePath] = fullText;
+            
+            // 更新加载状态
+            const loadedCount = Object.keys(sectionsText).length;
+            const progress = (loadedCount / PDF_CONFIG.sections.length) * 100;
+            
+            setLoadingStatus({
+              isLoading: loadedCount < PDF_CONFIG.sections.length,
+              loadedSections: loadedCount,
+              totalSections: PDF_CONFIG.sections.length,
+              progress,
+              currentSection: section.name
+            });
+
+            // 每完成一个章节就保存一次缓存
+            setCachedData(sectionsText);
           }
-          
-          sectionsText[section.filePath] = fullText;
-          
-          // 更新加载状态
-          const loadedCount = Object.keys(sectionsText).length;
-          const progress = (loadedCount / PDF_CONFIG.sections.length) * 100;
-          
-          setLoadingStatus({
-            isLoading: loadedCount < PDF_CONFIG.sections.length,
-            loadedSections: loadedCount,
-            totalSections: PDF_CONFIG.sections.length,
-            progress
-          });
+        } catch (error) {
+          console.error(`Failed to load section ${section.name}:`, error);
+          setLoadingStatus(prev => ({
+            ...prev,
+            error: `加载章节 ${section.name} 失败: ${error.message}`
+          }));
+          // 继续加载其他章节
         }
-      } catch (error) {
-        console.warn(`Failed to load section ${section.name}:`, error);
       }
+      
+      setTextData(sectionsText);
+      setIsLoading(false);
+      setHasLoaded(true);
+      
+    } catch (error) {
+      console.error('Failed to initialize PDF.js:', error);
+      setLoadingStatus(prev => ({
+        ...prev,
+        error: `初始化失败: ${error.message}`
+      }));
     }
-    
-    setTextData(sectionsText);
-    setIsLoading(false);
-    setHasLoaded(true);
-    
-    // 保存到缓存
-    setCachedData(sectionsText);
-  }, [isLoading, hasLoaded, hasStartedLoading]); // 包含所有使用的状态变量
+  }, [isLoading, hasLoaded, hasStartedLoading]);
 
   const isReady = !loadingStatus.isLoading && loadingStatus.loadedSections > 0;
 
@@ -217,7 +257,6 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
       totalSections: PDF_CONFIG.sections.length,
       progress: 0
     });
-    // 缓存已清除
   }, []);
 
   return (
