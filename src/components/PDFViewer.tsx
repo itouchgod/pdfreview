@@ -187,14 +187,46 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         throw new Error('Canvas context or parent element not available');
       }
 
-      // 计算缩放比例
+      // 计算缩放比例 - 针对手机端优化清晰度
       const viewport = page.getViewport({ scale: 1 });
       const containerWidth = canvas.parentElement.clientWidth || windowWidth;
-      const scale = containerWidth / viewport.width;
+      
+      // 基础缩放比例
+      let scale = containerWidth / viewport.width;
+      
+      // 手机端优化：提高缩放比例以获得更清晰的显示
+      const isMobile = windowWidth < 768;
+      const isHighDPI = window.devicePixelRatio > 1;
+      
+      if (isMobile) {
+        // 手机端使用更高的缩放比例
+        scale *= isHighDPI ? 1.5 : 2.0;
+      } else if (isHighDPI) {
+        // 桌面端高DPI屏幕也适当提高缩放
+        scale *= 1.2;
+      }
+      
+      // 限制最大缩放比例，避免性能问题
+      scale = Math.min(scale, 3.0);
+      
       const scaledViewport = page.getViewport({ scale });
 
       canvas.height = scaledViewport.height;
       canvas.width = scaledViewport.width;
+      
+      // 优化Canvas渲染质量
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      
+      // 设置高DPI支持
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      if (devicePixelRatio > 1) {
+        canvas.width = scaledViewport.width * devicePixelRatio;
+        canvas.height = scaledViewport.height * devicePixelRatio;
+        canvas.style.width = scaledViewport.width + 'px';
+        canvas.style.height = scaledViewport.height + 'px';
+        context.scale(devicePixelRatio, devicePixelRatio);
+      }
 
       // 使用 Promise.race 添加超时
       const renderPromise = new Promise((resolve, reject) => {
@@ -348,11 +380,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         ref={canvasRef} 
         className="h-auto shadow-lg"
         style={{ 
-          imageRendering: 'crisp-edges',
+          imageRendering: 'auto',
           maxWidth: '100%',
           height: 'auto',
           display: 'block',
-          objectFit: 'contain'
+          objectFit: 'contain',
+          // 优化手机端显示
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)'
         } as React.CSSProperties}
       />
     </div>

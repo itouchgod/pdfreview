@@ -16,6 +16,15 @@ export async function getPDFJS(): Promise<typeof PDFJS> {
       // 使用动态导入加载 worker
       const { default: workerSrc } = await import('pdfjs-dist/build/pdf.worker.entry');
       pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+      
+      // 优化渲染配置
+      pdfjs.GlobalWorkerOptions.verbosity = 0; // 减少日志输出
+      
+      // 设置更好的渲染质量
+      if (pdfjs.GlobalWorkerOptions) {
+        // 启用文本层渲染
+        pdfjs.GlobalWorkerOptions.isEvalSupported = false;
+      }
     }
 
     pdfjsLib = pdfjs;
