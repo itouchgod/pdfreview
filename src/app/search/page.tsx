@@ -45,13 +45,13 @@ function SearchContent() {
     console.log('handleSearchResults called with:', results.length, 'results');
   };
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSharedSearchResults([]);
     setSharedSearchTerm('');
     setIsSearchActive(false);
     setHasSearchResults(false);
     setCurrentResultIndex(0);
-  };
+  }, []);
 
   // 导航到上一个搜索结果
   const goToPreviousResult = () => {
@@ -211,7 +211,12 @@ function SearchContent() {
     url.searchParams.delete('section');
     url.searchParams.delete('page');
     
-    if (params.query) url.searchParams.set('q', params.query);
+    if (params.query) {
+      url.searchParams.set('q', params.query);
+    } else if (params.query === '') {
+      // 如果搜索词为空字符串，删除参数而不是设置空值
+      url.searchParams.delete('q');
+    }
     if (params.section) url.searchParams.set('section', params.section);
     if (params.page) url.searchParams.set('page', params.page.toString());
     
@@ -294,7 +299,13 @@ function SearchContent() {
 
   // 当URL中的搜索词变化时，自动执行搜索
   useEffect(() => {
-    if (!searchQuery || !textData || !Object.keys(textData).length) return;
+    if (!textData || !Object.keys(textData).length) return;
+    
+    // 如果搜索词为空，清空搜索结果
+    if (!searchQuery) {
+      handleClearSearch();
+      return;
+    }
     
     const searchResults = searchInAllSections(searchQuery, textData);
     if (searchResults && searchResults.length > 0) {
@@ -316,8 +327,11 @@ function SearchContent() {
         // 直接切换到正确的章节和页面
         navigateToPDF(firstResult.sectionPath, relativePage);
       }
+    } else {
+      // 如果没有搜索结果，也清空
+      handleClearSearch();
     }
-  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length, navigateToPDF]);
+  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length, navigateToPDF, handleClearSearch]);
 
   // 键盘快捷键支持
   useEffect(() => {

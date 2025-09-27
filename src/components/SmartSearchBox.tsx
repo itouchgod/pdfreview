@@ -177,7 +177,7 @@ export default function SmartSearchBox({
       }
       
       if (onUpdateURL) {
-        onUpdateURL({ q: searchTerm });
+        onUpdateURL({ query: searchTerm });
       }
     } finally {
       setIsSearching(false);
@@ -224,6 +224,9 @@ export default function SmartSearchBox({
               onClick={() => {
                 setSearchTerm('');
                 onClearSearch();
+                if (onUpdateURL) {
+                  onUpdateURL({ query: '' });
+                }
               }}
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
             >
