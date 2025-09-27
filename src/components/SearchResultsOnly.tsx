@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PDF_CONFIG } from '@/config/pdf';
+import { PageCalculator } from '@/utils/pageCalculator';
 
 interface SmartSearchResult {
   page: number;
@@ -102,57 +102,59 @@ export default function SearchResultsOnly({
     const result = groupedResults[index];
     const firstResult = result.results[0];
     
-    // 查找对应的章节配置
-    const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
-    if (!section) return;
-    
-    // 计算相对页码
-    const relativePage = firstResult.page - section.startPage + 1;
-    
-    // 验证页码有效性
-    if (relativePage < 1 || relativePage > (section.endPage - section.startPage + 1)) {
-      console.log('Invalid relative page in SearchResultsOnly:', { 
-        relativePage, 
-        actualPage: firstResult.page, 
-        startPage: section.startPage, 
-        endPage: section.endPage 
-      });
+    // 获取目标页码信息
+    const pageInfo = PageCalculator.findPageInfo(firstResult.page);
+    if (!pageInfo) {
+      console.log('Invalid page number:', firstResult.page);
       return;
     }
     
+    console.log('Page conversion in SearchResultsOnly:', {
+      absolutePage: pageInfo.absolutePage,
+      relativePage: pageInfo.relativePage,
+      section: pageInfo.section.name,
+      startPage: pageInfo.section.startPage,
+      endPage: pageInfo.section.endPage,
+      calculation: `${pageInfo.absolutePage} - ${pageInfo.section.startPage} + 1 = ${pageInfo.relativePage}`
+    });
+    
     // 如果需要切换章节
     if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
-      console.log('Switching section for search result:', firstResult.sectionPath);
+      console.log('Switching section and page:', {
+        fromSection: selectedPDF,
+        toSection: firstResult.sectionPath,
+        absolutePage: pageInfo.absolutePage,
+        relativePage: pageInfo.relativePage,
+        section: pageInfo.section.name,
+        calculation: `${pageInfo.absolutePage} - ${pageInfo.section.startPage} + 1 = ${pageInfo.relativePage}`
+      });
+      
+      // 先切换章节，并传递相对页码
       onSectionChange(firstResult.sectionPath, false);
       
-      // 使用更长的延迟和重试机制来确保PDF加载完成
-      let retryCount = 0;
-      const maxRetries = 5;
-      const checkAndJump = () => {
-        if (retryCount >= maxRetries) {
-          console.log('Max retries reached, giving up on page jump');
-          return;
-        }
-        
-        const pdfElement = document.querySelector('canvas');
-        if (pdfElement) {
-          console.log('PDF canvas found, jumping to page:', relativePage);
+      // 等待章节切换完成后再跳转
+      Promise.resolve().then(() => {
+        // 使用较短的延迟，因为章节切换应该很快
+        setTimeout(() => {
           if (onPageJump) {
-            onPageJump(relativePage);
+            console.log('Jumping to page after section change:', {
+              absolutePage: pageInfo.absolutePage,
+              relativePage: pageInfo.relativePage,
+              section: pageInfo.section.name
+            });
+            onPageJump(pageInfo.relativePage);
           }
-        } else {
-          console.log('PDF not ready yet, retrying...', { retryCount });
-          retryCount++;
-          setTimeout(checkAndJump, 300);
-        }
-      };
-      
-      // 开始第一次检查
-      setTimeout(checkAndJump, 300);
+        }, 300);
+      });
     } else {
       // 直接跳转页面
       if (onPageJump) {
-        onPageJump(relativePage);
+        console.log('Direct page jump:', {
+          absolutePage: pageInfo.absolutePage,
+          relativePage: pageInfo.relativePage,
+          section: pageInfo.section.name
+        });
+        onPageJump(pageInfo.relativePage);
       }
     }
   }, [groupedResults, selectedPDF, onSectionChange, onPageJump, onResultIndexChange]);

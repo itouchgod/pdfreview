@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
+import { createPageCalculator } from '@/utils/pageCalculator';
+import { PDF_CONFIG } from '@/config/pdf';
 import { PDFErrorBoundary } from './PDFErrorBoundary';
 import { CacheManager } from '@/lib/cache';
 import { PerformanceMonitor } from '@/lib/performance';
@@ -70,11 +72,21 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
       const startTime = performanceMonitor.startMeasure('pdf_load');
       
+      // 获取当前章节配置
+      const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
+      if (!section) {
+        console.log('Section not found:', pdfUrl);
+        setError('Invalid PDF section');
+        return;
+      }
+
+      const pageCalculator = createPageCalculator(section);
+      
       // 立即重置所有状态
       setLoading(true);
       setError(null);
       setPdf(null);
-      setTotalPages(0);
+      setTotalPages(pageCalculator.getTotalPages());
       setCurrentPage(1);
 
       try {
@@ -146,7 +158,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     }
 
     // 验证页码是否有效
-    if (pageNum < 1 || pageNum > pdf.numPages) {
+    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
+    if (!section) {
+      console.log('Section not found:', pdfUrl);
+      return;
+    }
+
+    const pageCalculator = createPageCalculator(section);
+    if (!pageCalculator.isValidRelativePage(pageNum)) {
       console.log('Invalid page number:', { pageNum, totalPages: pdf.numPages });
       return;
     }
@@ -234,10 +253,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   // 监听页面变化
   useEffect(() => {
     if (pdf && currentPage && !loading) {
+      // 获取当前章节配置
+      const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
+      if (!section) {
+        console.log('Section not found:', pdfUrl);
+        return;
+      }
+
+      const pageCalculator = createPageCalculator(section);
+      if (!pageCalculator.isValidRelativePage(currentPage)) {
+        console.log('Invalid page number:', { currentPage, totalPages });
+        return;
+      }
+
       // 添加延迟以避免快速连续的页面变化
       const debounceTimeout = setTimeout(() => {
         renderPage(currentPage);
-        onPageChange?.(currentPage, totalPages);
+        onPageChange?.(currentPage, pageCalculator.getTotalPages());
       }, 100); // 100ms 延迟
 
       return () => {
@@ -249,7 +281,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         }
       };
     }
-  }, [pdf, currentPage, loading, renderPage, onPageChange, totalPages]);
+  }, [pdf, currentPage, loading, renderPage, onPageChange, pdfUrl]);
 
   // 页面跳转
   const goToPage = useCallback((page: number) => {
@@ -263,22 +295,42 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
     
-    // 获取当前PDF的实际页数
-    const currentTotalPages = pdf ? pdf.numPages : 0;
-    console.log('PDFViewer goToPage called:', { 
-      page, 
-      totalPages: currentTotalPages, 
-      isValid: page >= 1 && page <= currentTotalPages 
-    });
+    // 获取当前章节配置
+    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
+    if (!section) {
+      console.log('Section not found:', pdfUrl);
+      performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
+      return;
+    }
+
+    // 使用 pageCalculator 验证和处理页码
+    const pageCalculator = createPageCalculator(section);
+    const currentTotalPages = pageCalculator.getTotalPages();
     
-    if (page >= 1 && page <= currentTotalPages) {
+    if (pageCalculator.isValidRelativePage(page)) {
+      console.log('PDFViewer goToPage called:', { 
+        page, 
+        totalPages: currentTotalPages, 
+        isValid: true 
+      });
+      
       setCurrentPage(page);
-      setTotalPages(currentTotalPages); // 确保totalPages是最新的
+      setTotalPages(currentTotalPages);
       onPageChange?.(page, currentTotalPages);
       performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
     } else {
-      console.log('Invalid page number:', { page, currentTotalPages });
-      performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
+      // 如果页码无效，使用最近的有效页码
+      const validPage = pageCalculator.getValidRelativePage(page);
+      console.log('Invalid page number, using nearest valid page:', { 
+        requestedPage: page, 
+        validPage,
+        currentTotalPages 
+      });
+      
+      setCurrentPage(validPage);
+      setTotalPages(currentTotalPages);
+      onPageChange?.(validPage, currentTotalPages);
+      performanceMonitor.endMeasure('page_navigation', startTime, { corrected: true });
     }
   }, [loading, pdf, onPageChange, performanceMonitor]);
 

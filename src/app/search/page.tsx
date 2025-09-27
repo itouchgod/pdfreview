@@ -9,12 +9,15 @@ import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
+import { PageCalculator } from '@/utils/pageCalculator';
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
+  const loadingLockRef = useRef<boolean>(false);
+  const pendingNavigationRef = useRef<{ path: string; page: number } | null>(null);
   
   // 用于在header和sidebar之间共享搜索结果
   const [sharedSearchResults, setSharedSearchResults] = useState<any[]>([]);
@@ -29,12 +32,8 @@ function SearchContent() {
   const { textData } = usePDFText();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(() => {
-    const section = PDF_CONFIG.sections.find(s => s.filePath === PDF_CONFIG.sections[0].filePath);
-    return section ? (section.endPage - section.startPage + 1) : 1;
-  });
-  const [startPage, setStartPage] = useState(() => {
-    const section = PDF_CONFIG.sections.find(s => s.filePath === PDF_CONFIG.sections[0].filePath);
-    return section ? section.startPage : 1;
+    const calculator = PageCalculator.fromPath(selectedPDF);
+    return calculator ? calculator.getTotalPages() : 1;
   });
 
   const handleTextExtracted = () => {
@@ -71,80 +70,135 @@ function SearchContent() {
     }
   };
 
+  // 统一的PDF导航函数
+  const navigateToPDF = useCallback(async (pdfPath: string, pageNumber?: number) => {
+    // 如果已经在加载中，存储请求并返回
+    if (loadingLockRef.current) {
+      if (pdfPath !== selectedPDF) {
+        pendingNavigationRef.current = {
+          path: pdfPath,
+          page: pageNumber || 1
+        };
+      }
+      return;
+    }
+
+    const calculator = PageCalculator.fromPath(pdfPath);
+    if (!calculator) {
+      console.error('Section not found:', pdfPath);
+      return;
+    }
+
+    // 设置加载锁
+    loadingLockRef.current = true;
+
+    try {
+      const section = calculator.getSection();
+      // 只有在没有提供页码时才使用默认值1
+      const validPage = typeof pageNumber === 'number' 
+        ? calculator.getValidRelativePage(pageNumber)
+        : 1;
+      
+      console.log('Navigating to PDF:', {
+        fromSection: selectedPDF,
+        toSection: pdfPath,
+        requestedPage: pageNumber,
+        validPage,
+        section: section.name,
+        calculation: pageNumber ? `${pageNumber} -> ${validPage}` : 'default: 1'
+      });
+
+      // 批量更新状态
+      if (pdfPath !== selectedPDF) {
+        setSelectedPDF(pdfPath);
+        setSelectedSectionName(section.name);
+        setTotalPages(calculator.getTotalPages());
+      }
+
+      // 更新页码状态
+      setTargetPage(validPage);
+      setCurrentPage(validPage);
+
+      // 等待PDF加载完成
+      await new Promise<void>((resolve) => {
+        let retryCount = 0;
+        const maxRetries = 10;
+        const retryInterval = 200;
+
+        const checkPDFLoaded = () => {
+          const pdfContainer = document.querySelector('.react-pdf__Document');
+          const pdfCanvas = document.querySelector('.react-pdf__Page canvas');
+          const pdfPage = document.querySelector('.react-pdf__Page');
+
+          if (pdfContainer && pdfCanvas && pdfPage) {
+            resolve();
+          } else if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(checkPDFLoaded, retryInterval);
+          } else {
+            resolve();
+          }
+        };
+
+        setTimeout(checkPDFLoaded, 100);
+      });
+
+      // 跳转到目标页面
+      if (pdfViewerRef.current) {
+        pdfViewerRef.current.jumpToPage(validPage);
+      }
+
+      // 检查待处理的导航
+      const pendingNav = pendingNavigationRef.current;
+      if (pendingNav && pendingNav.path !== selectedPDF) {
+        pendingNavigationRef.current = null;
+        navigateToPDF(pendingNav.path, pendingNav.page);
+      }
+    } finally {
+      loadingLockRef.current = false;
+    }
+  }, [selectedPDF, pdfViewerRef]);
+
   // 跳转到指定结果
-  const jumpToResult = (index: number) => {
+  const jumpToResult = useCallback(async (index: number) => {
     if (index < 0 || index >= sharedSearchResults.length) return;
     
     const result = sharedSearchResults[index];
-    const section = PDF_CONFIG.sections.find(s => s.filePath === result.sectionPath);
-    if (!section) return;
-    
-    const relativePage = result.relativePage;
-    
-    console.log('Jump To Result Debug:', {
-      resultPage: result.page,
-      relativePage,
-      sectionStartPage: section.startPage,
-      sectionName: section.name,
-      sectionPath: section.filePath
-    });
-    
-    if (result.sectionPath !== selectedPDF) {
-      handleSelectPDF(section.filePath, section.name, false, false);
-      setTimeout(() => {
-        setCurrentPage(relativePage);
-        setTargetPage(relativePage);
-        if (pdfViewerRef.current) {
-          pdfViewerRef.current.jumpToPage(relativePage);
-        }
-      }, 500);
-    } else {
-      setCurrentPage(relativePage);
-      setTargetPage(relativePage);
-      if (pdfViewerRef.current) {
-        pdfViewerRef.current.jumpToPage(relativePage);
-      }
-    }
-  };
+    if (!result || !result.sectionPath) return;
 
-  const handleSelectPDF = useCallback((pdfPath: string, sectionName: string, resetToFirstPage: boolean = true, clearSearch: boolean = false) => {
-    console.log('handleSelectPDF called:', { pdfPath, sectionName, resetToFirstPage, clearSearch });
-    setSelectedPDF(pdfPath);
-    setSelectedSectionName(sectionName);
+    const calculator = PageCalculator.fromPath(result.sectionPath);
+    if (!calculator) return;
+    const relativePage = calculator.getRelativePageFromResult(result);
     
-    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfPath);
-    if (section) {
-      setTotalPages(section.endPage - section.startPage + 1);
-      setStartPage(section.startPage);
-    }
-    
-    if (resetToFirstPage) {
-      setCurrentPage(1);
-      setTargetPage(1);
-    }
-    
-    if (clearSearch) {
-      setIsSearchActive(false);
-      setSharedSearchResults([]);
-      setSharedSearchTerm('');
-      setHasSearchResults(false);
-    }
-  }, []);
+    await navigateToPDF(result.sectionPath, relativePage);
+  }, [sharedSearchResults, navigateToPDF]);
 
+  // 页面跳转
   const handlePageJump = useCallback((pageNumber: number) => {
     if (pdfViewerRef.current) {
       setCurrentPage(pageNumber);
+      setTargetPage(pageNumber);
       pdfViewerRef.current.jumpToPage(pageNumber);
     }
   }, []);
 
-  const handleSectionChange = useCallback((sectionPath: string, resetToFirstPage: boolean = true) => {
-    const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
-    if (section) {
-      handleSelectPDF(section.filePath, section.name, resetToFirstPage, false);
+  // 章节切换
+  const handleSectionChange = useCallback((sectionPath: string) => {
+    const calculator = PageCalculator.fromPath(sectionPath);
+    if (!calculator) {
+      console.error('Section not found:', sectionPath);
+      return;
     }
-  }, [handleSelectPDF]);
+    const section = calculator.getSection();
+    console.log('Handling section change:', {
+      fromSection: selectedPDF,
+      toSection: sectionPath,
+      section: section.name
+    });
+    navigateToPDF(sectionPath);
+  }, [navigateToPDF, selectedPDF]);
 
+  // URL更新
   const handleUpdateURL = useCallback((params: { query?: string; section?: string; page?: number }) => {
     if (typeof window === 'undefined') return;
     
@@ -160,52 +214,31 @@ function SearchContent() {
     window.history.pushState({}, '', url.toString());
   }, []);
 
+  // 页面变化
   const handlePageChange = useCallback((page: number, total: number) => {
     setCurrentPage(page);
     setTotalPages(total);
   }, []);
 
   const handleSearchResultsUpdate = useCallback((results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
-    console.log('handleSearchResultsUpdate called:', { 
-      resultsCount: results.length, 
-      searchTerm, 
-      searchMode
-    });
-
     if (!results || !Array.isArray(results)) return;
 
-    setSharedSearchResults(results);
-    setSharedSearchTerm(searchTerm);
-    setSharedSearchMode(searchMode);
-    setHasSearchResults(results.length > 0);
-    setIsSearchActive(true);
-    setCurrentResultIndex(0);
-    
-    if (results.length > 0) {
-      const firstResult = results[0];
-      const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
-      if (section) {
-        if (firstResult.sectionPath !== selectedPDF) {
-          handleSelectPDF(section.filePath, section.name, false, false);
-          setTimeout(() => {
-            const relativePage = firstResult.relativePage || (firstResult.page - section.startPage + 1);
-            setTargetPage(relativePage);
-            setCurrentPage(relativePage);
-            if (pdfViewerRef.current) {
-              pdfViewerRef.current.jumpToPage(relativePage);
-            }
-          }, 500);
-        } else {
-          const relativePage = firstResult.relativePage || (firstResult.page - section.startPage + 1);
-          setTargetPage(relativePage);
-          setCurrentPage(relativePage);
-          if (pdfViewerRef.current) {
-            pdfViewerRef.current.jumpToPage(relativePage);
-          }
-        }
-      }
+    // 如果搜索结果相同，不更新状态
+    if (JSON.stringify(results) === JSON.stringify(sharedSearchResults)) {
+      return;
     }
-  }, [handleSelectPDF, selectedPDF]);
+
+    // 批量更新搜索状态
+    Promise.resolve().then(() => {
+      setSharedSearchResults(results);
+      setSharedSearchTerm(searchTerm);
+      setSharedSearchMode(searchMode);
+      setHasSearchResults(results.length > 0);
+      setIsSearchActive(true);
+      setCurrentResultIndex(0);
+    });
+  }, [sharedSearchResults]);
+
 
   // 搜索函数
   const searchInAllSections = useCallback((query: string, sectionsText: Record<string, string>) => {
@@ -229,16 +262,20 @@ function SearchContent() {
         );
         
         if (matches) {
-          const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
-          if (section) {
-            const relativePage = pageNumber - section.startPage + 1;
+          const pageInfo = PageCalculator.findPageInfo(pageNumber);
+          if (pageInfo && pageInfo.section.filePath === sectionPath) {
+            console.log('Found search result:', {
+              absolutePage: pageNumber,
+              section: pageInfo.section.name,
+              startPage: pageInfo.section.startPage,
+              endPage: pageInfo.section.endPage
+            });
             results.push({
-              page: pageNumber,
-              relativePage,
+              page: pageNumber, // 保存绝对页码
               text: line.trim(),
               index: results.length,
               context: line.trim(),
-              sectionName: section.name,
+              sectionName: pageInfo.section.name,
               sectionPath: sectionPath,
               category: 'search'
             });
@@ -259,9 +296,40 @@ function SearchContent() {
     
     const searchResults = searchInAllSections(searchQuery, textData);
     if (searchResults && searchResults.length > 0) {
+      // 先更新搜索结果
       handleSearchResultsUpdate(searchResults, searchQuery, 'global');
+      
+      // 只在初始加载且有搜索词的情况下跳转到第一个结果
+      const isInitialLoad = !sharedSearchResults.length && searchQuery;
+      if (isInitialLoad) {
+        // 确保搜索结果已经更新
+        Promise.resolve().then(() => {
+          // 获取第一个结果的章节和页码
+          const firstResult = searchResults[0];
+          if (!firstResult) return;
+
+          const calculator = PageCalculator.fromPath(firstResult.sectionPath);
+          if (!calculator) return;
+
+          const section = calculator.getSection();
+          const relativePage = calculator.getRelativePageFromResult(firstResult);
+
+          // 先切换到正确的章节
+          setSelectedPDF(firstResult.sectionPath);
+          setSelectedSectionName(section.name);
+          setTotalPages(calculator.getTotalPages());
+
+          // 等待章节切换完成后再跳转到指定页面
+          setTimeout(() => {
+            setCurrentPage(relativePage);
+            if (pdfViewerRef.current) {
+              pdfViewerRef.current.jumpToPage(relativePage);
+            }
+          }, 100);
+        });
+      }
     }
-  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections]);
+  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -339,7 +407,7 @@ function SearchContent() {
                       onChange={(e) => {
                         const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
                         if (section) {
-                          handleSelectPDF(section.filePath, section.name, true, false);
+                          navigateToPDF(section.filePath);
                         }
                       }}
                       className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
@@ -397,7 +465,11 @@ function SearchContent() {
                     
                     <div className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-blue-600/95 backdrop-blur-sm hover:bg-blue-700 rounded-2xl shadow-lg hover:shadow-blue-200/50 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-pointer">
                       <span className="text-xs sm:text-xs lg:text-xs font-bold text-white tracking-wide">
-                        {startPage + currentPage - 1}
+                        {(() => {
+                          const calculator = PageCalculator.fromPath(selectedPDF);
+                          if (!calculator) return currentPage;
+                          return calculator.toAbsolutePage(currentPage);
+                        })()}
                       </span>
                     </div>
                     
@@ -433,7 +505,11 @@ function SearchContent() {
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-gray-600">Page</span>
                         <span className="px-3 py-1 bg-blue-600 text-white text-sm font-bold rounded-lg">
-                          {startPage + currentPage - 1}
+                        {(() => {
+                          const calculator = PageCalculator.fromPath(selectedPDF);
+                          if (!calculator) return currentPage;
+                          return calculator.toAbsolutePage(currentPage);
+                        })()}
                         </span>
                       </div>
                       
