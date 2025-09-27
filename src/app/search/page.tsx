@@ -450,8 +450,8 @@ function SearchContent() {
       {/* 主要内容 - 响应式布局 */}
       <main className="max-w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
         <div className={`flex flex-col lg:flex-row gap-6 ${
-          // 手机端：根据搜索结果数量调整布局
-          sharedSearchResults.length <= 2 ? 'lg:gap-6' : 'lg:gap-6'
+          // 根据搜索结果调整布局
+          isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-6' : ''
         }`}>
           {/* PDF查看器 - 在移动端占满宽度，桌面端占左侧 */}
           <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
@@ -608,17 +608,17 @@ function SearchContent() {
             </div>
           </div>
 
-          {/* 搜索结果 - 响应式布局优化 */}
-          <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out ${getSearchResultsHeight()}`}>
-            <div className="h-full flex flex-col">
-              {/* 搜索结果标题 - 仅在手机端显示 */}
-              <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-700">
-                    Search Results {sharedSearchResults.length > 0 && `(${sharedSearchResults.length})`}
-                  </h3>
-                  {/* 手机端导航按钮 */}
-                  {sharedSearchResults.length > 0 && (
+          {/* 搜索结果 - 只在有搜索结果时显示 */}
+          {(isSearchActive && sharedSearchResults.length > 0) && (
+            <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out ${getSearchResultsHeight()}`}>
+              <div className="h-full flex flex-col">
+                {/* 搜索结果标题 - 仅在手机端显示 */}
+                <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Search Results ({sharedSearchResults.length})
+                    </h3>
+                    {/* 手机端导航按钮 */}
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={goToPreviousResult}
@@ -644,27 +644,27 @@ function SearchContent() {
                         </svg>
                       </button>
                     </div>
-                  )}
+                  </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+                  <SearchResultsOnly
+                    onPageJump={handlePageJump}
+                    onSectionChange={handleSectionChange}
+                    currentSection={selectedSectionName}
+                    selectedPDF={selectedPDF}
+                    initialSearchTerm={searchQuery}
+                    preloadedTextData={textData}
+                    sharedSearchResults={sharedSearchResults}
+                    sharedSearchTerm={sharedSearchTerm}
+                    sharedSearchMode={sharedSearchMode}
+                    currentResultIndex={currentResultIndex}
+                    onResultIndexChange={setCurrentResultIndex}
+                  />
                 </div>
               </div>
-              
-              <div className="flex-1 overflow-y-auto p-2 sm:p-3">
-                <SearchResultsOnly
-                  onPageJump={handlePageJump}
-                  onSectionChange={handleSectionChange}
-                  currentSection={selectedSectionName}
-                  selectedPDF={selectedPDF}
-                  initialSearchTerm={searchQuery}
-                  preloadedTextData={textData}
-                  sharedSearchResults={sharedSearchResults}
-                  sharedSearchTerm={sharedSearchTerm}
-                  sharedSearchMode={sharedSearchMode}
-                  currentResultIndex={currentResultIndex}
-                  onResultIndexChange={setCurrentResultIndex}
-                />
-              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 
