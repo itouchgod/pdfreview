@@ -25,7 +25,8 @@ export class PerformanceMonitor {
     return PerformanceMonitor.instance;
   }
 
-  startMeasure(/* category */: string, /* metadata */?: Record<string, any>): number {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  startMeasure(category: string, metadata?: Record<string, any>): number {
     return performance.now();
   }
 
