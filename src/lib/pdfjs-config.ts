@@ -18,13 +18,10 @@ export async function getPDFJS(): Promise<typeof PDFJS> {
       pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
       
       // 优化渲染配置
-      pdfjs.GlobalWorkerOptions.verbosity = 0; // 减少日志输出
+      // verbosity 属性在新版本中已移除
       
       // 设置更好的渲染质量
-      if (pdfjs.GlobalWorkerOptions) {
-        // 启用文本层渲染
-        pdfjs.GlobalWorkerOptions.isEvalSupported = false;
-      }
+      // isEvalSupported 属性在新版本中已移除
     }
 
     pdfjsLib = pdfjs;

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -25,12 +25,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   // 解析实际主题
-  const resolveTheme = (currentTheme: Theme): 'light' | 'dark' => {
+  const resolveTheme = useCallback((currentTheme: Theme): 'light' | 'dark' => {
     if (currentTheme === 'system') {
       return getSystemTheme();
     }
     return currentTheme;
-  };
+  }, []);
 
   // 应用主题到DOM
   const applyTheme = (resolvedTheme: 'light' | 'dark') => {
@@ -64,7 +64,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     // 保存到localStorage
     localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, resolveTheme]);
 
   // 监听系统主题变化
   useEffect(() => {
@@ -80,7 +80,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
-  }, [theme]);
+  }, [theme, resolveTheme]);
 
   const value: ThemeContextType = {
     theme,
