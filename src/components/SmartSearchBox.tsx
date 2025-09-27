@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Search } from 'lucide-react';
+import { CacheManager } from '@/lib/cache';
+import { PerformanceMonitor } from '@/lib/performance';
 import { PDF_CONFIG } from '@/config/pdf';
 
 interface SmartSearchResult {
@@ -17,33 +19,37 @@ interface SmartSearchResult {
 interface SmartSearchBoxProps {
   onSearchResults: (results: SmartSearchResult[]) => void;
   onClearSearch: () => void;
-  onPageJump?: (pageNumber: number) => void;
-  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
+  onUpdateURL?: (params: Record<string, string>) => void;
   onLoadingStatusChange?: (status: { isLoading: boolean; progress: number }) => void;
-  onUpdateURL?: (params: { query?: string; section?: string; page?: number }) => void;
   currentSection?: string;
-  selectedPDF?: string;
   showSearchInHeader?: boolean;
-  showSearchInSidebar?: boolean;
   initialSearchTerm?: string;
   preloadedTextData?: Record<string, string>;
-  onSearchResultsUpdate?: (results: SmartSearchResult[], searchTerm: string, searchMode: 'global') => void;
+  onSearchResultsUpdate?: (
+    results: SmartSearchResult[],
+    searchTerm: string,
+    searchMode: 'current' | 'global'
+  ) => void;
 }
 
-export default function SmartSearchBox({ 
-  onSearchResults, 
-  onClearSearch, 
-  onUpdateURL, 
+export default function SmartSearchBox({
+  onSearchResults,
+  onClearSearch,
+  onUpdateURL,
   onLoadingStatusChange,
-  currentSection, // eslint-disable-line @typescript-eslint/no-unused-vars
-  showSearchInHeader = false, 
-  initialSearchTerm = '', 
-  preloadedTextData = {}, 
-  onSearchResultsUpdate 
+  currentSection,
+  showSearchInHeader = false,
+  initialSearchTerm = '',
+  preloadedTextData = {},
+  onSearchResultsUpdate
 }: SmartSearchBoxProps) {
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isSearching, setIsSearching] = useState(false);
   const [allSectionsText, setAllSectionsText] = useState<Record<string, string>>(preloadedTextData);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const performanceMonitor = PerformanceMonitor.getInstance();
+  const cacheManager = CacheManager.getInstance();
 
   // 更新文本数据
   useEffect(() => {
@@ -55,148 +61,171 @@ export default function SmartSearchBox({
     setSearchTerm(initialSearchTerm);
   }, [initialSearchTerm]);
 
-  // 搜索所有章节
-  const searchInAllSections = (query: string): SmartSearchResult[] => {
+  // 智能搜索实现
+  const searchInAllSections = useCallback(async (query: string): Promise<SmartSearchResult[]> => {
+    const startTime = performanceMonitor.startMeasure('search');
     const results: SmartSearchResult[] = [];
     const searchTerm = query.toLowerCase();
+    const searchTerms = searchTerm.split(' ').filter(Boolean);
 
-    Object.entries(allSectionsText).forEach(([sectionPath, text]) => {
-      const lines = text.split('\n');
-      let pageNumber = 1;
-      
-      lines.forEach((line) => {
-        // 检查是否是页面分隔符
-        if (line.includes('--- 第') && line.includes('页 ---')) {
-          const pageMatch = line.match(/第 (\d+) 页/);
-          if (pageMatch) {
-            pageNumber = parseInt(pageMatch[1]);
-          }
-          return;
-        }
-        
-        // 搜索匹配
-        if (line.toLowerCase().includes(searchTerm)) {
-          const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
-          if (section) {
-          results.push({
-              page: pageNumber,
-              text: line.trim(),
-              index: results.length,
-              context: line.trim(),
-              sectionName: section.name,
-              sectionPath: sectionPath,
-              category: 'search'
-            });
-          }
-        }
-      });
-    });
+    // 尝试从缓存获取搜索结果
+    const cacheKey = `search:${searchTerm}`;
+    const cachedResults = await cacheManager.get<SmartSearchResult[]>(cacheKey);
     
-    return results;
-  };
+    if (cachedResults) {
+      performanceMonitor.endMeasure('search', startTime, { cached: true });
+      return cachedResults;
+    }
 
-  const handleSearch = () => {
-    console.log('handleSearch called:', { 
-      searchTerm, 
-      textDataCount: Object.keys(allSectionsText).length,
-      hasOnSearchResults: !!onSearchResults,
-      hasOnSearchResultsUpdate: !!onSearchResultsUpdate
-    });
+    try {
+      await Promise.all(
+        Object.entries(allSectionsText).map(async ([sectionPath, text]) => {
+          const lines = text.split('\n');
+          let pageNumber = 1;
+          let contextBuffer: string[] = [];
+          
+          for (const line of lines) {
+            // 检查是否是页面分隔符
+            const pageMatch = line.match(/--- 第 (\d+) 页 ---/);
+            if (pageMatch) {
+              pageNumber = parseInt(pageMatch[1]);
+              contextBuffer = [];
+              continue;
+            }
+            
+            // 维护上下文缓冲区
+            contextBuffer.push(line);
+            if (contextBuffer.length > 5) {
+              contextBuffer.shift();
+            }
+            
+            // 搜索匹配
+            const matches = searchTerms.every(term => 
+              line.toLowerCase().includes(term)
+            );
+            
+            if (matches) {
+              const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
+              if (section) {
+                // 构建上下文
+                const context = [...contextBuffer];
+                let nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
+                context.push(...nextLines);
+                
+                results.push({
+                  page: pageNumber,
+                  text: line.trim(),
+                  index: results.length,
+                  context: context.join('\n').trim(),
+                  sectionName: section.name,
+                  sectionPath: sectionPath,
+                  category: 'search'
+                });
+              }
+            }
+          }
+        })
+      );
+
+      // 缓存搜索结果
+      await cacheManager.set(cacheKey, results, 3600000); // 1小时过期
+      performanceMonitor.endMeasure('search', startTime, { 
+        resultCount: results.length,
+        cached: false 
+      });
+      
+      return results;
+    } catch (error) {
+      console.error('Search error:', error);
+      performanceMonitor.endMeasure('search', startTime, { error: true });
+      return [];
+    }
+  }, [allSectionsText, performanceMonitor, cacheManager]);
+
+  // 处理搜索
+  const handleSearch = useCallback(async () => {
     if (!searchTerm.trim() || Object.keys(allSectionsText).length === 0) {
-      console.log('Search skipped:', { hasSearchTerm: !!searchTerm.trim(), hasTextData: Object.keys(allSectionsText).length > 0 });
       return;
     }
 
     setIsSearching(true);
-    
-    // 更新加载状态
     if (onLoadingStatusChange) {
       onLoadingStatusChange({ isLoading: true, progress: 0 });
     }
-    
-    setTimeout(() => {
-      const searchResults = searchInAllSections(searchTerm);
-      console.log('Search results:', { 
-        count: searchResults.length, 
-        searchTerm,
-        results: searchResults.slice(0, 3) // 显示前3个结果用于调试
-      });
-      onSearchResults(searchResults);
+
+    try {
+      const results = await searchInAllSections(searchTerm);
+      onSearchResults(results);
       
-      // 通知父组件搜索结果更新
       if (onSearchResultsUpdate) {
-        console.log('Calling onSearchResultsUpdate with:', searchResults.length, 'results');
-        onSearchResultsUpdate(searchResults, searchTerm, 'global');
-      } else {
-        console.log('onSearchResultsUpdate is not available');
+        onSearchResultsUpdate(results, searchTerm, 'global');
       }
       
+      if (onUpdateURL) {
+        onUpdateURL({ q: searchTerm });
+      }
+    } finally {
       setIsSearching(false);
-      
-      // 更新加载状态
       if (onLoadingStatusChange) {
         onLoadingStatusChange({ isLoading: false, progress: 100 });
       }
-    }, 100);
-  };
-
-  const handleClear = () => {
-    setSearchTerm('');
-    onSearchResults([]);
-    onClearSearch();
-    
-    // 清除URL参数
-    if (onUpdateURL) {
-      onUpdateURL({});
     }
-  };
+  }, [
+    searchTerm,
+    allSectionsText,
+    onSearchResults,
+    onSearchResultsUpdate,
+    onUpdateURL,
+    onLoadingStatusChange,
+    searchInAllSections,
+    setIsSearching
+  ]);
 
-  // 搜索输入框
-  const renderSearchInput = () => (
-    <div className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-        placeholder="Search marine equipment, tools, code..."
-        className="w-full pl-4 pr-20 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
-            />
-            {searchTerm && (
-              <button
-                onClick={handleClear}
-          className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
-              >
-          <X className="h-5 w-5" />
-              </button>
-            )}
-          <button
-            onClick={handleSearch}
-        disabled={isSearching || !searchTerm.trim()}
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-      >
-        {isSearching ? (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
-        ) : (
-          <Search className="h-5 w-5" />
-        )}
-          </button>
-        </div>
-  );
-        
-  // Header模式下的简洁搜索框
-  if (showSearchInHeader) {
-    return (
-      <div>
-        {renderSearchInput()}
-      </div>
-    );
-  }
+  // 防抖搜索
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-  // 默认模式
+    // Only trigger search if searchTerm has actually changed
+    if (searchTerm.trim() !== initialSearchTerm.trim()) {
+      if (searchTerm.trim()) {
+        searchTimeoutRef.current = setTimeout(() => {
+          handleSearch();
+        }, 300);
+      } else {
+        // Only clear search if we're not initializing with an empty search term
+        if (initialSearchTerm.trim() === '') {
+          onClearSearch();
+        }
+      }
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, handleSearch, onClearSearch, initialSearchTerm]);
+
   return (
-    <div className="space-y-4">
-      {renderSearchInput()}
+    <div className={`relative ${showSearchInHeader ? 'w-full' : 'max-w-2xl mx-auto'}`}>
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search IMPA codes, names, or descriptions..."
+          className="w-full pl-10 pr-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={isSearching}
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+        {isSearching && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

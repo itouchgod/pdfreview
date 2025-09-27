@@ -2,20 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PDFTextProvider } from "@/contexts/PDFTextContext";
-
-// 过滤浏览器扩展相关的错误
-if (typeof window !== 'undefined') {
-  const originalConsoleError = console.error;
-  console.error = (...args) => {
-    const message = args.join(' ');
-    if (message.includes('message channel closed') || 
-        message.includes('runtime.lastError')) {
-      // 忽略浏览器扩展错误
-      return;
-    }
-    originalConsoleError.apply(console, args);
-  };
-}
+import Script from 'next/script';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,51 +36,49 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
-        {/* PWA相关meta标签 */}
         <meta name="application-name" content="IMPA" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="IMPA" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#2563eb" />
-        <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#2563eb" />
-        <meta name="msapplication-TileImage" content="/icon-144x144.png" />
         
-        {/* Android特定配置 */}
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="mobile-web-app-status-bar-style" content="default" />
-        
-        {/* 苹果设备特定图标 */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
-        
-        {/* 其他设备图标 */}
         <link rel="icon" type="image/png" sizes="32x32" href="/icon-48x48.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icon-48x48.png" />
-        <link rel="mask-icon" href="/brand-icon.svg" color="#2563eb" />
         <link rel="shortcut icon" href="/icon-48x48.png" type="image/png" />
+        
+        {/* 注册 Service Worker */}
+        <Script
+          id="register-sw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(registration) {
+                      console.log('ServiceWorker registration successful');
+                    },
+                    function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    }
+                  );
+                });
+              }
+            `,
+          }}
+        />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body>
         <PDFTextProvider>
           {children}
         </PDFTextProvider>
