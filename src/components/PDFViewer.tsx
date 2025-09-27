@@ -214,7 +214,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       
       // 使用标准视口设置
       const scaledViewport = page.getViewport({ scale });
+      
+      // 调试信息：记录页面渲染参数
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Rendering page:', pageNum, {
+          scale,
+          viewport: {
+            width: scaledViewport.width,
+            height: scaledViewport.height,
+            rotation: scaledViewport.rotation
+          },
+          containerWidth,
+          windowWidth,
+          devicePixelRatio: window.devicePixelRatio
+        });
+      }
 
+      // 重置canvas尺寸
       canvas.width = scaledViewport.width;
       canvas.height = scaledViewport.height;
       
@@ -229,10 +245,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // 设置高DPI支持
       const devicePixelRatio = window.devicePixelRatio || 1;
       if (devicePixelRatio > 1) {
-        canvas.width = scaledViewport.width * devicePixelRatio;
-        canvas.height = scaledViewport.height * devicePixelRatio;
+        // 重新计算高DPI下的视口
+        const highDPIScale = scale * devicePixelRatio;
+        const highDPIViewport = page.getViewport({ scale: highDPIScale });
+        
+        canvas.width = highDPIViewport.width;
+        canvas.height = highDPIViewport.height;
         canvas.style.width = scaledViewport.width + 'px';
         canvas.style.height = 'auto'; // 让高度自适应
+        
         context.scale(devicePixelRatio, devicePixelRatio);
       }
 
@@ -245,9 +266,13 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
             renderTaskRef.current = null;
           }
 
+          // 使用正确的视口进行渲染
+          const renderViewport = devicePixelRatio > 1 ? 
+            page.getViewport({ scale: scale * devicePixelRatio }) : scaledViewport;
+            
           renderTaskRef.current = page.render({
             canvasContext: context,
-            viewport: scaledViewport
+            viewport: renderViewport
           });
 
           renderTaskRef.current.promise
