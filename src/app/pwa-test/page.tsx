@@ -47,7 +47,7 @@ export default function PWATestPage() {
               <p className="text-blue-700 text-sm">
                 1. 在Safari中打开此页面<br/>
                 2. 点击底部分享按钮<br/>
-                3. 选择"添加到主屏幕"<br/>
+                3. 选择&quot;添加到主屏幕&quot;<br/>
                 4. 确认安装
               </p>
             </div>

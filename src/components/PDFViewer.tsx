@@ -280,7 +280,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       console.log('Invalid page number:', { page, currentTotalPages });
       performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
     }
-  }, [loading, totalPages, onPageChange, performanceMonitor]);
+  }, [loading, pdf, onPageChange, performanceMonitor]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({

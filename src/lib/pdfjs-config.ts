@@ -8,18 +8,18 @@ export async function getPDFJS(): Promise<PDFJSStatic> {
   }
 
   try {
-    // Use require to load the CommonJS build
-    const pdfjs = require('pdfjs-dist/webpack');
+    // 使用动态导入加载 PDF.js
+    const pdfjs = await import('pdfjs-dist/webpack');
     
-    // Configure the worker
+    // 配置 worker
     if (typeof window !== 'undefined') {
-      // Use the bundled worker
-      const worker = require('pdfjs-dist/build/pdf.worker.entry');
-      pdfjs.GlobalWorkerOptions.workerSrc = worker;
+      // 使用动态导入加载 worker
+      const worker = await import('pdfjs-dist/build/pdf.worker.entry');
+      pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     }
 
-    pdfjsLib = pdfjs;
-    return pdfjs;
+    pdfjsLib = pdfjs as unknown as PDFJSStatic;
+    return pdfjsLib;
   } catch (error) {
     console.error('Failed to load PDF.js:', error);
     throw error;

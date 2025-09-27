@@ -8,6 +8,7 @@ import { PDF_CONFIG } from '@/config/pdf';
 
 interface SmartSearchResult {
   page: number;
+  relativePage?: number;
   text: string;
   index: number;
   context: string;
@@ -30,6 +31,9 @@ interface SmartSearchBoxProps {
     searchTerm: string,
     searchMode: 'current' | 'global'
   ) => void;
+  onPageJump?: (pageNumber: number) => void;
+  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
+  selectedPDF?: string;
 }
 
 export default function SmartSearchBox({
@@ -37,7 +41,7 @@ export default function SmartSearchBox({
   onClearSearch,
   onUpdateURL,
   onLoadingStatusChange,
-  currentSection,
+  // currentSection,
   showSearchInHeader = false,
   initialSearchTerm = '',
   preloadedTextData = {},
@@ -46,7 +50,7 @@ export default function SmartSearchBox({
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isSearching, setIsSearching] = useState(false);
   const [allSectionsText, setAllSectionsText] = useState<Record<string, string>>(preloadedTextData);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const performanceMonitor = PerformanceMonitor.getInstance();
   const cacheManager = CacheManager.getInstance();
@@ -109,7 +113,7 @@ export default function SmartSearchBox({
               if (section) {
                 // 构建上下文
                 const context = [...contextBuffer];
-                let nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
+                const nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
                 context.push(...nextLines);
                 
                 // 计算相对页码
