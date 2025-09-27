@@ -6,6 +6,7 @@ import { CacheManager } from '@/lib/cache';
 import { PerformanceMonitor } from '@/lib/performance';
 import { PDF_CONFIG } from '@/config/pdf';
 import { SectionChangeHandler } from '@/types/pdf';
+import { PageCalculator } from '@/utils/pageCalculator';
 
 interface SmartSearchResult {
   page: number;
@@ -118,14 +119,29 @@ export default function SmartSearchBox({
                 const nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
                 context.push(...nextLines);
                 
-                // 计算相对页码
-                const relativePage = pageNumber - section.startPage + 1;
+                // 使用 PageCalculator 计算相对页码
+                const pageCalculator = new PageCalculator(section);
+                const relativePage = pageCalculator.toRelativePage(pageNumber);
+                
+                // 验证页码有效性
+                if (!pageCalculator.isValidAbsolutePage(pageNumber)) {
+                  console.warn('Invalid page number detected:', {
+                    pageNumber,
+                    section: section.name,
+                    startPage: section.startPage,
+                    endPage: section.endPage
+                  });
+                  continue; // 跳过无效的页码
+                }
+
                 console.log('Search Result Debug:', {
                   pageNumber,
                   startPage: section.startPage,
                   relativePage,
-                  sectionName: section.name
+                  sectionName: section.name,
+                  isValid: pageCalculator.isValidAbsolutePage(pageNumber)
                 });
+
                 results.push({
                   page: pageNumber,          // 保持原始页码
                   relativePage: relativePage, // 添加相对页码
