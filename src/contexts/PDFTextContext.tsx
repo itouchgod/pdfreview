@@ -143,6 +143,12 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
 
     const sectionsText: PDFTextData = {};
     
+    // 确保在客户端环境
+    if (typeof window === 'undefined') {
+      console.warn('PDF.js loading attempted on server side');
+      return;
+    }
+
     // Dynamically import PDF.js
     const pdfjsLib = await import('pdfjs-dist');
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
