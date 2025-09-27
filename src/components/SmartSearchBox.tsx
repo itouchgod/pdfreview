@@ -159,7 +159,7 @@ export default function SmartSearchBox({
 
   // 处理搜索
   const handleSearch = useCallback(async () => {
-    if (!searchTerm.trim() || Object.keys(allSectionsText).length === 0) {
+    if (Object.keys(allSectionsText).length === 0) {
       return;
     }
 
@@ -169,6 +169,17 @@ export default function SmartSearchBox({
     }
 
     try {
+      if (!searchTerm.trim()) {
+        onSearchResults([]);
+        if (onSearchResultsUpdate) {
+          onSearchResultsUpdate([], '', 'global');
+        }
+        if (onUpdateURL) {
+          onUpdateURL({ query: '' });
+        }
+        return;
+      }
+
       const results = await searchInAllSections(searchTerm);
       onSearchResults(results);
       

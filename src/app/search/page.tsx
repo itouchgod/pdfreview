@@ -271,12 +271,6 @@ function SearchContent() {
         if (matches) {
           const pageInfo = PageCalculator.findPageInfo(pageNumber);
           if (pageInfo && pageInfo.section.filePath === sectionPath) {
-            console.log('Found search result:', {
-              absolutePage: pageNumber,
-              section: pageInfo.section.name,
-              startPage: pageInfo.section.startPage,
-              endPage: pageInfo.section.endPage
-            });
             results.push({
               page: pageNumber, // 保存绝对页码
               text: line.trim(),
@@ -544,7 +538,7 @@ function SearchContent() {
             </div>
           </div>
 
-          {(isSearchActive && sharedSearchResults.length > 0) && (
+          {(isSearchActive && sharedSearchResults.length > 0 && sharedSearchTerm) && (
             <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[480px] lg:h-screen">
               <div className="h-full flex flex-col">
                 <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
