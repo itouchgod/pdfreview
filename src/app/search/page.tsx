@@ -312,7 +312,7 @@ function SearchContent() {
       console.log('Auto search results:', { count: searchResults.length });
       handleSearchResultsUpdate(searchResults, searchQuery, 'global');
     }
-  }, [searchQuery, textData, searchParams]);
+  }, [searchQuery, textData, searchParams, handleSearchResultsUpdate]);
 
   // 搜索函数
   const searchInAllSections = (query: string, sectionsText: Record<string, string>) => {

@@ -27,7 +27,7 @@ export class CacheManager {
     // 检查 IndexedDB 支持
     if ('indexedDB' in window) {
       try {
-        const db = await this.openIndexedDB();
+        await this.openIndexedDB();
         this.storage = 'indexedDB';
         console.log('Using IndexedDB for storage');
       } catch (error) {

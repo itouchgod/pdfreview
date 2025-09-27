@@ -50,7 +50,8 @@ export default function SmartSearchBox({
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [isSearching, setIsSearching] = useState(false);
   const [allSectionsText, setAllSectionsText] = useState<Record<string, string>>(preloadedTextData);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // 保留 searchTimeoutRef 用于将来实现搜索防抖
+  // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const performanceMonitor = PerformanceMonitor.getInstance();
   const cacheManager = CacheManager.getInstance();
