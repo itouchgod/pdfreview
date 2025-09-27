@@ -113,8 +113,16 @@ function SearchContent() {
     const section = PDF_CONFIG.sections.find(s => s.filePath === result.sectionPath);
     if (!section) return;
     
-    // 计算相对页码
-    const relativePage = result.page - section.startPage + 1;
+    // 使用搜索结果中的相对页码
+    const relativePage = result.relativePage;
+    
+    console.log('Jump To Result Debug:', {
+      resultPage: result.page,
+      relativePage,
+      sectionStartPage: section.startPage,
+      sectionName: section.name,
+      sectionPath: section.filePath
+    });
     
     // 如果需要切换章节
     if (result.sectionPath !== selectedPDF) {
@@ -238,13 +246,39 @@ function SearchContent() {
       const firstResult = results[0];
       const section = PDF_CONFIG.sections.find(s => s.filePath === firstResult.sectionPath);
       if (section) {
-        const relativePage = firstResult.page - section.startPage + 1;
-        // 只在目标页面真正变化时才更新
-        if (targetPage !== relativePage) {
-          console.log('Setting target page:', relativePage);
-          setTargetPage(relativePage);
-          // 同时更新当前页面状态
-          setCurrentPage(relativePage);
+        console.log('First Search Result:', {
+          absolutePage: firstResult.page,
+          sectionStartPage: section.startPage,
+          sectionName: section.name,
+          sectionPath: section.filePath
+        });
+        
+        // 如果需要切换章节
+        if (firstResult.sectionPath !== selectedPDF) {
+          handleSelectPDF(section.filePath, section.name, false, false);
+          // 延迟跳转页面，等待PDF加载
+          setTimeout(() => {
+            const relativePage = firstResult.page - section.startPage + 1;
+            if (targetPage !== relativePage) {
+              console.log('Setting target page (delayed):', relativePage);
+              setTargetPage(relativePage);
+              setCurrentPage(relativePage);
+              if (pdfViewerRef.current) {
+                pdfViewerRef.current.jumpToPage(relativePage);
+              }
+            }
+          }, 500);
+        } else {
+          // 直接跳转页面
+          const relativePage = firstResult.page - section.startPage + 1;
+          if (targetPage !== relativePage) {
+            console.log('Setting target page (immediate):', relativePage);
+            setTargetPage(relativePage);
+            setCurrentPage(relativePage);
+            if (pdfViewerRef.current) {
+              pdfViewerRef.current.jumpToPage(relativePage);
+            }
+          }
         }
       }
     } else {

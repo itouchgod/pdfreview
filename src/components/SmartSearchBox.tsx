@@ -112,8 +112,17 @@ export default function SmartSearchBox({
                 let nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
                 context.push(...nextLines);
                 
+                // 计算相对页码
+                const relativePage = pageNumber - section.startPage + 1;
+                console.log('Search Result Debug:', {
+                  pageNumber,
+                  startPage: section.startPage,
+                  relativePage,
+                  sectionName: section.name
+                });
                 results.push({
-                  page: pageNumber,
+                  page: pageNumber,          // 保持原始页码
+                  relativePage: relativePage, // 添加相对页码
                   text: line.trim(),
                   index: results.length,
                   context: context.join('\n').trim(),
@@ -181,50 +190,59 @@ export default function SmartSearchBox({
     setIsSearching
   ]);
 
-  // 防抖搜索
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+  // 处理回车键搜索
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchTerm.trim() && !isSearching) {
+      handleSearch();
     }
-
-    // Only trigger search if searchTerm has actually changed
-    if (searchTerm.trim() !== initialSearchTerm.trim()) {
-      if (searchTerm.trim()) {
-        searchTimeoutRef.current = setTimeout(() => {
-          handleSearch();
-        }, 300);
-      } else {
-        // Only clear search if we're not initializing with an empty search term
-        if (initialSearchTerm.trim() === '') {
-          onClearSearch();
-        }
-      }
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchTerm, handleSearch, onClearSearch, initialSearchTerm]);
+  };
 
   return (
     <div className={`relative ${showSearchInHeader ? 'w-full' : 'max-w-2xl mx-auto'}`}>
-      <div className="relative">
+      <div className="relative group">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Search IMPA codes, names, or descriptions..."
-          className="w-full pl-10 pr-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-4 pr-20 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
           disabled={isSearching}
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-        {isSearching && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
-          </div>
-        )}
+        
+        {/* 右侧按钮区域 */}
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+          {/* 清除按钮 */}
+          {searchTerm && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                onClearSearch();
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          
+          {/* 分隔线 */}
+          {searchTerm && <div className="h-6 w-px bg-gray-200"></div>}
+          
+          {/* 搜索按钮 */}
+          <button
+            onClick={handleSearch}
+            disabled={isSearching || !searchTerm.trim()}
+            className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {isSearching ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
