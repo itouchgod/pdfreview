@@ -274,34 +274,34 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const goToPage = useCallback((page: number) => {
     const startTime = performanceMonitor.startMeasure('page_navigation');
     
-    // 获取当前章节配置
-    const pageCalculator = PageCalculator.fromPath(pdfUrl);
-    if (!pageCalculator) {
-      console.log('Section not found:', pdfUrl);
-      performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
-      return;
-    }
-    const currentTotalPages = pageCalculator.getTotalPages();
-
     // 如果PDF还在加载中，先存储目标页码
     if (loading || !pdf) {
-      console.log('PDF still loading, storing target page:', page);
       pendingPageRef.current = page;
       performanceMonitor.endMeasure('page_navigation', startTime, { pending: true });
       return;
     }
     
-    // 直接设置页码，不做验证
-    console.log('PDFViewer goToPage called:', { 
-      page, 
-      totalPages: currentTotalPages
-    });
+    // 获取当前章节配置（仅在开发环境下验证页码）
+    if (process.env.NODE_ENV === 'development') {
+      const pageCalculator = PageCalculator.fromPath(pdfUrl);
+      if (pageCalculator) {
+        const currentTotalPages = pageCalculator.getTotalPages();
+        const validPage = pageCalculator.getValidRelativePage(page);
+        if (validPage !== page) {
+          console.warn('Invalid page number adjusted:', { 
+            requested: page,
+            adjusted: validPage,
+            totalPages: currentTotalPages
+          });
+          page = validPage;
+        }
+      }
+    }
     
     setCurrentPage(page);
-    setTotalPages(currentTotalPages);
-    onPageChange?.(page, currentTotalPages);
+    onPageChange?.(page, totalPages);
     performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
-  }, [loading, pdf, onPageChange, performanceMonitor, pdfUrl]);
+  }, [loading, pdf, onPageChange, performanceMonitor, pdfUrl, totalPages]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({

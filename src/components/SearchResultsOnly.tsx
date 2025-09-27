@@ -103,51 +103,50 @@ export default function SearchResultsOnly({
     const result = groupedResults[index];
     const firstResult = result.results[0];
     
-    // 获取目标页码信息
-    const pageInfo = PageCalculator.findPageInfo(firstResult.page);
-    if (!pageInfo) {
-      console.log('Invalid page number:', firstResult.page);
+    if (!selectedPDF) {
+      console.error('No PDF selected');
       return;
     }
     
-    console.log('Page conversion in SearchResultsOnly:', {
-      absolutePage: pageInfo.absolutePage,
-      relativePage: pageInfo.relativePage,
-      section: pageInfo.section.name,
-      startPage: pageInfo.section.startPage,
-      endPage: pageInfo.section.endPage,
-      calculation: `${pageInfo.absolutePage} - ${pageInfo.section.startPage} + 1 = ${pageInfo.relativePage}`
-    });
-    
     // 如果需要切换章节
     if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
-      console.log('Switching section and page:', {
+      // 获取目标章节的页码计算器
+      const targetCalculator = PageCalculator.fromPath(firstResult.sectionPath);
+      if (!targetCalculator) {
+        console.error('Invalid section:', firstResult.sectionPath);
+        return;
+      }
+
+      // 计算在目标章节中的相对页码
+      const targetRelativePage = targetCalculator.getRelativePageFromResult(firstResult);
+      
+      console.log('Switching section:', {
         fromSection: selectedPDF,
         toSection: firstResult.sectionPath,
-        absolutePage: pageInfo.absolutePage,
-        relativePage: pageInfo.relativePage,
-        section: pageInfo.section.name,
-        calculation: `${pageInfo.absolutePage} - ${pageInfo.section.startPage} + 1 = ${pageInfo.relativePage}`
+        absolutePage: firstResult.page,
+        targetRelativePage,
+        section: targetCalculator.getSection().name
       });
       
-      // 直接切换章节并跳转到目标页面
-      console.log('Switching section with target page:', {
-        absolutePage: pageInfo.absolutePage,
-        relativePage: pageInfo.relativePage,
-        section: pageInfo.section.name,
-        sectionPath: firstResult.sectionPath
-      });
-      // 将目标页码作为参数传递给 onSectionChange
-      onSectionChange(firstResult.sectionPath, pageInfo.relativePage);
+      // 切换到目标章节和页码
+      onSectionChange(firstResult.sectionPath, targetRelativePage);
     } else {
-      // 直接跳转页面
+      // 在当前章节内跳转
       if (onPageJump) {
+        const currentCalculator = PageCalculator.fromPath(selectedPDF);
+        if (!currentCalculator) {
+          console.error('Invalid current section:', selectedPDF);
+          return;
+        }
+        
+        const targetPage = currentCalculator.getRelativePageFromResult(firstResult);
         console.log('Direct page jump:', {
-          absolutePage: pageInfo.absolutePage,
-          relativePage: pageInfo.relativePage,
-          section: pageInfo.section.name
+          page: firstResult.page,
+          targetPage,
+          section: currentCalculator.getSection().name
         });
-        onPageJump(pageInfo.relativePage);
+        
+        onPageJump(targetPage);
       }
     }
   }, [groupedResults, selectedPDF, onSectionChange, onPageJump, onResultIndexChange]);

@@ -17,8 +17,6 @@ function SearchContent() {
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
-  const loadingLockRef = useRef<boolean>(false);
-  const pendingNavigationRef = useRef<{ path: string; page?: number } | null>(null);
   
   // 用于在header和sidebar之间共享搜索结果
   const [sharedSearchResults, setSharedSearchResults] = useState<any[]>([]);
@@ -45,13 +43,13 @@ function SearchContent() {
     console.log('handleSearchResults called with:', results.length, 'results');
   };
 
-  const handleClearSearch = useCallback(() => {
+  const handleClearSearch = () => {
     setSharedSearchResults([]);
     setSharedSearchTerm('');
     setIsSearchActive(false);
     setHasSearchResults(false);
     setCurrentResultIndex(0);
-  }, []);
+  };
 
   // 导航到上一个搜索结果
   const goToPreviousResult = () => {
@@ -73,90 +71,38 @@ function SearchContent() {
 
   // 统一的PDF导航函数
   const navigateToPDF = useCallback(async (pdfPath: string, pageNumber?: number) => {
-    // 如果已经在加载中，存储请求并返回
-    if (loadingLockRef.current) {
-      if (pdfPath !== selectedPDF) {
-        pendingNavigationRef.current = {
-          path: pdfPath,
-          page: pageNumber
-        };
-      }
-      return;
-    }
-
-    // 如果是切换章节但没有指定页码，保持 undefined
-    // 这样后面的代码会使用当前页码
-
     const calculator = PageCalculator.fromPath(pdfPath);
     if (!calculator) {
       console.error('Section not found:', pdfPath);
       return;
     }
 
-    // 设置加载锁
-    loadingLockRef.current = true;
+    const section = calculator.getSection();
+    // 如果没有提供页码，使用当前页码
+    const validPage = typeof pageNumber === 'number'
+      ? calculator.getValidRelativePage(pageNumber)
+      : calculator.getValidRelativePage(currentPage);
+    
+    console.log('Navigating to PDF:', {
+      fromSection: selectedPDF,
+      toSection: pdfPath,
+      requestedPage: pageNumber,
+      validPage,
+      section: section.name,
+      calculation: pageNumber ? `${pageNumber} -> ${validPage}` : 'default: 1'
+    });
 
-    try {
-      const section = calculator.getSection();
-      // 如果没有提供页码，使用当前页码
-      const validPage = typeof pageNumber === 'number'
-        ? calculator.getValidRelativePage(pageNumber)
-        : calculator.getValidRelativePage(currentPage);
-      
-      console.log('Navigating to PDF:', {
-        fromSection: selectedPDF,
-        toSection: pdfPath,
-        requestedPage: pageNumber,
-        validPage,
-        section: section.name,
-        calculation: pageNumber ? `${pageNumber} -> ${validPage}` : 'default: 1'
-      });
-
-      // 等待PDF加载完成
-      await new Promise<void>((resolve) => {
-        let retryCount = 0;
-        const maxRetries = 10;
-        const retryInterval = 200;
-
-        const checkPDFLoaded = () => {
-          const pdfContainer = document.querySelector('.react-pdf__Document');
-          const pdfCanvas = document.querySelector('.react-pdf__Page canvas');
-          const pdfPage = document.querySelector('.react-pdf__Page');
-
-          if (pdfContainer && pdfCanvas && pdfPage) {
-            resolve();
-          } else if (retryCount < maxRetries) {
-            retryCount++;
-            setTimeout(checkPDFLoaded, retryInterval);
-          } else {
-            resolve();
-          }
-        };
-
-        setTimeout(checkPDFLoaded, 100);
-      });
-
-      // 批量更新所有状态
-      if (pdfPath !== selectedPDF) {
-        setSelectedPDF(pdfPath);
-        setSelectedSectionName(section.name);
-        setTotalPages(calculator.getTotalPages());
-      }
-
-      // 更新页码状态并跳转
-      setTargetPage(validPage);
-      setCurrentPage(validPage);
-      pdfViewerRef.current?.jumpToPage(validPage);
-
-      // 检查待处理的导航
-      const pendingNav = pendingNavigationRef.current;
-      if (pendingNav && pendingNav.path !== selectedPDF) {
-        pendingNavigationRef.current = null;
-        navigateToPDF(pendingNav.path, pendingNav.page);
-      }
-    } finally {
-      loadingLockRef.current = false;
+    // 批量更新所有状态
+    if (pdfPath !== selectedPDF) {
+      setSelectedPDF(pdfPath);
+      setSelectedSectionName(section.name);
+      setTotalPages(calculator.getTotalPages());
     }
+
+    // 更新页码状态并跳转
+    setTargetPage(validPage);
+    setCurrentPage(validPage);
+    pdfViewerRef.current?.jumpToPage(validPage);
   }, [selectedPDF, pdfViewerRef, currentPage]);
 
   // 跳转到指定结果
@@ -295,37 +241,48 @@ function SearchContent() {
   useEffect(() => {
     if (!textData || !Object.keys(textData).length) return;
     
-    // 如果搜索词为空，清空搜索结果
+    // 如果搜索词为空，批量更新状态
     if (!searchQuery) {
-      handleClearSearch();
+      setSharedSearchResults([]);
+      setSharedSearchTerm('');
+      setIsSearchActive(false);
+      setHasSearchResults(false);
+      setCurrentResultIndex(0);
       return;
     }
     
     const searchResults = searchInAllSections(searchQuery, textData);
     if (searchResults && searchResults.length > 0) {
-      // 先更新搜索结果
-      handleSearchResultsUpdate(searchResults, searchQuery, 'global');
+      // 批量更新搜索状态
+      setSharedSearchResults(searchResults);
+      setSharedSearchTerm(searchQuery);
+      setSharedSearchMode('global');
+      setHasSearchResults(true);
+      setIsSearchActive(true);
       
-      // 只在初始加载且有搜索词的情况下跳转到第一个结果
-      const isInitialLoad = !sharedSearchResults.length && searchQuery;
+      // 只在初始加载时跳转到第一个结果
+      const isInitialLoad = !sharedSearchResults.length;
       if (isInitialLoad) {
-        // 获取第一个结果的章节和页码
+        setCurrentResultIndex(0);
         const firstResult = searchResults[0];
-        if (!firstResult) return;
-
-        const calculator = PageCalculator.fromPath(firstResult.sectionPath);
-        if (!calculator) return;
-
-        const relativePage = calculator.getRelativePageFromResult(firstResult);
-
-        // 直接切换到正确的章节和页面
-        navigateToPDF(firstResult.sectionPath, relativePage);
+        if (firstResult) {
+          const calculator = PageCalculator.fromPath(firstResult.sectionPath);
+          if (calculator) {
+            const relativePage = calculator.getRelativePageFromResult(firstResult);
+            // 直接切换到正确的章节和页面
+            navigateToPDF(firstResult.sectionPath, relativePage);
+          }
+        }
       }
     } else {
-      // 如果没有搜索结果，也清空
-      handleClearSearch();
+      // 如果没有搜索结果，批量更新状态
+      setSharedSearchResults([]);
+      setSharedSearchTerm('');
+      setIsSearchActive(false);
+      setHasSearchResults(false);
+      setCurrentResultIndex(0);
     }
-  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length, navigateToPDF, handleClearSearch]);
+  }, [searchQuery, textData, searchInAllSections, navigateToPDF, sharedSearchResults.length]);
 
   // 键盘快捷键支持
   useEffect(() => {

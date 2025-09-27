@@ -87,13 +87,14 @@ export class PageCalculator {
     }
 
     const relativePage = absolutePage - this.section.startPage + 1;
-    console.log('Converting absolute to relative page:', {
-      absolutePage,
-      startPage: this.section.startPage,
-      relativePage,
-      section: this.section.name,
-      calculation: `${absolutePage} - ${this.section.startPage} + 1 = ${relativePage}`
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Page conversion:', {
+        type: 'absolute_to_relative',
+        absolutePage,
+        relativePage,
+        section: this.section.name
+      });
+    }
     return relativePage;
   }
 
@@ -103,12 +104,14 @@ export class PageCalculator {
    */
   toAbsolutePage(relativePage: number): number {
     const absolutePage = relativePage + this.section.startPage - 1;
-    console.log('Converting relative to absolute page:', {
-      relativePage,
-      startPage: this.section.startPage,
-      absolutePage,
-      section: this.section.name
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Page conversion:', {
+        type: 'relative_to_absolute',
+        relativePage,
+        absolutePage,
+        section: this.section.name
+      });
+    }
     return absolutePage;
   }
 

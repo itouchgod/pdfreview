@@ -40,7 +40,6 @@ interface SmartSearchBoxProps {
 
 export default function SmartSearchBox({
   onSearchResults,
-  onClearSearch,
   onUpdateURL,
   onLoadingStatusChange,
   // currentSection,
@@ -236,7 +235,20 @@ export default function SmartSearchBox({
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setSearchTerm(newValue);
+            // 清空时直接清除结果
+            if (!newValue) {
+              onSearchResults([]);
+              if (onSearchResultsUpdate) {
+                onSearchResultsUpdate([], '', 'global');
+              }
+              if (onUpdateURL) {
+                onUpdateURL({ query: '' });
+              }
+            }
+          }}
           onKeyPress={handleKeyPress}
           placeholder="Search IMPA codes, names, or descriptions..."
           className="w-full pl-4 pr-20 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
@@ -250,7 +262,10 @@ export default function SmartSearchBox({
             <button
               onClick={() => {
                 setSearchTerm('');
-                onClearSearch();
+                onSearchResults([]);
+                if (onSearchResultsUpdate) {
+                  onSearchResultsUpdate([], '', 'global');
+                }
                 if (onUpdateURL) {
                   onUpdateURL({ query: '' });
                 }
