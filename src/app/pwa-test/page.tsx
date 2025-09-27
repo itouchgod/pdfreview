@@ -42,9 +42,9 @@ export default function PWATestPage() {
           <h2 className="text-xl font-semibold mb-4">📱 移动端安装测试</h2>
           
           <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">iPhone (Safari)</h3>
-              <p className="text-blue-700 text-sm">
+            <div className="p-4 bg-primary/10 rounded-lg">
+              <h3 className="font-medium text-primary mb-2">iPhone (Safari)</h3>
+              <p className="text-primary/80 text-sm">
                 1. 在Safari中打开此页面<br/>
                 2. 点击底部分享按钮<br/>
                 3. 选择&quot;添加到主屏幕&quot;<br/>

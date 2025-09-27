@@ -346,43 +346,41 @@ function SearchContent() {
         </div>
       </header>
 
-      <main className="max-w-full mx-auto px-4 py-6 pb-24 sm:pb-6">
-        <div className={`flex flex-col lg:flex-row gap-6 ${
-          isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-6' : ''
+      <main className="max-w-full mx-auto px-4 py-1 pb-24 sm:pb-6">
+        <div className={`flex flex-col lg:flex-row gap-2 ${
+          isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-2' : ''
         }`}>
           <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
-            <div className="px-6 py-4 border-b border-border bg-card">
-              <div className="flex items-center">
-                <div className="flex items-center">
-                  <div className="relative">
-                    <select
-                      value={selectedPDF || ''}
-                      onChange={(e) => {
-                        const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
-                        if (section) {
-                          // 切换章节时总是从第一页开始
-                          navigateToPDF(section.filePath, 1);
-                        }
-                      }}
-                      className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-card-foreground hover:text-foreground focus:text-foreground min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
-                    >
-                      {PDF_CONFIG.sections.map((section) => (
-                        <option key={section.name} value={section.filePath}>
-                          {section.title || section.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
+            <div className="px-6 py-3 border-b border-border bg-card">
+              <div className="flex items-center justify-center">
+                <div className="relative">
+                  <select
+                    value={selectedPDF || ''}
+                    onChange={(e) => {
+                      const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
+                      if (section) {
+                        // 切换章节时总是从第一页开始
+                        navigateToPDF(section.filePath, 1);
+                      }
+                    }}
+                    className="appearance-none bg-transparent border-none outline-none cursor-pointer text-lg font-semibold text-primary hover:text-primary/80 focus:text-primary min-w-0 max-w-full pr-8 py-2 transition-colors duration-200 text-center"
+                  >
+                    {PDF_CONFIG.sections.map((section) => (
+                      <option key={section.name} value={section.filePath}>
+                        {section.title || section.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               </div>
             </div>
               
-            <div className="p-1 flex justify-center relative bg-background">
+            <div className="relative bg-background" style={{ margin: 0, padding: 0 }}>
               {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="text-center">
@@ -499,7 +497,7 @@ function SearchContent() {
           {(isSearchActive && sharedSearchResults.length > 0 && sharedSearchTerm) && (
             <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[480px] lg:h-screen">
               <div className="h-full flex flex-col">
-                <div className="lg:hidden px-4 py-3 bg-muted border-b border-border">
+                <div className="lg:hidden px-4 py-3 bg-muted border-b border-border/30">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-card-foreground">
                       Search Results ({sharedSearchResults.length})

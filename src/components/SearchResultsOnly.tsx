@@ -199,7 +199,7 @@ export default function SearchResultsOnly({
   return (
     <div className="flex flex-col h-full bg-background">
       {/* 导航控制 - 桌面端显示，手机端隐藏（因为手机端有专门的标题栏） */}
-      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-muted border-b border-border">
+      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-muted border-b border-border/30">
         <div className="flex items-center space-x-3">
           <button
             onClick={goToPrevious}
@@ -229,8 +229,8 @@ export default function SearchResultsOnly({
             onClick={() => goToResult(index)}
             className={`group cursor-pointer transition-all duration-200 ${
               index === highlightIndex 
-                ? 'bg-primary/10 border-l-4 border-l-primary shadow-sm' 
-                : 'hover:bg-accent border-l-4 border-l-transparent'
+                ? 'bg-primary/15 shadow-sm' 
+                : 'hover:bg-accent'
             }`}
           >
             <div className="px-3 sm:px-4 py-2 sm:py-3">
@@ -239,8 +239,8 @@ export default function SearchResultsOnly({
                 <div className="flex-shrink-0">
                   <span className={`inline-flex items-center justify-center w-10 h-6 sm:w-14 sm:h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
                     index === highlightIndex 
-                      ? 'bg-primary text-primary-foreground shadow-md' 
-                      : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'
+                      ? 'bg-primary/80 text-primary-foreground shadow-md' 
+                      : 'bg-muted text-muted-foreground group-hover:bg-primary/30 group-hover:text-primary'
                   }`}>
                     P{result.page}
                   </span>
@@ -250,7 +250,7 @@ export default function SearchResultsOnly({
                 <div className="flex-1 min-w-0">
                   <div className={`text-xs sm:text-sm font-medium transition-colors duration-200 ${
                     index === highlightIndex 
-                      ? 'text-primary-foreground' 
+                      ? 'text-primary/90 font-medium' 
                       : 'text-card-foreground group-hover:text-foreground'
                   }`}>
                     {/* 手机端显示更紧凑的章节名称 */}
@@ -271,7 +271,7 @@ export default function SearchResultsOnly({
                   <div className="flex-shrink-0">
                     <span className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs font-medium transition-all duration-200 ${
                       index === highlightIndex 
-                        ? 'bg-primary/20 text-primary-foreground' 
+                        ? 'bg-primary/15 text-primary/80' 
                         : 'bg-muted text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground'
                     }`}>
                       {result.count}
