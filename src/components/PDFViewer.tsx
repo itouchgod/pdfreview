@@ -306,8 +306,34 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }, [pdf, currentPage, loading, renderPage]);
 
 
+  // 存储待跳转的页面
+  const pendingPageRef = useRef<number | null>(null);
+
+  // 监听PDF加载完成
+  useEffect(() => {
+    if (!loading && totalPages > 0 && pendingPageRef.current !== null) {
+      const targetPage = pendingPageRef.current;
+      if (targetPage >= 1 && targetPage <= totalPages) {
+        console.log('PDF loaded, jumping to stored target page:', targetPage);
+        setCurrentPage(targetPage);
+        onPageChange?.(targetPage, totalPages);
+      }
+      // 清除存储的目标页面
+      pendingPageRef.current = null;
+    }
+  }, [loading, totalPages, onPageChange]);
+
   const goToPage = (page: number) => {
     console.log('PDFViewer goToPage called:', { page, totalPages, isValid: page >= 1 && page <= totalPages });
+    
+    // 如果PDF还在加载中，将目标页面保存起来
+    if (loading || totalPages === 0) {
+      console.log('PDF still loading, storing target page:', page);
+      pendingPageRef.current = page;
+      return;
+    }
+    
+    // PDF已加载完成，直接跳转
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
       onPageChange?.(page, totalPages);

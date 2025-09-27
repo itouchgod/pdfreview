@@ -380,13 +380,17 @@ function SearchContent() {
           <div className="flex items-center space-x-3 sm:space-x-4">
             {/* Logo - 保留点击返回功能，移除返回箭头 */}
             <Link href="/home" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
-                <Image 
-                  src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
-                  width={20}
-                  height={28}
-                  className="sm:w-5 sm:h-7"
-                />
+                <div className="w-5 h-7 relative">
+                  <Image 
+                    src="/brand-icon.svg" 
+                    alt="IMPA Logo" 
+                    fill
+                    sizes="20px"
+                    className="object-contain"
+                    priority
+                    unoptimized
+                  />
+                </div>
             </Link>
             
             {/* 搜索框 - 紧跟在logo后面 */}
@@ -635,12 +639,16 @@ function SearchContent() {
         <div className="max-w-full mx-auto px-4">
           <div className="flex justify-center items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Image 
-                src="/brand-icon.svg" 
-                alt="IMPA Logo" 
-                width={16}
-                height={20}
-              />
+              <div className="w-4 h-5 relative">
+                <Image 
+                  src="/brand-icon.svg" 
+                  alt="IMPA Logo" 
+                  fill
+                  sizes="16px"
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
               <span>Marine Stores Guide</span>
             </div>
             <span>•</span>

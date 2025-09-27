@@ -86,9 +86,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
         
         {/* 其他设备图标 */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icon-192x192.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon-48x48.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icon-48x48.png" />
         <link rel="mask-icon" href="/brand-icon.svg" color="#2563eb" />
+        <link rel="shortcut icon" href="/icon-48x48.png" type="image/png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

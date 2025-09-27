@@ -8,8 +8,14 @@ import { usePDFText } from '@/contexts/PDFTextContext';
 
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { loadingStatus, startLoading, isReady, hasStartedLoading } = usePDFText();
+
+  // 处理客户端挂载
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 页面加载时开始加载PDF文本（只在首次访问时）
   useEffect(() => {
@@ -38,6 +44,18 @@ export default function HomePage() {
     'bearing', 'seal', 'gasket', 'bolt', 'nut', 'screw', 'washer'
   ];
 
+  // 如果还没有挂载，返回一个加载状态
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="animate-pulse">
+          <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
+          <div className="h-12 w-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-4">
@@ -46,13 +64,17 @@ export default function HomePage() {
           <div className="mb-12">
             <form onSubmit={handleSearch} className="relative max-w-3xl mx-auto">
               <div className="flex items-center space-x-4">
-                <Image 
-                  src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
-                  width={32}
-                  height={42}
-                  className="flex-shrink-0"
-                />
+                <div className="flex-shrink-0 w-8 h-8 relative">
+                  <Image 
+                    src="/brand-icon.svg" 
+                    alt="IMPA Logo" 
+                    fill
+                    sizes="32px"
+                    className="object-contain"
+                    priority
+                    unoptimized
+                  />
+                </div>
                 <div className="relative flex-1">
                   <input
                     type="text"
@@ -114,12 +136,15 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex justify-center items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Image 
-                src="/brand-icon.svg" 
-                alt="IMPA Logo" 
-                width={16}
-                height={20}
-              />
+              <div className="w-4 h-5 relative">
+                <Image 
+                  src="/brand-icon.svg" 
+                  alt="IMPA Logo" 
+                  fill
+                  sizes="16px"
+                  className="object-contain"
+                />
+              </div>
               <span>Marine Stores Guide</span>
             </div>
             <span>•</span>
