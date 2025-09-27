@@ -162,9 +162,13 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     const startTime = performanceMonitor.startMeasure('page_render');
 
     try {
-      // 取消之前的渲染任务
+      // 彻底取消之前的渲染任务
       if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
+        try {
+          renderTaskRef.current.cancel();
+        } catch {
+          // 忽略取消时的错误
+        }
         renderTaskRef.current = null;
       }
 
@@ -187,119 +191,80 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         throw new Error('Canvas context or parent element not available');
       }
 
-      // 不需要清除 Canvas，PDF.js 会自动处理
+      // 等待一小段时间确保之前的渲染完全停止
+      await new Promise(resolve => setTimeout(resolve, 10));
 
-      // 计算缩放比例 - 只以宽度为基准
+      // 简化的缩放逻辑：只计算一次缩放比例
       const viewport = page.getViewport({ scale: 1 });
       const containerWidth = canvas.parentElement.clientWidth || windowWidth;
       
-      // 只使用宽度缩放，确保 PDF 宽度完全适配页面宽度
-      let scale = containerWidth / viewport.width;
+      // 计算缩放比例：确保PDF宽度适配容器宽度
+      const scale = Math.max(0.5, Math.min(containerWidth / viewport.width, 3.0));
       
-      // 手机端优化：提高缩放比例以获得更清晰的显示
-      const isMobile = windowWidth < 768;
-      const isHighDPI = window.devicePixelRatio > 1;
+      // 获取设备像素比
+      const devicePixelRatio = window.devicePixelRatio || 1;
       
-      if (isMobile) {
-        // 手机端使用更高的缩放比例
-        const mobileScale = isHighDPI ? 1.5 : 2.0;
-        scale = scale * mobileScale;
-      } else if (isHighDPI) {
-        // 桌面端高DPI屏幕也适当提高缩放
-        scale = scale * 1.2;
-      }
-      
-      // 限制最大缩放比例，避免性能问题
-      scale = Math.min(scale, 3.0);
-      
-      // 使用标准视口设置
+      // 计算视口
       const scaledViewport = page.getViewport({ scale });
       
-      // 调试信息：记录页面渲染参数
+      // 调试信息
       if (process.env.NODE_ENV === 'development') {
         console.log('Rendering page:', pageNum, {
           scale,
+          devicePixelRatio,
           viewport: {
             width: scaledViewport.width,
-            height: scaledViewport.height,
-            rotation: scaledViewport.rotation
+            height: scaledViewport.height
           },
-          containerWidth,
-          windowWidth,
-          devicePixelRatio: window.devicePixelRatio
+          containerWidth
         });
       }
 
-      // 重置canvas尺寸
-      canvas.width = scaledViewport.width;
-      canvas.height = scaledViewport.height;
+      // 设置Canvas尺寸
+      canvas.width = scaledViewport.width * devicePixelRatio;
+      canvas.height = scaledViewport.height * devicePixelRatio;
       
-      // 设置 Canvas 样式，确保高度自适应
+      // 设置Canvas显示样式
       canvas.style.width = scaledViewport.width + 'px';
-      canvas.style.height = 'auto'; // 让高度自适应
+      canvas.style.height = scaledViewport.height + 'px';
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 auto';
       
-      // 优化Canvas渲染质量
+      // 设置高DPI缩放
+      context.scale(devicePixelRatio, devicePixelRatio);
+      
+      // 优化渲染质量
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = 'high';
-      
-      // 设置高DPI支持
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      if (devicePixelRatio > 1) {
-        // 重新计算高DPI下的视口
-        const highDPIScale = scale * devicePixelRatio;
-        const highDPIViewport = page.getViewport({ scale: highDPIScale });
-        
-        canvas.width = highDPIViewport.width;
-        canvas.height = highDPIViewport.height;
-        canvas.style.width = scaledViewport.width + 'px';
-        canvas.style.height = 'auto'; // 让高度自适应
-        
-        context.scale(devicePixelRatio, devicePixelRatio);
-      }
 
-      // 使用 Promise.race 添加超时
-      const renderPromise = new Promise((resolve, reject) => {
-        try {
-          // 确保之前的渲染任务已完全取消
-          if (renderTaskRef.current) {
-            renderTaskRef.current.cancel();
-            renderTaskRef.current = null;
-          }
-
-          // 使用正确的视口进行渲染
-          const renderViewport = devicePixelRatio > 1 ? 
-            page.getViewport({ scale: scale * devicePixelRatio }) : scaledViewport;
-            
-          renderTaskRef.current = page.render({
-            canvasContext: context,
-            viewport: renderViewport
-          });
-
-          renderTaskRef.current.promise
-            .then((result: any) => {
-              // 渲染完成后清理引用
-              renderTaskRef.current = null;
-              resolve(result);
-            })
-            .catch((error: Error) => {
-              // 清理引用
-              renderTaskRef.current = null;
-              // 只有在不是取消错误的情况下才拒绝
-              if (error?.name !== 'RenderingCancelledException') {
-                reject(error);
-              } else {
-                // 对于取消错误，我们静默处理
-                resolve(null);
-              }
-            });
-        } catch (error) {
-          renderTaskRef.current = null;
-          reject(error);
-        }
+      // 创建新的渲染任务
+      const currentRenderTask = page.render({
+        canvasContext: context,
+        viewport: scaledViewport
       });
 
+      // 保存当前渲染任务引用
+      renderTaskRef.current = currentRenderTask;
+
       // 等待渲染完成
-      await renderPromise;
+      try {
+        await currentRenderTask.promise;
+        // 只有在当前任务仍然是活跃任务时才清理
+        if (renderTaskRef.current === currentRenderTask) {
+          renderTaskRef.current = null;
+        }
+      } catch (error: any) {
+        // 清理引用
+        if (renderTaskRef.current === currentRenderTask) {
+          renderTaskRef.current = null;
+        }
+        
+        // 只有在不是取消错误的情况下才抛出
+        if (error?.name !== 'RenderingCancelledException') {
+          throw error;
+        }
+        // 对于取消错误，静默处理
+      }
       performanceMonitor.endMeasure('page_render', startTime);
 
       // 只有在渲染成功且组件仍然挂载时才提取文本
@@ -389,29 +354,25 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   // 窗口大小变化时重新渲染（仅在必要时）
   useEffect(() => {
     if (pdf && currentPage) {
-      // 取消之前的渲染任务
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
-      
+      // 取消之前的超时
       if (renderTimeoutRef.current) {
         clearTimeout(renderTimeoutRef.current);
       }
-      // 只在窗口宽度变化较大时才重新渲染
+      
+      // 防抖处理，避免频繁重新渲染
       renderTimeoutRef.current = setTimeout(() => {
-        // 检查是否需要重新渲染（容器宽度是否真的变化了）
+        // 检查是否需要重新渲染
         const canvas = canvasRef.current;
         if (canvas && canvas.parentElement) {
           const containerWidth = canvas.parentElement.clientWidth;
           const currentCanvasWidth = canvas.width;
           
-          // 只有当宽度差异超过 10px 时才重新渲染
-          if (Math.abs(currentCanvasWidth - containerWidth) > 10) {
+          // 只有当宽度差异超过 20px 时才重新渲染
+          if (Math.abs(currentCanvasWidth - containerWidth) > 20) {
             renderPage(currentPage);
           }
         }
-      }, 200);
+      }, 300); // 增加防抖时间
     }
   }, [windowWidth, pdf, currentPage, renderPage]);
 
@@ -443,22 +404,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         ref={canvasRef} 
         className="block"
         style={{ 
-          imageRendering: 'auto',
-          maxWidth: '100%',
-          width: 'auto',
-          height: 'auto',
           display: 'block',
-          objectFit: 'contain',
           margin: '0 auto',
           padding: 0,
           border: 'none',
           outline: 'none',
-          verticalAlign: 'top',
-          // 优化手机端显示
-          WebkitBackfaceVisibility: 'hidden',
-          backfaceVisibility: 'hidden',
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateZ(0)'
+          verticalAlign: 'top'
         } as React.CSSProperties}
       />
     </div>
