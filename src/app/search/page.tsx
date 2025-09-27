@@ -207,19 +207,6 @@ function SearchContent() {
     }
   }, [handleSelectPDF, selectedPDF]);
 
-  // 从URL参数获取搜索词
-  const searchQuery = searchParams?.get('q') || '';
-
-  // 当URL中的搜索词变化时，自动执行搜索
-  useEffect(() => {
-    if (!searchQuery || !textData || !Object.keys(textData).length) return;
-    
-    const searchResults = searchInAllSections(searchQuery, textData);
-    if (searchResults && searchResults.length > 0) {
-      handleSearchResultsUpdate(searchResults, searchQuery, 'global');
-    }
-  }, [searchQuery, textData, handleSearchResultsUpdate]);
-
   // 搜索函数
   const searchInAllSections = useCallback((query: string, sectionsText: Record<string, string>) => {
     const results: any[] = [];
@@ -262,6 +249,19 @@ function SearchContent() {
     
     return results;
   }, []);
+
+  // 从URL参数获取搜索词
+  const searchQuery = searchParams?.get('q') || '';
+
+  // 当URL中的搜索词变化时，自动执行搜索
+  useEffect(() => {
+    if (!searchQuery || !textData || !Object.keys(textData).length) return;
+    
+    const searchResults = searchInAllSections(searchQuery, textData);
+    if (searchResults && searchResults.length > 0) {
+      handleSearchResultsUpdate(searchResults, searchQuery, 'global');
+    }
+  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -467,7 +467,7 @@ function SearchContent() {
           </div>
 
           {(isSearchActive && sharedSearchResults.length > 0) && (
-            <div className={`w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[${getSearchResultsHeight()}]`}>
+            <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[480px] lg:h-screen">
               <div className="h-full flex flex-col">
                 <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center justify-between">
