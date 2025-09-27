@@ -90,18 +90,28 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         }
 
         const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        
+        // 在设置PDF之前重置状态
+        setPdf(null);
+        setTotalPages(0);
+        
+        // 设置新的PDF和页数
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
-        setLoading(false);
-
-        // 如果有待跳转的页面，现在执行
+        
+        // 处理待处理的页面跳转
         if (pendingPageRef.current !== null) {
           const targetPage = pendingPageRef.current;
           pendingPageRef.current = null;
           if (targetPage >= 1 && targetPage <= loadedPdf.numPages) {
             setCurrentPage(targetPage);
+          } else {
+            console.log('Pending page out of range:', { targetPage, totalPages: loadedPdf.numPages });
+            setCurrentPage(1);
           }
         }
+        
+        setLoading(false);
       } catch (err) {
         console.error('Failed to load PDF:', err);
         setError('Failed to load PDF file');
@@ -115,7 +125,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   // 渲染页面
   const renderPage = useCallback(async (pageNum: number) => {
-    if (!pdf || !canvasRef.current) return;
+    if (!pdf || !canvasRef.current) {
+      console.log('Skipping render - PDF or canvas not ready');
+      return;
+    }
+
+    // 验证页码是否有效
+    if (pageNum < 1 || pageNum > pdf.numPages) {
+      console.log('Invalid page number:', { pageNum, totalPages: pdf.numPages });
+      return;
+    }
 
     const startTime = performanceMonitor.startMeasure('page_render');
 
@@ -130,6 +149,11 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       if (renderTimeoutRef.current) {
         clearTimeout(renderTimeoutRef.current);
         renderTimeoutRef.current = null;
+      }
+
+      // 确保PDF对象和页码都有效
+      if (!pdf.getPage) {
+        throw new Error('PDF object is not properly initialized');
       }
 
       const page = await pdf.getPage(pageNum);
@@ -215,21 +239,30 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   // 页面跳转
   const goToPage = useCallback((page: number) => {
     const startTime = performanceMonitor.startMeasure('page_navigation');
-    console.log('PDFViewer goToPage called:', { page, totalPages, isValid: page >= 1 && page <= totalPages });
     
-    if (loading || totalPages === 0) {
+    // 如果PDF还在加载中，先存储目标页码
+    if (loading || !pdf) {
       console.log('PDF still loading, storing target page:', page);
       pendingPageRef.current = page;
       performanceMonitor.endMeasure('page_navigation', startTime, { pending: true });
       return;
     }
     
-    if (page >= 1 && page <= totalPages) {
+    // 获取当前PDF的实际页数
+    const currentTotalPages = pdf ? pdf.numPages : 0;
+    console.log('PDFViewer goToPage called:', { 
+      page, 
+      totalPages: currentTotalPages, 
+      isValid: page >= 1 && page <= currentTotalPages 
+    });
+    
+    if (page >= 1 && page <= currentTotalPages) {
       setCurrentPage(page);
-      onPageChange?.(page, totalPages);
+      setTotalPages(currentTotalPages); // 确保totalPages是最新的
+      onPageChange?.(page, currentTotalPages);
       performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
     } else {
-      console.log('Invalid page number:', { page, totalPages });
+      console.log('Invalid page number:', { page, currentTotalPages });
       performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
     }
   }, [loading, totalPages, onPageChange, performanceMonitor]);
