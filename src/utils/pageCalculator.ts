@@ -156,6 +156,8 @@ export class PageCalculator {
   }
 }
 
+// 已废弃，请使用 PageCalculator.fromPath 代替
 export function createPageCalculator(section: Section): PageCalculator {
+  console.warn('createPageCalculator is deprecated, please use PageCalculator.fromPath instead');
   return new PageCalculator(section);
 }

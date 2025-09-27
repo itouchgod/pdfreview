@@ -17,7 +17,7 @@ function SearchContent() {
   const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   const loadingLockRef = useRef<boolean>(false);
-  const pendingNavigationRef = useRef<{ path: string; page: number } | null>(null);
+  const pendingNavigationRef = useRef<{ path: string; page?: number } | null>(null);
   
   // 用于在header和sidebar之间共享搜索结果
   const [sharedSearchResults, setSharedSearchResults] = useState<any[]>([]);
@@ -77,10 +77,15 @@ function SearchContent() {
       if (pdfPath !== selectedPDF) {
         pendingNavigationRef.current = {
           path: pdfPath,
-          page: pageNumber || 1
+          page: pageNumber
         };
       }
       return;
+    }
+
+    // 如果是切换章节但没有指定页码，默认使用第1页
+    if (pdfPath !== selectedPDF && typeof pageNumber === 'undefined') {
+      pageNumber = 1;
     }
 
     const calculator = PageCalculator.fromPath(pdfPath);
@@ -182,8 +187,8 @@ function SearchContent() {
     }
   }, []);
 
-  // 章节切换
-  const handleSectionChange = useCallback((sectionPath: string) => {
+    // 章节切换
+  const handleSectionChange = useCallback((sectionPath: string, resetToFirstPage?: boolean) => {
     const calculator = PageCalculator.fromPath(sectionPath);
     if (!calculator) {
       console.error('Section not found:', sectionPath);
@@ -193,9 +198,10 @@ function SearchContent() {
     console.log('Handling section change:', {
       fromSection: selectedPDF,
       toSection: sectionPath,
-      section: section.name
+      section: section.name,
+      resetToFirstPage
     });
-    navigateToPDF(sectionPath);
+    navigateToPDF(sectionPath, resetToFirstPage ? 1 : undefined);
   }, [navigateToPDF, selectedPDF]);
 
   // URL更新
@@ -311,25 +317,14 @@ function SearchContent() {
           const calculator = PageCalculator.fromPath(firstResult.sectionPath);
           if (!calculator) return;
 
-          const section = calculator.getSection();
           const relativePage = calculator.getRelativePageFromResult(firstResult);
 
-          // 先切换到正确的章节
-          setSelectedPDF(firstResult.sectionPath);
-          setSelectedSectionName(section.name);
-          setTotalPages(calculator.getTotalPages());
-
-          // 等待章节切换完成后再跳转到指定页面
-          setTimeout(() => {
-            setCurrentPage(relativePage);
-            if (pdfViewerRef.current) {
-              pdfViewerRef.current.jumpToPage(relativePage);
-            }
-          }, 100);
+          // 直接切换到正确的章节和页面
+          navigateToPDF(firstResult.sectionPath, relativePage);
         });
       }
     }
-  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length]);
+  }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length, navigateToPDF]);
 
   // 键盘快捷键支持
   useEffect(() => {

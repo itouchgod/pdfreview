@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
-import { createPageCalculator } from '@/utils/pageCalculator';
-import { PDF_CONFIG } from '@/config/pdf';
+import { PageCalculator } from '@/utils/pageCalculator';
 import { PDFErrorBoundary } from './PDFErrorBoundary';
 import { CacheManager } from '@/lib/cache';
 import { PerformanceMonitor } from '@/lib/performance';
@@ -73,14 +72,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       const startTime = performanceMonitor.startMeasure('pdf_load');
       
       // 获取当前章节配置
-      const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
-      if (!section) {
+      const pageCalculator = PageCalculator.fromPath(pdfUrl);
+      if (!pageCalculator) {
         console.log('Section not found:', pdfUrl);
         setError('Invalid PDF section');
         return;
       }
-
-      const pageCalculator = createPageCalculator(section);
       
       // 立即重置所有状态
       setLoading(true);
@@ -158,13 +155,11 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     }
 
     // 验证页码是否有效
-    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
-    if (!section) {
+    const pageCalculator = PageCalculator.fromPath(pdfUrl);
+    if (!pageCalculator) {
       console.log('Section not found:', pdfUrl);
       return;
     }
-
-    const pageCalculator = createPageCalculator(section);
     if (!pageCalculator.isValidRelativePage(pageNum)) {
       console.log('Invalid page number:', { pageNum, totalPages: pdf.numPages });
       return;
@@ -248,19 +243,17 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         performanceMonitor.endMeasure('page_render', startTime, { error: true });
       }
     }
-  }, [pdf, windowWidth, onTextExtracted, performanceMonitor]);
+  }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl]);
 
   // 监听页面变化
   useEffect(() => {
     if (pdf && currentPage && !loading) {
       // 获取当前章节配置
-      const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
-      if (!section) {
+      const pageCalculator = PageCalculator.fromPath(pdfUrl);
+      if (!pageCalculator) {
         console.log('Section not found:', pdfUrl);
         return;
       }
-
-      const pageCalculator = createPageCalculator(section);
       if (!pageCalculator.isValidRelativePage(currentPage)) {
         console.log('Invalid page number:', { currentPage, totalPages });
         return;
@@ -281,7 +274,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         }
       };
     }
-  }, [pdf, currentPage, loading, renderPage, onPageChange, pdfUrl]);
+  }, [pdf, currentPage, loading, renderPage, onPageChange, pdfUrl, totalPages]);
 
   // 页面跳转
   const goToPage = useCallback((page: number) => {
@@ -296,15 +289,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     }
     
     // 获取当前章节配置
-    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfUrl);
-    if (!section) {
+    const pageCalculator = PageCalculator.fromPath(pdfUrl);
+    if (!pageCalculator) {
       console.log('Section not found:', pdfUrl);
       performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
       return;
     }
-
-    // 使用 pageCalculator 验证和处理页码
-    const pageCalculator = createPageCalculator(section);
     const currentTotalPages = pageCalculator.getTotalPages();
     
     if (pageCalculator.isValidRelativePage(page)) {
@@ -332,7 +322,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       onPageChange?.(validPage, currentTotalPages);
       performanceMonitor.endMeasure('page_navigation', startTime, { corrected: true });
     }
-  }, [loading, pdf, onPageChange, performanceMonitor]);
+  }, [loading, pdf, onPageChange, performanceMonitor, pdfUrl]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
