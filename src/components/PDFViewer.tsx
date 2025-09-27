@@ -69,18 +69,27 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       if (!pdfjsLib || !pdfUrl) return;
 
       const startTime = performanceMonitor.startMeasure('pdf_load');
+      
+      // 立即重置所有状态
       setLoading(true);
       setError(null);
+      setPdf(null);
+      setTotalPages(0);
+      setCurrentPage(1);
 
       try {
+        console.log('Starting to load PDF:', pdfUrl);
+        
         // 尝试从缓存加载
         const cachedPDF = await cacheManager.get<ArrayBuffer>(`pdf:${pdfUrl}`);
         let pdfData: ArrayBuffer;
 
         if (cachedPDF) {
+          console.log('Using cached PDF data');
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: true });
           pdfData = cachedPDF;
         } else {
+          console.log('Fetching PDF from network');
           // 从网络加载
           const response = await fetch(pdfUrl);
           pdfData = await response.arrayBuffer();
@@ -89,11 +98,9 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: false });
         }
 
+        console.log('Loading PDF document');
         const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        
-        // 在设置PDF之前重置状态
-        setPdf(null);
-        setTotalPages(0);
+        console.log('PDF loaded successfully:', { numPages: loadedPdf.numPages });
         
         // 设置新的PDF和页数
         setPdf(loadedPdf);
@@ -104,6 +111,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           const targetPage = pendingPageRef.current;
           pendingPageRef.current = null;
           if (targetPage >= 1 && targetPage <= loadedPdf.numPages) {
+            console.log('Jumping to pending page:', targetPage);
             setCurrentPage(targetPage);
           } else {
             console.log('Pending page out of range:', { targetPage, totalPages: loadedPdf.numPages });
@@ -111,10 +119,17 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           }
         }
         
+        // 确保在设置loading=false之前所有状态都已更新
+        await new Promise(resolve => setTimeout(resolve, 100));
         setLoading(false);
+        console.log('PDF loading completed');
+        
       } catch (err) {
         console.error('Failed to load PDF:', err);
         setError('Failed to load PDF file');
+        setPdf(null);
+        setTotalPages(0);
+        setCurrentPage(1);
         setLoading(false);
         performanceMonitor.endMeasure('pdf_load', startTime, { error: true });
       }

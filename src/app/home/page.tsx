@@ -81,14 +81,33 @@ export default function HomePage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search name, code..."
-                    className="w-full pl-6 pr-14 py-4 text-lg bg-white rounded-full border border-gray-300 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
+                    className="w-full pl-6 pr-24 py-4 text-lg bg-white rounded-full border border-gray-300 focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
                   />
-                  <button
-                    type="submit"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-2 transition-all duration-200"
-                  >
-                    <Search className="h-6 w-6" />
-                  </button>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                    {/* 清除按钮 */}
+                    {searchTerm && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setSearchTerm('')}
+                          className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        {/* 分隔线 */}
+                        <div className="h-6 w-px bg-gray-200"></div>
+                      </>
+                    )}
+                    {/* 搜索按钮 */}
+                    <button
+                      type="submit"
+                      className="p-2 text-gray-500 hover:text-gray-700 transition-all duration-200"
+                    >
+                      <Search className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </form>

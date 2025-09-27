@@ -122,13 +122,33 @@ export default function SearchResultsOnly({
     
     // 如果需要切换章节
     if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
+      console.log('Switching section for search result:', firstResult.sectionPath);
       onSectionChange(firstResult.sectionPath, false);
-      // 延迟跳转页面，等待PDF加载
-      setTimeout(() => {
-        if (onPageJump) {
-          onPageJump(relativePage);
+      
+      // 使用更长的延迟和重试机制来确保PDF加载完成
+      let retryCount = 0;
+      const maxRetries = 5;
+      const checkAndJump = () => {
+        if (retryCount >= maxRetries) {
+          console.log('Max retries reached, giving up on page jump');
+          return;
         }
-      }, 500);
+        
+        const pdfElement = document.querySelector('canvas');
+        if (pdfElement) {
+          console.log('PDF canvas found, jumping to page:', relativePage);
+          if (onPageJump) {
+            onPageJump(relativePage);
+          }
+        } else {
+          console.log('PDF not ready yet, retrying...', { retryCount });
+          retryCount++;
+          setTimeout(checkAndJump, 300);
+        }
+      };
+      
+      // 开始第一次检查
+      setTimeout(checkAndJump, 300);
     } else {
       // 直接跳转页面
       if (onPageJump) {
