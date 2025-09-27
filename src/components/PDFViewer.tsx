@@ -322,10 +322,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
+      <div className="flex items-center justify-center h-96 bg-muted rounded-lg">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading IMPA data...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading IMPA data...</p>
         </div>
       </div>
     );
@@ -333,10 +333,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96 bg-red-50 rounded-lg">
+      <div className="flex items-center justify-center h-96 bg-destructive/10 rounded-lg">
         <div className="text-center">
-          <FileText className="h-8 w-8 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">{error}</p>
+          <FileText className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">{error}</p>
         </div>
       </div>
     );

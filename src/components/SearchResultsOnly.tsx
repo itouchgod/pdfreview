@@ -197,24 +197,24 @@ export default function SearchResultsOnly({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* 导航控制 - 桌面端显示，手机端隐藏（因为手机端有专门的标题栏） */}
-      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-gray-50 border-b border-gray-200">
+      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-muted border-b border-border">
         <div className="flex items-center space-x-3">
           <button
             onClick={goToPrevious}
             disabled={highlightIndex === 0}
-            className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-sm font-medium text-gray-700 px-3 py-1 bg-white rounded-full shadow-sm">
+          <span className="text-sm font-medium text-card-foreground px-3 py-1 bg-card rounded-full shadow-sm">
             {highlightIndex + 1} / {groupedResults.length}
           </span>
           <button
             onClick={goToNext}
             disabled={highlightIndex === groupedResults.length - 1}
-            className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -229,8 +229,8 @@ export default function SearchResultsOnly({
             onClick={() => goToResult(index)}
             className={`group cursor-pointer transition-all duration-200 ${
               index === highlightIndex 
-                ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm' 
-                : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+                ? 'bg-primary/10 border-l-4 border-l-primary shadow-sm' 
+                : 'hover:bg-accent border-l-4 border-l-transparent'
             }`}
           >
             <div className="px-3 sm:px-4 py-2 sm:py-3">
@@ -239,8 +239,8 @@ export default function SearchResultsOnly({
                 <div className="flex-shrink-0">
                   <span className={`inline-flex items-center justify-center w-10 h-6 sm:w-14 sm:h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
                     index === highlightIndex 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600'
+                      ? 'bg-primary text-primary-foreground shadow-md' 
+                      : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'
                   }`}>
                     P{result.page}
                   </span>
@@ -250,8 +250,8 @@ export default function SearchResultsOnly({
                 <div className="flex-1 min-w-0">
                   <div className={`text-xs sm:text-sm font-medium transition-colors duration-200 ${
                     index === highlightIndex 
-                      ? 'text-blue-900' 
-                      : 'text-gray-900 group-hover:text-gray-700'
+                      ? 'text-primary-foreground' 
+                      : 'text-card-foreground group-hover:text-foreground'
                   }`}>
                     {/* 手机端显示更紧凑的章节名称 */}
                     <div className="block sm:hidden">
@@ -271,8 +271,8 @@ export default function SearchResultsOnly({
                   <div className="flex-shrink-0">
                     <span className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs font-medium transition-all duration-200 ${
                       index === highlightIndex 
-                        ? 'bg-blue-200 text-blue-800' 
-                        : 'bg-gray-200 text-gray-600 group-hover:bg-green-200 group-hover:text-green-800'
+                        ? 'bg-primary/20 text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground'
                     }`}>
                       {result.count}
                     </span>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
+import ThemeToggle from '@/components/ThemeToggle';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -309,8 +310,8 @@ function SearchContent() {
   }, [currentPage, totalPages]);
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-background">
+      <header className="bg-background border-b border-border">
         <div className="max-w-full mx-auto px-4 py-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <Link href="/home" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
@@ -342,6 +343,11 @@ function SearchContent() {
                 onSearchResultsUpdate={handleSearchResultsUpdate}
               />
             </div>
+            
+            {/* 主题切换按钮 */}
+            <div className="flex-shrink-0">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
@@ -351,7 +357,7 @@ function SearchContent() {
           isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-6' : ''
         }`}>
           <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
-            <div className="px-6 py-4 border-b border-gray-100 bg-white">
+            <div className="px-6 py-4 border-b border-border bg-card">
               <div className="flex items-center">
                 <div className="flex items-center">
                   <div className="relative">
@@ -364,7 +370,7 @@ function SearchContent() {
                           navigateToPDF(section.filePath, 1);
                         }
                       }}
-                      className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-gray-800 hover:text-gray-900 focus:text-gray-900 min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
+                      className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base font-medium text-card-foreground hover:text-foreground focus:text-foreground min-w-0 max-w-full pr-8 py-2 transition-colors duration-200"
                     >
                       {PDF_CONFIG.sections.map((section) => (
                         <option key={section.name} value={section.filePath}>
@@ -373,7 +379,7 @@ function SearchContent() {
                       ))}
                     </select>
                     <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
@@ -382,17 +388,17 @@ function SearchContent() {
               </div>
             </div>
               
-            <div className="p-1 flex justify-center relative bg-white">
+            <div className="p-1 flex justify-center relative bg-background">
               {isSearchActive && sharedSearchTerm && !hasSearchResults ? (
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                     </div>
-                    <p className="text-base text-gray-600 font-medium mb-1">No results found</p>
-                    <p className="text-sm text-gray-500">Try different keywords</p>
+                    <p className="text-base text-muted-foreground font-medium mb-1">No results found</p>
+                    <p className="text-sm text-muted-foreground/70">Try different keywords</p>
                   </div>
                 </div>
               ) : (
@@ -409,16 +415,16 @@ function SearchContent() {
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/95 hover:bg-white border border-gray-100 hover:border-blue-200 rounded-2xl shadow-lg hover:shadow-blue-100/50 flex items-center justify-center text-gray-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
+                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
                       title="Previous Page (↑ or ←)"
                     >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:-translate-y-1 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:-translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
                     
-                    <div className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-blue-600/95 backdrop-blur-sm hover:bg-blue-700 rounded-2xl shadow-lg hover:shadow-blue-200/50 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-pointer">
-                      <span className="text-xs sm:text-xs lg:text-xs font-bold text-white tracking-wide">
+                    <div className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-primary/95 backdrop-blur-sm hover:bg-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-pointer">
+                      <span className="text-xs sm:text-xs lg:text-xs font-bold text-primary-foreground tracking-wide">
                         {(() => {
                           const calculator = PageCalculator.fromPath(selectedPDF);
                           if (!calculator) return currentPage;
@@ -430,25 +436,25 @@ function SearchContent() {
                     <button
                       onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/95 hover:bg-white border border-gray-100 hover:border-blue-200 rounded-2xl shadow-lg hover:shadow-blue-100/50 flex items-center justify-center text-gray-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
+                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
                       title="Next Page (↓ or →)"
                     >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:translate-y-1 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     
-                    <div className="hidden lg:block text-xs text-gray-500 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    <div className="hidden lg:block text-xs text-muted-foreground text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                       ↑↓ or ←→ to navigate
                     </div>
                   </div>
                   
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 sm:hidden">
+                  <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-40 sm:hidden">
                     <div className="flex items-center justify-between px-4 py-3">
                       <button
                         onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                         disabled={currentPage <= 1}
-                        className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200"
+                        className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -457,8 +463,8 @@ function SearchContent() {
                       </button>
                       
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">Page</span>
-                        <span className="px-3 py-1 bg-blue-600 text-white text-sm font-bold rounded-lg">
+                        <span className="text-sm text-muted-foreground">Page</span>
+                        <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-lg">
                         {(() => {
                           const calculator = PageCalculator.fromPath(selectedPDF);
                           if (!calculator) return currentPage;
@@ -470,7 +476,7 @@ function SearchContent() {
                       <button
                         onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                         disabled={currentPage >= totalPages}
-                        className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200"
+                        className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                       >
                         <span className="text-sm font-medium">Next</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -479,8 +485,8 @@ function SearchContent() {
                       </button>
                     </div>
                     
-                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-                      <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
+                    <div className="px-4 py-2 bg-muted border-t border-border">
+                      <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
                         <Image 
                           src="/brand-icon.svg" 
                           alt="IMPA Logo" 
@@ -499,29 +505,29 @@ function SearchContent() {
           {(isSearchActive && sharedSearchResults.length > 0 && sharedSearchTerm) && (
             <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[480px] lg:h-screen">
               <div className="h-full flex flex-col">
-                <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="lg:hidden px-4 py-3 bg-muted border-b border-border">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-700">
+                    <h3 className="text-sm font-medium text-card-foreground">
                       Search Results ({sharedSearchResults.length})
                     </h3>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={goToPreviousResult}
                         disabled={currentResultIndex === 0}
-                        className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         title="Previous result"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
                       </button>
-                      <span className="text-xs text-gray-500 px-2 py-1 bg-white rounded-full">
+                      <span className="text-xs text-muted-foreground px-2 py-1 bg-card rounded-full">
                         {currentResultIndex + 1} / {sharedSearchResults.length}
                       </span>
                       <button
                         onClick={goToNextResult}
                         disabled={currentResultIndex === sharedSearchResults.length - 1}
-                        className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         title="Next result"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

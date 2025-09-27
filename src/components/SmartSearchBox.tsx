@@ -251,7 +251,7 @@ export default function SmartSearchBox({
           }}
           onKeyPress={handleKeyPress}
           placeholder="Search IMPA codes, names, or descriptions..."
-          className="w-full pl-4 pr-20 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:shadow-lg focus:border-transparent transition-all duration-200 hover:shadow-md"
+          className="w-full pl-4 pr-20 py-3 bg-card border border-border rounded-full focus:outline-none focus:shadow-lg focus:border-primary transition-all duration-200 hover:shadow-md text-card-foreground placeholder:text-muted-foreground"
           disabled={isSearching}
         />
         
@@ -270,7 +270,7 @@ export default function SmartSearchBox({
                   onUpdateURL({ query: '' });
                 }
               }}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-200"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -279,16 +279,16 @@ export default function SmartSearchBox({
           )}
           
           {/* 分隔线 */}
-          {searchTerm && <div className="h-6 w-px bg-gray-200"></div>}
+          {searchTerm && <div className="h-6 w-px bg-border"></div>}
           
           {/* 搜索按钮 */}
           <button
             onClick={handleSearch}
             disabled={isSearching || !searchTerm.trim()}
-            className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-2 text-muted-foreground hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             {isSearching ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-muted-foreground border-t-primary"></div>
             ) : (
               <Search className="h-5 w-5" />
             )}

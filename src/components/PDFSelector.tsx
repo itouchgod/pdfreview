@@ -42,37 +42,37 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Selector Button - Enhanced Style with Mobile Optimization */}
+      {/* Selector Button - Enhanced Style with Dark Mode Support */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center space-x-3 px-3 sm:px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-0 touch-manipulation active:scale-95"
+        className="group flex items-center space-x-3 px-3 sm:px-4 py-3 bg-card border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all duration-200 min-w-0 touch-manipulation active:scale-95"
       >
-        <div className="flex-shrink-0 p-1.5 sm:p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+        <div className="flex-shrink-0 p-1.5 sm:p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-sm font-medium text-gray-900 truncate">
+          <div className="text-sm font-medium text-card-foreground truncate">
             {currentSection ? (currentSection.title || currentSection.name) : '选择PDF章节'}
           </div>
           {currentSection && (
-            <div className="text-xs text-gray-500 truncate">
+            <div className="text-xs text-muted-foreground truncate">
               <span className="hidden sm:inline">{currentSection.description} • </span>
               {currentSection.size}
             </div>
           )}
         </div>
-        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Dropdown Options - Enhanced Design with Mobile Optimization */}
+      {/* Dropdown Options - Enhanced Design with Dark Mode Support */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-3 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto w-full sm:min-w-80 sm:max-w-md">
+        <div className="absolute top-full left-0 mt-3 bg-popover border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto w-full sm:min-w-80 sm:max-w-md animate-slide-in">
           <div className="p-2">
             {Object.entries(groupedSections).map(([category, sections]) => (
               <div key={category} className="mb-4 last:mb-0">
                 {/* Category Header */}
                 <div className="px-3 py-2 mb-2">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {category}
                   </h3>
                 </div>
@@ -91,28 +91,28 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
                         }}
                         className={`w-full flex items-start space-x-3 p-3 text-left rounded-lg transition-all duration-150 touch-manipulation ${
                           isSelected 
-                            ? 'bg-blue-50 border border-blue-200 text-blue-900' 
-                            : 'hover:bg-gray-50 text-gray-900 hover:border-gray-200 border border-transparent active:bg-gray-100'
+                            ? 'bg-primary/10 border border-primary/20 text-primary-foreground' 
+                            : 'hover:bg-accent text-popover-foreground hover:border-border border border-transparent active:bg-accent/80'
                         }`}
                       >
                         <div className={`flex-shrink-0 p-1.5 rounded-md transition-colors ${
-                          isSelected ? 'bg-blue-100' : 'bg-gray-100'
+                          isSelected ? 'bg-primary/20' : 'bg-muted'
                         }`}>
-                          <FileText className={`h-4 w-4 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
+                          <FileText className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className={`font-medium text-sm leading-tight ${
-                            isSelected ? 'text-blue-900' : 'text-gray-900'
+                            isSelected ? 'text-primary-foreground' : 'text-popover-foreground'
                           }`}>
                             {section.title || section.name}
                           </div>
                           <div className={`text-xs mt-1 leading-tight ${
-                            isSelected ? 'text-blue-600' : 'text-gray-500'
+                            isSelected ? 'text-primary/80' : 'text-muted-foreground'
                           }`}>
                             {section.description}
                           </div>
                           <div className={`text-xs mt-1 ${
-                            isSelected ? 'text-blue-500' : 'text-gray-400'
+                            isSelected ? 'text-primary/70' : 'text-muted-foreground/70'
                           }`}>
                             <span className="hidden sm:inline">{section.size} • </span>
                             第 {section.startPage}-{section.endPage} 页
@@ -120,7 +120,7 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
                         </div>
                         {isSelected && (
                           <div className="flex-shrink-0 p-1">
-                            <Check className="h-4 w-4 text-blue-600" />
+                            <Check className="h-4 w-4 text-primary" />
                           </div>
                         )}
                       </button>

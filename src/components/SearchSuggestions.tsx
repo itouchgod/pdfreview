@@ -181,42 +181,42 @@ export default function SearchSuggestions({ searchTerm, onSelectSection }: Searc
   }
 
   return (
-    <div className="mt-4 bg-blue-50 rounded-lg p-4">
+    <div className="mt-4 bg-primary/10 rounded-lg p-4">
       <div className="flex items-center mb-3">
-        <Search className="h-4 w-4 text-blue-600 mr-2" />
-        <h4 className="text-sm font-medium text-blue-900">搜索建议</h4>
+        <Search className="h-4 w-4 text-primary mr-2" />
+        <h4 className="text-sm font-medium text-primary-foreground">搜索建议</h4>
       </div>
       
       <div className="space-y-2">
         {suggestions.map((suggestion, index) => (
           <div
             key={index}
-            className="flex items-center justify-between p-2 bg-white rounded border border-blue-200 hover:bg-blue-50 cursor-pointer transition-colors"
+            className="flex items-center justify-between p-2 bg-card rounded border border-border hover:bg-accent cursor-pointer transition-colors"
             onClick={() => onSelectSection(suggestion.section.title, suggestion.section.filePath)}
           >
             <div className="flex items-center space-x-3">
-              <FileText className="h-4 w-4 text-blue-600" />
+              <FileText className="h-4 w-4 text-primary" />
               <div>
-                <div className="text-sm font-medium text-gray-800">
+                <div className="text-sm font-medium text-card-foreground">
                   {suggestion.section.title}
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-muted-foreground">
                   {suggestion.section.description}
                 </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 第{suggestion.section.startPage}-{suggestion.section.endPage}页
               </span>
-              <ArrowRight className="h-3 w-3 text-blue-600" />
+              <ArrowRight className="h-3 w-3 text-primary" />
             </div>
           </div>
         ))}
       </div>
       
-      <div className="mt-3 text-xs text-blue-700">
+      <div className="mt-3 text-xs text-primary/80">
         💡 点击建议可快速跳转到相关章节进行搜索
       </div>
     </div>
