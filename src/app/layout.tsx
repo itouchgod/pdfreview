@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PDFTextProvider } from "@/contexts/PDFTextContext";
 import Script from 'next/script';
+import { headers } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,11 +37,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+// 避免被静态化缓存
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 🔧 关键修复：headers() 需要 await
+  const h = await headers();
+  const nonce = h.get("x-nonce") || "";
+
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
@@ -56,10 +64,11 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/icon-48x48.png" />
         <link rel="shortcut icon" href="/icon-48x48.png" type="image/png" />
         
-        {/* 注册 Service Worker */}
+        {/* 注册 Service Worker - 使用 nonce */}
         <Script
           id="register-sw"
           strategy="afterInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
@@ -78,7 +87,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body data-nonce={nonce}>
         <PDFTextProvider>
           {children}
         </PDFTextProvider>

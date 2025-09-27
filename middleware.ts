@@ -1,38 +1,48 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from "next/server";
+import crypto from "crypto";
 
-export function middleware(request: NextRequest) {
-  // 获取响应头
-  const response = NextResponse.next();
-  
-  // 定义 CSP
-  const csp = [
-    // 默认配置
-    "default-src 'self'",
-    // 允许 PDF.js 使用 worker
-    "worker-src 'self' blob:",
-    // 允许 PDF.js 执行必要的脚本
-    "script-src 'self' 'unsafe-eval' blob:",
-    // 允许内联样式
-    "style-src 'self' 'unsafe-inline'",
-    // 允许图片
-    "img-src 'self' blob: data:",
-    // 允许 PDF 文件
-    "object-src 'self' blob:",
-    // 允许连接到自己
-    "connect-src 'self'",
-    // 字体
-    "font-src 'self'",
-  ].join('; ');
+export function middleware(req: NextRequest) {
+  const nonce = crypto.randomBytes(16).toString("base64");
 
-  // 设置 CSP header
-  response.headers.set('Content-Security-Policy', csp);
-  
-  // 设置其他安全相关的 headers
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
-  return response;
+  const res = NextResponse.next({
+    request: { headers: req.headers },
+  });
+
+  // Dev 环境先简化 CSP，避免 Next 的内部脚本因为 strict-dynamic 被拦
+  const isProd = process.env.NODE_ENV === "production";
+
+  const cspParts = [
+    `default-src 'self'`,
+    `base-uri 'self'`,
+    `object-src 'none'`,
+    // 生产可考虑改回含 'strict-dynamic' 的版本
+    isProd
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' blob:`
+      : `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' blob:`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob:`,
+    `font-src 'self' data:`,
+    `connect-src 'self' https: ws:`,
+    `frame-ancestors 'self'`,
+  ];
+
+  res.headers.set("x-nonce", nonce);
+  res.headers.set("Content-Security-Policy", cspParts.join("; "));
+
+  return res;
 }
+
+// 配置中间件匹配
+export const config = {
+  matcher: [
+    /*
+     * 匹配所有请求路径，除了：
+     * - api 路由 (/api/*)
+     * - 静态文件 (*.png, *.jpg, etc.)
+     * - _next/static (Next.js 静态文件)
+     * - _next/image (Next.js 优化的图片)
+     * - favicon.ico
+     */
+    '/((?!api|_next/static|_next/image|.*\\..*|favicon.ico).*)',
+  ],
+};
