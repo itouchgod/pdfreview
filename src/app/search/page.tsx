@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
@@ -298,7 +298,7 @@ function SearchContent() {
         }
       }
     }
-  }, [handleSelectPDF, setSharedSearchResults, setSharedSearchTerm, setSharedSearchMode, setHasSearchResults, setIsSearchActive, setCurrentResultIndex, setTargetPage, selectedPDF]);
+  }, [handleSelectPDF, setSharedSearchResults, setSharedSearchTerm, setSharedSearchMode, setHasSearchResults, setIsSearchActive, setCurrentResultIndex, setTargetPage, selectedPDF, targetPage]);
 
   // 从URL参数获取搜索词
   const searchQuery = searchParams.get('q') || '';
