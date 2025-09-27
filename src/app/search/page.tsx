@@ -227,7 +227,7 @@ function SearchContent() {
   //   setIsSearchCollapsed(!isSearchCollapsed);
   // };
 
-  const handleSearchResultsUpdate = (results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
+  const handleSearchResultsUpdate = useCallback((results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
     console.log('handleSearchResultsUpdate called:', { 
       resultsCount: results.length, 
       searchTerm, 
@@ -298,7 +298,7 @@ function SearchContent() {
         }
       }
     }
-  };
+  }, [handleSelectPDF, setSharedSearchResults, setSharedSearchTerm, setSharedSearchMode, setHasSearchResults, setIsSearchActive, setCurrentResultIndex, setTargetPage, selectedPDF]);
 
   // 从URL参数获取搜索词
   const searchQuery = searchParams.get('q') || '';

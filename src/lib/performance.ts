@@ -25,7 +25,7 @@ export class PerformanceMonitor {
     return PerformanceMonitor.instance;
   }
 
-  startMeasure(_category: string, _metadata?: Record<string, any>): number {
+  startMeasure(/* category */: string, /* metadata */?: Record<string, any>): number {
     return performance.now();
   }
 

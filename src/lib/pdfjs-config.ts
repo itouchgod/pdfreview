@@ -1,4 +1,3 @@
-// 使用 * as 导入所有类型
 import type * as PDFJS from 'pdfjs-dist';
 
 let pdfjsLib: typeof PDFJS | null = null;
@@ -10,13 +9,13 @@ export async function getPDFJS(): Promise<typeof PDFJS> {
 
   try {
     // 使用动态导入加载 PDF.js
-    const pdfjs = await import('pdfjs-dist/webpack');
+    const pdfjs = await import('pdfjs-dist/webpack') as typeof PDFJS;
     
     // 配置 worker
     if (typeof window !== 'undefined') {
       // 使用动态导入加载 worker
-      const worker = await import('pdfjs-dist/build/pdf.worker.entry');
-      pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+      const { default: workerSrc } = await import('pdfjs-dist/build/pdf.worker.entry');
+      pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
     }
 
     pdfjsLib = pdfjs;

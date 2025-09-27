@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { CacheManager } from '@/lib/cache';
 import { PerformanceMonitor } from '@/lib/performance';
