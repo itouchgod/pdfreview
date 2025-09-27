@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
+import { PDFErrorBoundary } from './PDFErrorBoundary';
+import { CacheManager } from '@/lib/cache';
+import { PerformanceMonitor } from '@/lib/performance';
 
 interface PDFViewerProps {
   pdfUrl: string;
@@ -18,24 +21,20 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [pdf, setPdf] = useState<unknown>(null);
-  const [currentPage, setCurrentPage] = useState(initialPage); // 使用传入的初始页面
-  
-  // 当initialPage变化时，更新currentPage
-  const lastInitialPageRef = useRef(initialPage);
-  useEffect(() => {
-    if (initialPage && initialPage !== lastInitialPageRef.current) {
-      lastInitialPageRef.current = initialPage;
-      setCurrentPage(initialPage);
-    }
-  }, [initialPage]);
+  const pendingPageRef = useRef<number | null>(null);
+  const [pdf, setPdf] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
-  // Handle window resize for responsive PDF scaling
+  // 初始化性能监控和缓存
+  const performanceMonitor = PerformanceMonitor.getInstance();
+  const cacheManager = CacheManager.getInstance();
+
+  // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -45,314 +44,210 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Dynamically load PDF.js
+  // 动态加载 PDF.js
   useEffect(() => {
-    const loadPdfjs = async () => {
+    const loadPDFJS = async () => {
+      const startTime = performanceMonitor.startMeasure('pdfjs_load');
       try {
-        const pdfjs = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-        
-        // Add global error handling
-        window.addEventListener('unhandledrejection', (event) => {
-          if (event.reason && event.reason.message && 
-              event.reason.message.includes('message channel closed')) {
-            console.warn('Browser extension communication error, ignored:', event.reason.message);
-            event.preventDefault(); // Prevent error display
-          }
-        });
-        
+        const { getPDFJS } = await import('@/lib/pdfjs-config');
+        const pdfjs = await getPDFJS();
         setPdfjsLib(pdfjs);
+        performanceMonitor.endMeasure('pdfjs_load', startTime);
       } catch (err) {
-        setError('Failed to load PDF.js: ' + (err as Error).message);
-        setLoading(false);
+        console.error('Failed to load PDF.js:', err);
+        setError('Failed to load PDF viewer');
+        performanceMonitor.endMeasure('pdfjs_load', startTime, { error: true });
       }
     };
-    
-    loadPdfjs();
-  }, []);
 
-  const extractAllText = useCallback(async (pdfDoc: any) => {
-    let fullText = '';
-    
-    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+    loadPDFJS();
+  }, [performanceMonitor]);
+
+  // 加载 PDF 文件
+  useEffect(() => {
+    const loadPDF = async () => {
+      if (!pdfjsLib || !pdfUrl) return;
+
+      const startTime = performanceMonitor.startMeasure('pdf_load');
+      setLoading(true);
+      setError(null);
+
       try {
-        const page = await pdfDoc.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += `\n--- 第 ${pageNum} 页 ---\n${pageText}\n`;
+        // 尝试从缓存加载
+        const cachedPDF = await cacheManager.get<ArrayBuffer>(`pdf:${pdfUrl}`);
+        let pdfData: ArrayBuffer;
+
+        if (cachedPDF) {
+          performanceMonitor.endMeasure('pdf_load', startTime, { cached: true });
+          pdfData = cachedPDF;
+        } else {
+          // 从网络加载
+          const response = await fetch(pdfUrl);
+          pdfData = await response.arrayBuffer();
+          // 缓存 PDF 数据
+          await cacheManager.set(`pdf:${pdfUrl}`, pdfData);
+          performanceMonitor.endMeasure('pdf_load', startTime, { cached: false });
+        }
+
+        const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        setPdf(loadedPdf);
+        setTotalPages(loadedPdf.numPages);
+        setLoading(false);
+
+        // 如果有待跳转的页面，现在执行
+        if (pendingPageRef.current !== null) {
+          const targetPage = pendingPageRef.current;
+          pendingPageRef.current = null;
+          if (targetPage >= 1 && targetPage <= loadedPdf.numPages) {
+            setCurrentPage(targetPage);
+          }
+        }
       } catch (err) {
-        console.error(`提取第 ${pageNum} 页文本失败:`, err);
-      }
-    }
-    
-    onTextExtracted?.(fullText);
-  }, [onTextExtracted]);
-
-  const renderPageWithPDF = useCallback(async (pdfDoc: any, pageNum: number) => {
-    if (!pdfDoc || !pdfjsLib) return;
-    
-    // Validate page number using actual PDF document pages
-    if (pageNum < 1 || pageNum > pdfDoc.numPages) {
-      console.log('Invalid page number:', { pageNum, totalPages: pdfDoc.numPages });
-      return;
-    }
-    
-    try {
-      // Cancel previous render task and wait for it to complete
-      if (renderTaskRef.current) {
-        try {
-          renderTaskRef.current.cancel();
-        } catch {
-          // Ignore cancellation errors
-        }
-        renderTaskRef.current = null;
-      }
-      
-      // Wait a bit to ensure previous task is fully cancelled
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      const page = await pdfDoc.getPage(pageNum);
-      // Calculate scale to fit container width with better mobile support
-      const containerWidth = canvasRef.current?.parentElement?.clientWidth || 
-                           canvasRef.current?.parentElement?.parentElement?.clientWidth || 
-                           800;
-      const viewport = page.getViewport({ scale: 1.0 });
-      
-      // Get device pixel ratio for high-DPI displays
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      
-      // Calculate scale to fit container width while maintaining aspect ratio
-      // This ensures the PDF maintains its original proportions
-      let scale = containerWidth / viewport.width;
-      
-      // Apply reasonable scaling limits to prevent distortion
-      const isMobile = windowWidth < 768;
-      const isTablet = windowWidth >= 768 && windowWidth < 1024;
-      
-      if (isMobile) {
-        // For mobile, use a more conservative scale to prevent stretching
-        scale = Math.min(scale, 1.2);
-      } else if (isTablet) {
-        // For tablet, moderate scale
-        scale = Math.min(scale, 1.5);
-      } else {
-        // For desktop, allow larger scale but still maintain proportions
-        scale = Math.min(scale, 2.0);
-      }
-      
-      // Ensure minimum scale for readability
-      scale = Math.max(scale, 0.3);
-      
-      // Debug logging removed for production
-      
-      const scaledViewport = page.getViewport({ scale });
-      
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        
-        if (!context) return;
-        
-        // Clear canvas completely
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Set new dimensions based on scaled viewport with high-DPI support
-        const displayWidth = scaledViewport.width;
-        const displayHeight = scaledViewport.height;
-        
-        // Set the actual canvas size in device pixels (for high-DPI)
-        canvas.width = displayWidth * devicePixelRatio;
-        canvas.height = displayHeight * devicePixelRatio;
-        
-        // Set the CSS size in logical pixels
-        canvas.style.width = displayWidth + 'px';
-        canvas.style.height = displayHeight + 'px';
-        
-        // Scale the drawing context to match device pixel ratio
-        context.scale(devicePixelRatio, devicePixelRatio);
-        
-        // Clear canvas
-        context.clearRect(0, 0, displayWidth, displayHeight);
-        
-        const renderContext = {
-          canvasContext: context,
-          viewport: scaledViewport,
-        };
-        
-        // Create new render task and save reference
-        const renderTask = page.render(renderContext);
-        renderTaskRef.current = renderTask;
-        
-        await renderTask.promise;
-        renderTaskRef.current = null;
-        
-        // Highlight functionality removed
-      }
-    } catch (err: any) {
-      // 忽略渲染取消异常，这是正常的
-      if (err.name !== 'RenderingCancelledException') {
-        console.error('渲染页面失败:', err);
-      }
-    }
-  }, [pdfjsLib, totalPages]);
-
-  const loadPDF = useCallback(async () => {
-    if (!pdfjsLib) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Cancel previous render task
-      if (renderTaskRef.current) {
-        try {
-          renderTaskRef.current.cancel();
-        } catch {
-          // 忽略取消渲染时的错误
-        }
-        renderTaskRef.current = null;
-      }
-      
-      const loadingTask = pdfjsLib.getDocument(pdfUrl);
-      const pdfDoc = await loadingTask.promise;
-      
-      setPdf(pdfDoc);
-      setTotalPages(pdfDoc.numPages);
-      // Don't reset currentPage to avoid jumping to first page when switching sections
-      
-      // Extract text from all pages
-      await extractAllText(pdfDoc);
-      
-    } catch (err) {
-      setError('Failed to load PDF: ' + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [pdfjsLib, pdfUrl, extractAllText]);
-
-  useEffect(() => {
-    if (pdfjsLib && pdfUrl) {
-      // Reset state but don't reset currentPage to avoid jumping to first page
-      setPdf(null);
-      setTotalPages(0);
-      setError(null);
-      setLoading(true);
-      loadPDF();
-    }
-  }, [pdfjsLib, pdfUrl, loadPDF]);
-
-  const renderPage = useCallback(async (pageNum: number) => {
-    if (!pdf || !pdfjsLib) return;
-    
-    // Clear any pending render timeout
-    if (renderTimeoutRef.current) {
-      clearTimeout(renderTimeoutRef.current);
-    }
-    
-    // Debounce rendering to avoid rapid successive calls
-    renderTimeoutRef.current = setTimeout(async () => {
-      await renderPageWithPDF(pdf, pageNum);
-    }, 50);
-  }, [pdf, pdfjsLib, renderPageWithPDF]);
-
-
-  // Highlight functionality removed
-
-  useEffect(() => {
-    if (pdf && currentPage && !loading) {
-      renderPage(currentPage);
-      // 通知父组件页面变化
-      onPageChange?.(currentPage, totalPages);
-    }
-  }, [pdf, currentPage, loading, renderPage, onPageChange, totalPages]);
-
-  // Highlight functionality removed
-
-  // Handle window resize to recalculate PDF scale
-  useEffect(() => {
-    const handleResize = () => {
-      if (pdf && currentPage && !loading) {
-        // Debounce resize events
-        if (renderTimeoutRef.current) {
-          clearTimeout(renderTimeoutRef.current);
-        }
-        renderTimeoutRef.current = setTimeout(() => {
-          renderPage(currentPage);
-        }, 250);
+        console.error('Failed to load PDF:', err);
+        setError('Failed to load PDF file');
+        setLoading(false);
+        performanceMonitor.endMeasure('pdf_load', startTime, { error: true });
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      // Clear timeout
+    loadPDF();
+  }, [pdfjsLib, pdfUrl, cacheManager, performanceMonitor]);
+
+  // 渲染页面
+  const renderPage = useCallback(async (pageNum: number) => {
+    if (!pdf || !canvasRef.current) return;
+
+    const startTime = performanceMonitor.startMeasure('page_render');
+
+    try {
+      // 取消之前的渲染任务
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+
+      // 取消之前的超时
       if (renderTimeoutRef.current) {
         clearTimeout(renderTimeoutRef.current);
         renderTimeoutRef.current = null;
       }
-      
-      // Cancel render task
-      if (renderTaskRef.current) {
+
+      const page = await pdf.getPage(pageNum);
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      if (!context || !canvas.parentElement) {
+        throw new Error('Canvas context or parent element not available');
+      }
+
+      // 计算缩放比例
+      const viewport = page.getViewport({ scale: 1 });
+      const containerWidth = canvas.parentElement.clientWidth || windowWidth;
+      const scale = containerWidth / viewport.width;
+      const scaledViewport = page.getViewport({ scale });
+
+      canvas.height = scaledViewport.height;
+      canvas.width = scaledViewport.width;
+
+      // 使用 Promise.race 添加超时
+      const renderPromise = new Promise((resolve, reject) => {
         try {
-          renderTaskRef.current.cancel();
-        } catch {
-          // Ignore cancellation errors during cleanup
+          renderTaskRef.current = page.render({
+            canvasContext: context,
+            viewport: scaledViewport
+          });
+
+          renderTaskRef.current.promise
+            .then(resolve)
+            .catch((error: Error) => {
+              // 只有在不是取消错误的情况下才拒绝
+              if (error?.name !== 'RenderingCancelledException') {
+                reject(error);
+              } else {
+                // 对于取消错误，我们静默处理
+                resolve(null);
+              }
+            });
+        } catch (error) {
+          reject(error);
         }
-        renderTaskRef.current = null;
+      });
+
+      // 等待渲染完成
+      await renderPromise;
+      performanceMonitor.endMeasure('page_render', startTime);
+
+      // 只有在渲染成功且组件仍然挂载时才提取文本
+      if (onTextExtracted && canvasRef.current) {
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map((item: any) => item.str).join(' ');
+        onTextExtracted(text);
       }
-    };
-  }, [pdf, currentPage, loading, renderPage]);
-
-
-  // 存储待跳转的页面
-  const pendingPageRef = useRef<number | null>(null);
-
-  // 监听PDF加载完成
-  useEffect(() => {
-    if (!loading && totalPages > 0 && pendingPageRef.current !== null) {
-      const targetPage = pendingPageRef.current;
-      if (targetPage >= 1 && targetPage <= totalPages) {
-        console.log('PDF loaded, jumping to stored target page:', targetPage);
-        setCurrentPage(targetPage);
-        onPageChange?.(targetPage, totalPages);
+    } catch (err: unknown) {
+      // 只记录非取消错误
+      if (err instanceof Error && err.name !== 'RenderingCancelledException') {
+        console.error('Failed to render page:', err);
+        performanceMonitor.endMeasure('page_render', startTime, { error: true });
       }
-      // 清除存储的目标页面
-      pendingPageRef.current = null;
     }
-  }, [loading, totalPages, onPageChange]);
+  }, [pdf, windowWidth, onTextExtracted, performanceMonitor]);
 
-  const goToPage = (page: number) => {
+  // 监听页面变化
+  useEffect(() => {
+    if (pdf && currentPage && !loading) {
+      // 添加延迟以避免快速连续的页面变化
+      const debounceTimeout = setTimeout(() => {
+        renderPage(currentPage);
+        onPageChange?.(currentPage, totalPages);
+      }, 100); // 100ms 延迟
+
+      return () => {
+        clearTimeout(debounceTimeout);
+        // 取消当前渲染任务
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+          renderTaskRef.current = null;
+        }
+      };
+    }
+  }, [pdf, currentPage, loading, renderPage, onPageChange, totalPages]);
+
+  // 页面跳转
+  const goToPage = useCallback((page: number) => {
+    const startTime = performanceMonitor.startMeasure('page_navigation');
     console.log('PDFViewer goToPage called:', { page, totalPages, isValid: page >= 1 && page <= totalPages });
     
-    // 如果PDF还在加载中，将目标页面保存起来
     if (loading || totalPages === 0) {
       console.log('PDF still loading, storing target page:', page);
       pendingPageRef.current = page;
+      performanceMonitor.endMeasure('page_navigation', startTime, { pending: true });
       return;
     }
     
-    // PDF已加载完成，直接跳转
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
       onPageChange?.(page, totalPages);
+      performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
     } else {
       console.log('Invalid page number:', { page, totalPages });
+      performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
     }
-  };
+  }, [loading, totalPages, onPageChange, performanceMonitor]);
 
-  // Methods exposed to parent component
+  // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
-    jumpToPage: (pageNumber: number) => {
-      goToPage(pageNumber);
-    }
-  }));
+    jumpToPage: goToPage
+  }), [goToPage]);
 
-  // Re-render PDF when window width changes
+  // 窗口大小变化时重新渲染
   useEffect(() => {
     if (pdf && currentPage) {
-      renderPage(currentPage);
+      if (renderTimeoutRef.current) {
+        clearTimeout(renderTimeoutRef.current);
+      }
+      renderTimeoutRef.current = setTimeout(() => {
+        renderPage(currentPage);
+      }, 100);
     }
   }, [windowWidth, pdf, currentPage, renderPage]);
 
@@ -379,7 +274,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }
 
   return (
-    <div className="w-full overflow-auto flex justify-center bg-gray-50">
+    <div className="relative w-full">
       <canvas 
         ref={canvasRef} 
         className="h-auto shadow-lg"
@@ -388,7 +283,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           maxWidth: '100%',
           height: 'auto',
           display: 'block',
-          objectFit: 'contain' // 确保保持宽高比
+          objectFit: 'contain'
         } as React.CSSProperties}
       />
     </div>
@@ -397,4 +292,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
 PDFViewer.displayName = 'PDFViewer';
 
-export default PDFViewer;
+const PDFViewerWithErrorBoundary = forwardRef<PDFViewerRef, PDFViewerProps>((props, ref) => {
+  return (
+    <PDFErrorBoundary>
+      <PDFViewer {...props} ref={ref} />
+    </PDFErrorBoundary>
+  );
+});
+
+PDFViewerWithErrorBoundary.displayName = 'PDFViewerWithErrorBoundary';
+
+export default PDFViewerWithErrorBoundary;
