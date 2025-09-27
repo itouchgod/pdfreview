@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import { PageCalculator } from '@/utils/pageCalculator';
+import { SectionChangeHandler } from '@/types/pdf';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -83,10 +84,8 @@ function SearchContent() {
       return;
     }
 
-    // 如果是切换章节但没有指定页码，默认使用第1页
-    if (pdfPath !== selectedPDF && typeof pageNumber === 'undefined') {
-      pageNumber = 1;
-    }
+    // 如果是切换章节但没有指定页码，保持 undefined
+    // 这样后面的代码会使用当前页码
 
     const calculator = PageCalculator.fromPath(pdfPath);
     if (!calculator) {
@@ -99,10 +98,10 @@ function SearchContent() {
 
     try {
       const section = calculator.getSection();
-      // 只有在没有提供页码时才使用默认值1
-      const validPage = typeof pageNumber === 'number' 
+      // 如果没有提供页码，使用当前页码
+      const validPage = typeof pageNumber === 'number'
         ? calculator.getValidRelativePage(pageNumber)
-        : 1;
+        : calculator.getValidRelativePage(currentPage);
       
       console.log('Navigating to PDF:', {
         fromSection: selectedPDF,
@@ -112,17 +111,6 @@ function SearchContent() {
         section: section.name,
         calculation: pageNumber ? `${pageNumber} -> ${validPage}` : 'default: 1'
       });
-
-      // 批量更新状态
-      if (pdfPath !== selectedPDF) {
-        setSelectedPDF(pdfPath);
-        setSelectedSectionName(section.name);
-        setTotalPages(calculator.getTotalPages());
-      }
-
-      // 更新页码状态
-      setTargetPage(validPage);
-      setCurrentPage(validPage);
 
       // 等待PDF加载完成
       await new Promise<void>((resolve) => {
@@ -148,10 +136,17 @@ function SearchContent() {
         setTimeout(checkPDFLoaded, 100);
       });
 
-      // 跳转到目标页面
-      if (pdfViewerRef.current) {
-        pdfViewerRef.current.jumpToPage(validPage);
+      // 批量更新所有状态
+      if (pdfPath !== selectedPDF) {
+        setSelectedPDF(pdfPath);
+        setSelectedSectionName(section.name);
+        setTotalPages(calculator.getTotalPages());
       }
+
+      // 更新页码状态并跳转
+      setTargetPage(validPage);
+      setCurrentPage(validPage);
+      pdfViewerRef.current?.jumpToPage(validPage);
 
       // 检查待处理的导航
       const pendingNav = pendingNavigationRef.current;
@@ -162,7 +157,7 @@ function SearchContent() {
     } finally {
       loadingLockRef.current = false;
     }
-  }, [selectedPDF, pdfViewerRef]);
+  }, [selectedPDF, pdfViewerRef, currentPage]);
 
   // 跳转到指定结果
   const jumpToResult = useCallback(async (index: number) => {
@@ -188,7 +183,9 @@ function SearchContent() {
   }, []);
 
     // 章节切换
-  const handleSectionChange = useCallback((sectionPath: string, resetToFirstPage?: boolean) => {
+  const handleSectionChange: SectionChangeHandler = useCallback((sectionPath: string, pageOrReset?: number | boolean) => {
+    // 如果是布尔值，转换为页码
+    const targetPage = typeof pageOrReset === 'boolean' ? (pageOrReset ? 1 : undefined) : pageOrReset;
     const calculator = PageCalculator.fromPath(sectionPath);
     if (!calculator) {
       console.error('Section not found:', sectionPath);
@@ -199,9 +196,10 @@ function SearchContent() {
       fromSection: selectedPDF,
       toSection: sectionPath,
       section: section.name,
-      resetToFirstPage
+      targetPage
     });
-    navigateToPDF(sectionPath, resetToFirstPage ? 1 : undefined);
+    // 直接传递目标页码
+    navigateToPDF(sectionPath, targetPage);
   }, [navigateToPDF, selectedPDF]);
 
   // URL更新
@@ -235,14 +233,12 @@ function SearchContent() {
     }
 
     // 批量更新搜索状态
-    Promise.resolve().then(() => {
-      setSharedSearchResults(results);
-      setSharedSearchTerm(searchTerm);
-      setSharedSearchMode(searchMode);
-      setHasSearchResults(results.length > 0);
-      setIsSearchActive(true);
-      setCurrentResultIndex(0);
-    });
+    setSharedSearchResults(results);
+    setSharedSearchTerm(searchTerm);
+    setSharedSearchMode(searchMode);
+    setHasSearchResults(results.length > 0);
+    setIsSearchActive(true);
+    setCurrentResultIndex(0);
   }, [sharedSearchResults]);
 
 
@@ -308,20 +304,17 @@ function SearchContent() {
       // 只在初始加载且有搜索词的情况下跳转到第一个结果
       const isInitialLoad = !sharedSearchResults.length && searchQuery;
       if (isInitialLoad) {
-        // 确保搜索结果已经更新
-        Promise.resolve().then(() => {
-          // 获取第一个结果的章节和页码
-          const firstResult = searchResults[0];
-          if (!firstResult) return;
+        // 获取第一个结果的章节和页码
+        const firstResult = searchResults[0];
+        if (!firstResult) return;
 
-          const calculator = PageCalculator.fromPath(firstResult.sectionPath);
-          if (!calculator) return;
+        const calculator = PageCalculator.fromPath(firstResult.sectionPath);
+        if (!calculator) return;
 
-          const relativePage = calculator.getRelativePageFromResult(firstResult);
+        const relativePage = calculator.getRelativePageFromResult(firstResult);
 
-          // 直接切换到正确的章节和页面
-          navigateToPDF(firstResult.sectionPath, relativePage);
-        });
+        // 直接切换到正确的章节和页面
+        navigateToPDF(firstResult.sectionPath, relativePage);
       }
     }
   }, [searchQuery, textData, handleSearchResultsUpdate, searchInAllSections, sharedSearchResults.length, navigateToPDF]);

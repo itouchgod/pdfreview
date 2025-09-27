@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageCalculator } from '@/utils/pageCalculator';
+import { SectionChangeHandler } from '@/types/pdf';
 
 interface SmartSearchResult {
   page: number;
@@ -16,7 +17,7 @@ interface SmartSearchResult {
 
 interface SearchResultsOnlyProps {
   onPageJump?: (pageNumber: number) => void;
-  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
+  onSectionChange?: SectionChangeHandler;
   currentSection?: string;
   selectedPDF?: string;
   initialSearchTerm?: string;
@@ -129,23 +130,15 @@ export default function SearchResultsOnly({
         calculation: `${pageInfo.absolutePage} - ${pageInfo.section.startPage} + 1 = ${pageInfo.relativePage}`
       });
       
-      // 先切换章节，并传递相对页码
-      onSectionChange(firstResult.sectionPath, false);
-      
-      // 等待章节切换完成后再跳转
-      Promise.resolve().then(() => {
-        // 使用较短的延迟，因为章节切换应该很快
-        setTimeout(() => {
-          if (onPageJump) {
-            console.log('Jumping to page after section change:', {
-              absolutePage: pageInfo.absolutePage,
-              relativePage: pageInfo.relativePage,
-              section: pageInfo.section.name
-            });
-            onPageJump(pageInfo.relativePage);
-          }
-        }, 300);
+      // 直接切换章节并跳转到目标页面
+      console.log('Switching section with target page:', {
+        absolutePage: pageInfo.absolutePage,
+        relativePage: pageInfo.relativePage,
+        section: pageInfo.section.name,
+        sectionPath: firstResult.sectionPath
       });
+      // 将目标页码作为参数传递给 onSectionChange
+      onSectionChange(firstResult.sectionPath, pageInfo.relativePage);
     } else {
       // 直接跳转页面
       if (onPageJump) {

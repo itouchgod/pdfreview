@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { CacheManager } from '@/lib/cache';
 import { PerformanceMonitor } from '@/lib/performance';
 import { PDF_CONFIG } from '@/config/pdf';
+import { SectionChangeHandler } from '@/types/pdf';
 
 interface SmartSearchResult {
   page: number;
@@ -32,7 +33,7 @@ interface SmartSearchBoxProps {
     searchMode: 'current' | 'global'
   ) => void;
   onPageJump?: (pageNumber: number) => void;
-  onSectionChange?: (sectionPath: string, resetToFirstPage?: boolean) => void;
+  onSectionChange?: SectionChangeHandler;
   selectedPDF?: string;
 }
 

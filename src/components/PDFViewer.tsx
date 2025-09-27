@@ -84,7 +84,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       setError(null);
       setPdf(null);
       setTotalPages(pageCalculator.getTotalPages());
-      setCurrentPage(1);
+      // 保持当前页码，除非有初始页码
+      if (initialPage !== currentPage) {
+        setCurrentPage(initialPage);
+      }
 
       try {
         console.log('Starting to load PDF:', pdfUrl);
@@ -145,7 +148,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     };
 
     loadPDF();
-  }, [pdfjsLib, pdfUrl, cacheManager, performanceMonitor]);
+  }, [pdfjsLib, pdfUrl, cacheManager, performanceMonitor, currentPage, initialPage]);
 
   // 渲染页面
   const renderPage = useCallback(async (pageNum: number) => {
