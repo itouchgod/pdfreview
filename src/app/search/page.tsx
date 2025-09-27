@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
-import ThemeToggle from '@/components/ThemeToggle';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -342,11 +341,6 @@ function SearchContent() {
                 preloadedTextData={textData}
                 onSearchResultsUpdate={handleSearchResultsUpdate}
               />
-            </div>
-            
-            {/* 主题切换按钮 */}
-            <div className="flex-shrink-0">
-              <ThemeToggle />
             </div>
           </div>
         </div>

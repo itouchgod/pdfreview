@@ -57,11 +57,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* 主题切换按钮 - 右上角 */}
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
-      
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-4xl">
           {/* Logo and Search Box */}
@@ -163,32 +158,12 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="mt-auto py-4 sm:py-6 text-center border-t border-border">
+      <footer className="mt-auto py-4 sm:py-6 border-t border-border">
         <div className="max-w-4xl mx-auto px-4">
-          {/* 桌面端显示完整信息 */}
-          <div className="hidden sm:flex justify-center items-center space-x-4 text-sm text-muted-foreground">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-5 relative">
-                <Image 
-                  src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
-                  fill
-                  sizes="16px"
-                  className="object-contain"
-                />
-              </div>
-              <span>Marine Stores Guide</span>
-            </div>
-            <span>•</span>
-            <span>8th Edition 2023</span>
-            <span>•</span>
-            <span>Internal Use Only</span>
-          </div>
-          
-          {/* 手机端显示简洁信息 */}
-          <div className="sm:hidden flex flex-col items-center space-y-2 text-xs text-muted-foreground">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-4 relative">
+          <div className="flex justify-between items-center">
+            {/* 左侧信息 */}
+            <div className="flex items-center space-x-2 text-xs sm:text-sm text-muted-foreground">
+              <div className="w-3 h-4 sm:w-4 sm:h-5 relative">
                 <Image 
                   src="/brand-icon.svg" 
                   alt="IMPA Logo" 
@@ -197,10 +172,18 @@ export default function HomePage() {
                   className="object-contain"
                 />
               </div>
-              <span className="font-medium">IMPA Guide 2023</span>
+              <span className="hidden sm:inline">Marine Stores Guide</span>
+              <span className="sm:hidden">IMPA Guide</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">8th Edition 2023</span>
+              <span className="sm:hidden">2023</span>
+              <span>•</span>
+              <span className="text-muted-foreground/70">Internal Use Only</span>
             </div>
-            <div className="text-muted-foreground/70">
-              Internal Use Only
+            
+            {/* 右侧主题切换按钮 */}
+            <div className="flex-shrink-0">
+              <ThemeToggle />
             </div>
           </div>
         </div>
