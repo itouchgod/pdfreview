@@ -214,36 +214,36 @@ export default function SearchResultsOnly({
           <div
             key={result.key}
             onClick={() => goToResult(index)}
-            className={`group cursor-pointer transition-all duration-200 ${
+            className={`group cursor-pointer transition-all duration-200 border-b border-border/20 last:border-b-0 ${
               index === highlightIndex 
                 ? 'bg-primary/15 shadow-sm' 
-                : 'hover:bg-accent'
+                : 'hover:bg-accent/50'
             }`}
           >
-            <div className="px-3 sm:px-4 py-2 sm:py-3">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                {/* 页码标签 - 手机端更紧凑 */}
+            <div className="px-2 sm:px-3 py-1.5 sm:py-2">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                {/* 页码标签 - 更紧凑 */}
                 <div className="flex-shrink-0">
-                  <span className={`inline-flex items-center justify-center w-10 h-6 sm:w-14 sm:h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  <span className={`inline-flex items-center justify-center w-8 h-5 sm:w-10 sm:h-6 rounded text-xs font-semibold transition-all duration-200 ${
                     index === highlightIndex 
-                      ? 'bg-primary/80 text-primary-foreground shadow-md' 
+                      ? 'bg-primary/80 text-primary-foreground shadow-sm' 
                       : 'bg-muted text-muted-foreground group-hover:bg-primary/30 group-hover:text-primary'
                   }`}>
                     P{result.page}
                   </span>
                 </div>
                 
-                {/* 章节信息 - 手机端优化文本显示 */}
+                {/* 章节信息 - 更小的字体和紧凑间距 */}
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs sm:text-sm font-medium transition-colors duration-200 ${
+                  <div className={`text-xs font-normal transition-colors duration-200 leading-tight ${
                     index === highlightIndex 
-                      ? 'text-primary/90 font-medium' 
+                      ? 'text-primary/90' 
                       : 'text-card-foreground group-hover:text-foreground'
                   }`}>
                     {/* 手机端显示更紧凑的章节名称 */}
                     <div className="block sm:hidden">
-                      {result.sectionName.length > 25 
-                        ? `${result.sectionName.substring(0, 25)}...` 
+                      {result.sectionName.length > 30 
+                        ? `${result.sectionName.substring(0, 30)}...` 
                         : result.sectionName}
                     </div>
                     {/* 桌面端显示完整章节名称 */}
@@ -253,10 +253,10 @@ export default function SearchResultsOnly({
                   </div>
                 </div>
                 
-                {/* 匹配数量 - 手机端更小 */}
+                {/* 匹配数量 - 更小 */}
                 {result.count > 1 && (
                   <div className="flex-shrink-0">
-                    <span className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-xs font-medium transition-all duration-200 ${
+                    <span className={`inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full text-xs font-medium transition-all duration-200 ${
                       index === highlightIndex 
                         ? 'bg-primary/15 text-primary/80' 
                         : 'bg-muted text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground'

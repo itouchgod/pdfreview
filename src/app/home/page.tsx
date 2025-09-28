@@ -136,7 +136,7 @@ export default function HomePage() {
           <div className="max-w-md mx-auto px-4 py-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-card-foreground">
-                {loadingStatus.currentSection ? `加载章节: ${loadingStatus.currentSection}` : '准备加载...'}
+                {loadingStatus.currentSection ? 'Loading IMPA data...' : 'Preparing to load...'}
               </span>
               <span className="text-sm text-muted-foreground">
                 {loadingStatus.loadedSections} / {loadingStatus.totalSections}

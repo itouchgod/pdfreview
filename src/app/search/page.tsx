@@ -480,7 +480,7 @@ function SearchContent() {
           </div>
 
           {(isSearchActive && sharedSearchResults.length > 0 && sharedSearchTerm) && (
-            <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-screen overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[480px] lg:h-screen">
+            <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-[90vh] overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[360px] lg:h-[90vh]">
               <div className="h-full flex flex-col">
                 <div className="lg:hidden px-4 py-3 bg-muted border-b border-border/30">
                   <div className="flex items-center justify-between">
@@ -515,7 +515,7 @@ function SearchContent() {
                   </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+                <div className="flex-1 overflow-y-auto p-1 sm:p-2">
                   <SearchResultsOnly
                     onPageJump={handlePageJump}
                     onSectionChange={handleSectionChange}
