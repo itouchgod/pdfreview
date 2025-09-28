@@ -39,8 +39,8 @@ function SearchContent() {
     // Text extracted for search functionality
   };
 
-  const handleSearchResults = (results: unknown[]) => {
-    console.log('handleSearchResults called with:', results.length, 'results');
+  const handleSearchResults = (_results: unknown[]) => {
+    // Search results handled
   };
 
   const handleClearSearch = () => {
@@ -83,14 +83,6 @@ function SearchContent() {
       ? calculator.getValidRelativePage(pageNumber)
       : calculator.getValidRelativePage(currentPage);
     
-    console.log('Navigating to PDF:', {
-      fromSection: selectedPDF,
-      toSection: pdfPath,
-      requestedPage: pageNumber,
-      validPage,
-      section: section.name,
-      calculation: pageNumber ? `${pageNumber} -> ${validPage}` : 'default: 1'
-    });
 
     // 批量更新所有状态
     if (pdfPath !== selectedPDF) {
@@ -137,16 +129,9 @@ function SearchContent() {
       console.error('Section not found:', sectionPath);
       return;
     }
-    const section = calculator.getSection();
-    console.log('Handling section change:', {
-      fromSection: selectedPDF,
-      toSection: sectionPath,
-      section: section.name,
-      targetPage
-    });
     // 直接传递目标页码
     navigateToPDF(sectionPath, targetPage);
-  }, [navigateToPDF, selectedPDF]);
+  }, [navigateToPDF]);
 
   // URL更新
   const handleUpdateURL = useCallback((params: { query?: string; section?: string; page?: number }) => {

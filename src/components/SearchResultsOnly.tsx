@@ -78,7 +78,6 @@ export default function SearchResultsOnly({
   const lastSearchTermRef = useRef<string>('');
   useEffect(() => {
     if (searchTerm && searchTerm !== lastSearchTermRef.current) {
-      console.log('Auto-selecting first result for new search term:', searchTerm);
       lastSearchTermRef.current = searchTerm;
       // 重置为第一个结果
       if (onResultIndexChange) {
@@ -120,13 +119,6 @@ export default function SearchResultsOnly({
       // 计算在目标章节中的相对页码
       const targetRelativePage = targetCalculator.getRelativePageFromResult(firstResult);
       
-      console.log('Switching section:', {
-        fromSection: selectedPDF,
-        toSection: firstResult.sectionPath,
-        absolutePage: firstResult.page,
-        targetRelativePage,
-        section: targetCalculator.getSection().name
-      });
       
       // 切换到目标章节和页码
       onSectionChange(firstResult.sectionPath, targetRelativePage);
@@ -140,11 +132,6 @@ export default function SearchResultsOnly({
         }
         
         const targetPage = currentCalculator.getRelativePageFromResult(firstResult);
-        console.log('Direct page jump:', {
-          page: firstResult.page,
-          targetPage,
-          section: currentCalculator.getSection().name
-        });
         
         onPageJump(targetPage);
       }

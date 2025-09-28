@@ -29,7 +29,6 @@ export class CacheManager {
       try {
         await this.openIndexedDB();
         this.storage = 'indexedDB';
-        console.log('Using IndexedDB for storage');
       } catch (error) {
         console.warn('IndexedDB initialization failed, falling back to localStorage:', error);
         this.storage = 'localStorage';

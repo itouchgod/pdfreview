@@ -74,7 +74,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // 获取当前章节配置
       const pageCalculator = PageCalculator.fromPath(pdfUrl);
       if (!pageCalculator) {
-        console.log('Section not found:', pdfUrl);
         setError('Invalid PDF section');
         return;
       }
@@ -86,18 +85,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       setTotalPages(pageCalculator.getTotalPages());
 
       try {
-        console.log('Starting to load PDF:', pdfUrl);
-        
         // 尝试从缓存加载
         const cachedPDF = await cacheManager.get<ArrayBuffer>(`pdf:${pdfUrl}`);
         let pdfData: ArrayBuffer;
 
         if (cachedPDF) {
-          console.log('Using cached PDF data');
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: true });
           pdfData = cachedPDF;
         } else {
-          console.log('Fetching PDF from network');
           // 从网络加载
           const response = await fetch(pdfUrl);
           pdfData = await response.arrayBuffer();
@@ -106,9 +101,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: false });
         }
 
-        console.log('Loading PDF document');
         const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        console.log('PDF loaded successfully:', { numPages: loadedPdf.numPages });
         
         // 设置新的PDF和页数
         setPdf(loadedPdf);
@@ -118,14 +111,12 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         if (pendingPageRef.current !== null) {
           const targetPage = pendingPageRef.current;
           pendingPageRef.current = null;
-          console.log('Jumping to pending page:', targetPage);
           setCurrentPage(targetPage);
         }
         
         // 确保在设置loading=false之前所有状态都已更新
         await new Promise(resolve => setTimeout(resolve, 100));
         setLoading(false);
-        console.log('PDF loading completed');
         
       } catch (err) {
         console.error('Failed to load PDF:', err);
@@ -144,18 +135,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   // 渲染页面
   const renderPage = useCallback(async (pageNum: number) => {
     if (!pdf || !canvasRef.current) {
-      console.log('Skipping render - PDF or canvas not ready');
       return;
     }
 
     // 验证页码是否有效
     const pageCalculator = PageCalculator.fromPath(pdfUrl);
     if (!pageCalculator) {
-      console.log('Section not found:', pdfUrl);
       return;
     }
     if (!pageCalculator.isValidRelativePage(pageNum)) {
-      console.log('Invalid page number:', { pageNum, totalPages: pdf.numPages });
       return;
     }
 
@@ -207,18 +195,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // 计算视口
       const scaledViewport = page.getViewport({ scale });
       
-      // 调试信息
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Rendering page:', pageNum, {
-          scale,
-          devicePixelRatio,
-          viewport: {
-            width: scaledViewport.width,
-            height: scaledViewport.height
-          },
-          containerWidth
-        });
-      }
 
       // 设置Canvas尺寸
       canvas.width = scaledViewport.width * devicePixelRatio;
@@ -288,11 +264,9 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       // 获取当前章节配置
       const pageCalculator = PageCalculator.fromPath(pdfUrl);
       if (!pageCalculator) {
-        console.log('Section not found:', pdfUrl);
         return;
       }
       if (!pageCalculator.isValidRelativePage(currentPage)) {
-        console.log('Invalid page number:', { currentPage, totalPages });
         return;
       }
 

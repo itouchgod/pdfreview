@@ -43,11 +43,13 @@ export class PerformanceMonitor {
     }
     this.measurements[category].push(metric);
 
-    // 记录到控制台
-    console.log(`Performance [${category}]:`, {
-      duration: `${duration.toFixed(2)}ms`,
-      ...(metadata || {})
-    });
+    // 记录到控制台（仅在开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Performance [${category}]:`, {
+        duration: `${duration.toFixed(2)}ms`,
+        ...(metadata || {})
+      });
+    }
 
     // 如果超过阈值，发出警告
     this.checkThreshold(category, duration);

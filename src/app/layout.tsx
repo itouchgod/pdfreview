@@ -76,10 +76,10 @@ export default async function RootLayout({
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(
                     function(registration) {
-                      console.log('ServiceWorker registration successful');
+                      // ServiceWorker registered successfully
                     },
                     function(err) {
-                      console.log('ServiceWorker registration failed: ', err);
+                      console.error('ServiceWorker registration failed: ', err);
                     }
                   );
                 });

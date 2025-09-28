@@ -133,13 +133,6 @@ export default function SmartSearchBox({
                   continue; // 跳过无效的页码
                 }
 
-                console.log('Search Result Debug:', {
-                  pageNumber,
-                  startPage: section.startPage,
-                  relativePage,
-                  sectionName: section.name,
-                  isValid: pageCalculator.isValidAbsolutePage(pageNumber)
-                });
 
                 results.push({
                   page: pageNumber,          // 保持原始页码
