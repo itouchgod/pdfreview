@@ -16,13 +16,11 @@ import { SectionChangeHandler } from '@/types/pdf';
 function SearchContent() {
   const searchParams = useSearchParams();
   const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
-  const [selectedSectionName, setSelectedSectionName] = useState<string>(PDF_CONFIG.sections[0].name);
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   
   // 用于在header和sidebar之间共享搜索结果
   const [sharedSearchResults, setSharedSearchResults] = useState<any[]>([]);
   const [sharedSearchTerm, setSharedSearchTerm] = useState('');
-  const [sharedSearchMode, setSharedSearchMode] = useState<'current' | 'global'>('global');
   const [hasSearchResults, setHasSearchResults] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
@@ -78,7 +76,6 @@ function SearchContent() {
       return;
     }
 
-    const section = calculator.getSection();
     // 如果没有提供页码，使用当前页码
     const validPage = typeof pageNumber === 'number'
       ? calculator.getValidRelativePage(pageNumber)
@@ -88,7 +85,6 @@ function SearchContent() {
     // 批量更新所有状态
     if (pdfPath !== selectedPDF) {
       setSelectedPDF(pdfPath);
-      setSelectedSectionName(section.name);
       setTotalPages(calculator.getTotalPages());
     }
 
@@ -161,7 +157,7 @@ function SearchContent() {
     setTotalPages(total);
   }, []);
 
-  const handleSearchResultsUpdate = useCallback((results: any[], searchTerm: string, searchMode: 'current' | 'global') => {
+  const handleSearchResultsUpdate = useCallback((results: any[], searchTerm: string) => {
     if (!results || !Array.isArray(results)) return;
 
     // 如果搜索结果相同，不更新状态
@@ -172,7 +168,6 @@ function SearchContent() {
     // 批量更新搜索状态
     setSharedSearchResults(results);
     setSharedSearchTerm(searchTerm);
-    setSharedSearchMode(searchMode);
     setHasSearchResults(results.length > 0);
     setIsSearchActive(true);
     setCurrentResultIndex(0);
@@ -242,7 +237,6 @@ function SearchContent() {
       // 批量更新搜索状态
       setSharedSearchResults(searchResults);
       setSharedSearchTerm(searchQuery);
-      setSharedSearchMode('global');
       setHasSearchResults(true);
       setIsSearchActive(true);
       
@@ -320,7 +314,6 @@ function SearchContent() {
                 onPageJump={handlePageJump}
                 onSectionChange={handleSectionChange}
                 onUpdateURL={handleUpdateURL}
-                currentSection={selectedSectionName}
                 selectedPDF={selectedPDF}
                 showSearchInHeader={true}
                 initialSearchTerm={searchQuery}
@@ -393,7 +386,6 @@ function SearchContent() {
                   <div className="hidden sm:block">
                     <DraggableFloatingButton
                       currentPage={currentPage}
-                      totalPages={totalPages}
                       selectedPDF={selectedPDF}
                       onPreviousPage={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       onNextPage={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
@@ -495,13 +487,9 @@ function SearchContent() {
                   <SearchResultsOnly
                     onPageJump={handlePageJump}
                     onSectionChange={handleSectionChange}
-                    currentSection={selectedSectionName}
                     selectedPDF={selectedPDF}
-                    initialSearchTerm={searchQuery}
-                    preloadedTextData={textData}
                     sharedSearchResults={sharedSearchResults}
                     sharedSearchTerm={sharedSearchTerm}
-                    sharedSearchMode={sharedSearchMode}
                     currentResultIndex={currentResultIndex}
                     onResultIndexChange={setCurrentResultIndex}
                   />

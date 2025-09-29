@@ -24,7 +24,7 @@ export class PerformanceMonitor {
     return PerformanceMonitor.instance;
   }
 
-  startMeasure(category: string): number {
+  startMeasure(): number {
     return performance.now();
   }
 

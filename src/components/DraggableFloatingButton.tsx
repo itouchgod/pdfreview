@@ -5,7 +5,6 @@ import { PageCalculator } from '@/utils/pageCalculator';
 
 interface DraggableFloatingButtonProps {
   currentPage: number;
-  totalPages: number;
   selectedPDF: string;
   onPreviousPage: () => void;
   onNextPage: () => void;
@@ -20,7 +19,6 @@ interface Position {
 
 export default function DraggableFloatingButton({
   currentPage,
-  totalPages,
   selectedPDF,
   onPreviousPage,
   onNextPage,

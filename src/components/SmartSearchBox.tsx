@@ -29,8 +29,7 @@ interface SmartSearchBoxProps {
   preloadedTextData?: Record<string, string>;
   onSearchResultsUpdate?: (
     results: SmartSearchResult[],
-    searchTerm: string,
-    searchMode: 'current' | 'global'
+    searchTerm: string
   ) => void;
   onPageJump?: (pageNumber: number) => void;
   onSectionChange?: SectionChangeHandler;
@@ -67,7 +66,7 @@ export default function SmartSearchBox({
 
   // 智能搜索实现
   const searchInAllSections = useCallback(async (query: string): Promise<SmartSearchResult[]> => {
-    const startTime = performanceMonitor.startMeasure('search');
+    const startTime = performanceMonitor.startMeasure();
     const results: SmartSearchResult[] = [];
     const searchTerm = query.toLowerCase();
     const searchTerms = searchTerm.split(' ').filter(Boolean);
@@ -175,7 +174,7 @@ export default function SmartSearchBox({
       if (!searchTerm.trim()) {
         onSearchResults([]);
         if (onSearchResultsUpdate) {
-          onSearchResultsUpdate([], '', 'global');
+          onSearchResultsUpdate([], '');
         }
         if (onUpdateURL) {
           onUpdateURL({ query: '' });
@@ -187,7 +186,7 @@ export default function SmartSearchBox({
       onSearchResults(results);
       
       if (onSearchResultsUpdate) {
-        onSearchResultsUpdate(results, searchTerm, 'global');
+        onSearchResultsUpdate(results, searchTerm);
       }
       
       if (onUpdateURL) {
@@ -230,7 +229,7 @@ export default function SmartSearchBox({
             if (!newValue) {
               onSearchResults([]);
               if (onSearchResultsUpdate) {
-                onSearchResultsUpdate([], '', 'global');
+                onSearchResultsUpdate([], '');
               }
               if (onUpdateURL) {
                 onUpdateURL({ query: '' });
@@ -252,7 +251,7 @@ export default function SmartSearchBox({
                 setSearchTerm('');
                 onSearchResults([]);
                 if (onSearchResultsUpdate) {
-                  onSearchResultsUpdate([], '', 'global');
+                  onSearchResultsUpdate([], '');
                 }
                 if (onUpdateURL) {
                   onUpdateURL({ query: '' });

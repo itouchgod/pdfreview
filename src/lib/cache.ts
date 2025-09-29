@@ -56,7 +56,7 @@ export class CacheManager {
 
   async set<T>(key: string, data: T, expiry: number = this.DEFAULT_EXPIRY): Promise<boolean> {
     const performanceMonitor = PerformanceMonitor.getInstance();
-    const startTime = performanceMonitor.startMeasure('cacheWrite');
+    const startTime = performanceMonitor.startMeasure();
 
     const entry: CacheEntry<T> = {
       data,
@@ -89,7 +89,7 @@ export class CacheManager {
 
   async get<T>(key: string): Promise<T | null> {
     const performanceMonitor = PerformanceMonitor.getInstance();
-    const startTime = performanceMonitor.startMeasure('cacheRead');
+    const startTime = performanceMonitor.startMeasure();
 
     try {
       let entry: CacheEntry<T> | null = null;

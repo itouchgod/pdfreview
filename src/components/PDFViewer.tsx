@@ -48,7 +48,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   // 动态加载 PDF.js
   useEffect(() => {
     const loadPDFJS = async () => {
-      const startTime = performanceMonitor.startMeasure('pdfjs_load');
+      const startTime = performanceMonitor.startMeasure();
       try {
         const { getPDFJS } = await import('@/lib/pdfjs-config');
         const pdfjs = await getPDFJS();
@@ -69,7 +69,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     const loadPDF = async () => {
       if (!pdfjsLib || !pdfUrl) return;
 
-      const startTime = performanceMonitor.startMeasure('pdf_load');
+      const startTime = performanceMonitor.startMeasure();
       
       // 获取当前章节配置
       const pageCalculator = PageCalculator.fromPath(pdfUrl);
@@ -145,7 +145,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
 
-    const startTime = performanceMonitor.startMeasure('page_render');
+    const startTime = performanceMonitor.startMeasure();
 
     try {
       // 彻底取消之前的渲染任务
@@ -287,7 +287,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   // 页面跳转
   const goToPage = useCallback((page: number) => {
-    const startTime = performanceMonitor.startMeasure('page_navigation');
+    const startTime = performanceMonitor.startMeasure();
     
     // 如果PDF还在加载中，先存储目标页码
     if (loading || !pdf) {
@@ -299,7 +299,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     // 获取当前章节配置并验证页码
     const pageCalculator = PageCalculator.fromPath(pdfUrl);
     if (pageCalculator) {
-      const currentTotalPages = pageCalculator.getTotalPages();
       const validPage = pageCalculator.getValidRelativePage(page);
       if (validPage !== page) {
         // 静默处理页码调整，避免控制台噪音
