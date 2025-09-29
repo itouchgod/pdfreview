@@ -120,18 +120,14 @@ export default function SmartSearchBox({
                 
                 // 使用 PageCalculator 计算相对页码
                 const pageCalculator = new PageCalculator(section);
-                const relativePage = pageCalculator.toRelativePage(pageNumber);
                 
                 // 验证页码有效性
                 if (!pageCalculator.isValidAbsolutePage(pageNumber)) {
-                  console.warn('Invalid page number detected:', {
-                    pageNumber,
-                    section: section.name,
-                    startPage: section.startPage,
-                    endPage: section.endPage
-                  });
-                  continue; // 跳过无效的页码
+                  // 静默跳过无效页码，避免控制台噪音
+                  continue;
                 }
+                
+                const relativePage = pageCalculator.toRelativePage(pageNumber);
 
 
                 results.push({

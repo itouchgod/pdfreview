@@ -298,20 +298,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
     
-    // 获取当前章节配置（仅在开发环境下验证页码）
-    if (process.env.NODE_ENV === 'development') {
-      const pageCalculator = PageCalculator.fromPath(pdfUrl);
-      if (pageCalculator) {
-        const currentTotalPages = pageCalculator.getTotalPages();
-        const validPage = pageCalculator.getValidRelativePage(page);
-        if (validPage !== page) {
-          console.warn('Invalid page number adjusted:', { 
-            requested: page,
-            adjusted: validPage,
-            totalPages: currentTotalPages
-          });
-          page = validPage;
-        }
+    // 获取当前章节配置并验证页码
+    const pageCalculator = PageCalculator.fromPath(pdfUrl);
+    if (pageCalculator) {
+      const currentTotalPages = pageCalculator.getTotalPages();
+      const validPage = pageCalculator.getValidRelativePage(page);
+      if (validPage !== page) {
+        // 静默处理页码调整，避免控制台噪音
+        // 页码会自动调整到有效范围内
+        page = validPage;
       }
     }
     

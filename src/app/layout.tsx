@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PDFTextProvider } from "@/contexts/PDFTextContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import DevToolsInit from "@/components/DevToolsInit";
 import Script from 'next/script';
 import { headers } from "next/headers";
 
@@ -87,10 +88,12 @@ export default async function RootLayout({
             `,
           }}
         />
+        
       </head>
       <body data-nonce={nonce}>
         <ThemeProvider>
           <PDFTextProvider>
+            <DevToolsInit />
             {children}
           </PDFTextProvider>
         </ThemeProvider>

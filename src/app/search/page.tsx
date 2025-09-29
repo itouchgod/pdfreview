@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
+import DraggableFloatingButton from '@/components/DraggableFloatingButton';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -388,42 +389,17 @@ function SearchContent() {
                     onPageChange={handlePageChange}
                   />
                   
-                  <div className="hidden sm:flex fixed right-4 sm:right-6 lg:right-8 xl:right-10 top-1/2 transform -translate-y-1/2 flex-col items-center space-y-3 sm:space-y-4 lg:space-y-5 z-50 animate-fade-in">
-                    <button
-                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
-                      disabled={currentPage <= 1}
-                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
-                      title="Previous Page (↑ or ←)"
-                    >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:-translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                    
-                    <div className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-primary/95 backdrop-blur-sm hover:bg-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-pointer">
-                      <span className="text-xs sm:text-xs lg:text-xs font-bold text-primary-foreground tracking-wide">
-                        {(() => {
-                          const calculator = PageCalculator.fromPath(selectedPDF);
-                          if (!calculator) return currentPage;
-                          return calculator.toAbsolutePage(currentPage);
-                        })()}
-                      </span>
-                    </div>
-                    
-                    <button
-                      onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                      className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
-                      title="Next Page (↓ or →)"
-                    >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    
-                    <div className="hidden lg:block text-xs text-muted-foreground text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                      ↑↓ or ←→ to navigate
-                    </div>
+                  {/* 可拖动的悬浮按钮 - 桌面端显示 */}
+                  <div className="hidden sm:block">
+                    <DraggableFloatingButton
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      selectedPDF={selectedPDF}
+                      onPreviousPage={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
+                      onNextPage={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
+                      isPreviousDisabled={currentPage <= 1}
+                      isNextDisabled={currentPage >= totalPages}
+                    />
                   </div>
                   
                   <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-40 sm:hidden">

@@ -76,13 +76,7 @@ export class PageCalculator {
   toRelativePage(absolutePage: number): number {
     // 先验证绝对页码是否有效
     if (!this.isValidAbsolutePage(absolutePage)) {
-      console.error('Invalid absolute page:', {
-        absolutePage,
-        startPage: this.section.startPage,
-        endPage: this.section.endPage,
-        section: this.section.name
-      });
-      // 返回最近的有效页码
+      // 静默处理无效页码，返回最近的有效页码
       return this.getValidRelativePage(1);
     }
 

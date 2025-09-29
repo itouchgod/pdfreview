@@ -13,9 +13,14 @@ export class PerformanceMonitor {
     cacheHit: [],
     cacheMiss: []
   };
+  private verboseLogging: boolean = false;
 
   private constructor() {
     // 私有构造函数
+    // 检查是否有详细日志的环境变量
+    if (typeof window !== 'undefined') {
+      this.verboseLogging = localStorage.getItem('performance-verbose') === 'true';
+    }
   }
 
   static getInstance(): PerformanceMonitor {
@@ -43,16 +48,44 @@ export class PerformanceMonitor {
     }
     this.measurements[category].push(metric);
 
-    // 记录到控制台（仅在开发环境）
+    // 只在开发环境且满足条件时记录到控制台
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Performance [${category}]:`, {
-        duration: `${duration.toFixed(2)}ms`,
-        ...(metadata || {})
-      });
+      const shouldLog = this.verboseLogging || this.shouldLogPerformance(category, duration, metadata);
+      if (shouldLog) {
+        console.log(`Performance [${category}]:`, {
+          duration: `${duration.toFixed(2)}ms`,
+          ...(metadata || {})
+        });
+      }
     }
 
     // 如果超过阈值，发出警告
     this.checkThreshold(category, duration);
+  }
+
+  private shouldLogPerformance(category: string, duration: number, metadata?: Record<string, any>): boolean {
+    // 对于快速操作，减少日志频率
+    const quickOperations = ['page_navigation'];
+    if (quickOperations.includes(category) && duration < 10) {
+      return false;
+    }
+
+    // 对于缓存命中，只在首次或异常时记录
+    if (category === 'cacheRead' && metadata?.hit === true && duration < 100) {
+      return false;
+    }
+
+    // 对于页面渲染，只在较慢时记录（提高阈值）
+    if (category === 'page_render' && duration < 200) {
+      return false;
+    }
+
+    // 对于PDF加载，只在首次或异常时记录
+    if (category === 'pdf_load' && metadata?.cached === true && duration < 200) {
+      return false;
+    }
+
+    return true;
   }
 
   private checkThreshold(category: string, duration: number) {
@@ -101,5 +134,16 @@ export class PerformanceMonitor {
         cacheMiss: []
       };
     }
+  }
+
+  setVerboseLogging(enabled: boolean) {
+    this.verboseLogging = enabled;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('performance-verbose', enabled.toString());
+    }
+  }
+
+  getVerboseLogging(): boolean {
+    return this.verboseLogging;
   }
 }
