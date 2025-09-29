@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageCalculator } from '@/utils/pageCalculator';
 import { SectionChangeHandler } from '@/types/pdf';
+import { PDF_CONFIG } from '@/config/pdf';
 
 interface SmartSearchResult {
   page: number;
@@ -44,7 +45,7 @@ export default function SearchResultsOnly({
   
   // 调试信息已移除，避免循环渲染
 
-  // 按页面分组搜索结果
+  // 按页面分组搜索结果并排序
   const groupedResults = useMemo(() => {
     const groups = new Map<string, SmartSearchResult[]>();
     
@@ -56,7 +57,8 @@ export default function SearchResultsOnly({
       groups.get(key)!.push(result);
     });
     
-    return Array.from(groups.entries()).map(([key, groupResults]) => ({
+    // 将分组结果转换为数组并排序
+    const groupedArray = Array.from(groups.entries()).map(([key, groupResults]) => ({
       key,
       page: groupResults[0].page,
       sectionPath: groupResults[0].sectionPath,
@@ -64,6 +66,20 @@ export default function SearchResultsOnly({
       results: groupResults,
       count: groupResults.length
     }));
+    
+    // 按页码排序：先按章节在PDF_CONFIG中的顺序，再按页码
+    return groupedArray.sort((a, b) => {
+      // 首先按章节在配置中的顺序排序
+      const sectionA = PDF_CONFIG.sections.findIndex(s => s.filePath === a.sectionPath);
+      const sectionB = PDF_CONFIG.sections.findIndex(s => s.filePath === b.sectionPath);
+      
+      if (sectionA !== sectionB) {
+        return sectionA - sectionB;
+      }
+      
+      // 同一章节内按页码排序
+      return a.page - b.page;
+    });
   }, [results]);
 
   // 当搜索结果更新时，自动选中第一个结果
