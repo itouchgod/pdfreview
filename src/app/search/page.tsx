@@ -39,7 +39,7 @@ function SearchContent() {
     // Text extracted for search functionality
   };
 
-  const handleSearchResults = (_results: unknown[]) => {
+  const handleSearchResults = () => {
     // Search results handled
   };
 
@@ -480,7 +480,7 @@ function SearchContent() {
           </div>
 
           {(isSearchActive && sharedSearchResults.length > 0 && sharedSearchTerm) && (
-            <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 lg:h-[90vh] overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[360px] lg:h-[90vh]">
+            <div className="w-full lg:flex-[1] xl:flex-[1] lg:min-w-[320px] lg:max-w-[480px] lg:flex-shrink-0 overflow-hidden order-2 lg:order-2 transition-all duration-300 ease-in-out h-[360px] lg:h-[90vh]">
               <div className="h-full flex flex-col">
                 <div className="lg:hidden px-4 py-3 bg-muted border-b border-border/30">
                   <div className="flex items-center justify-between">
