@@ -1,5 +1,6 @@
 const CACHE_NAME = 'impa-cache-v1';
 const PDF_CACHE_NAME = 'impa-pdf-cache-v1';
+const STATIC_CACHE_EXPIRY = 365 * 24 * 60 * 60 * 1000; // 1年
 
 const CACHED_ROUTES = [
   '/',

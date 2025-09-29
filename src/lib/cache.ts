@@ -4,13 +4,15 @@ interface CacheEntry<T> {
   data: T;
   timestamp: number;
   expiresAt: number;
+  version: string;
 }
 
 export class CacheManager {
   private static instance: CacheManager;
   private storage: 'localStorage' | 'indexedDB' = 'localStorage';
   private readonly MAX_LOCAL_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB
-  private readonly DEFAULT_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
+  private readonly DEFAULT_EXPIRY = 365 * 24 * 60 * 60 * 1000; // 1年（PDF文件不会变化）
+  private readonly CACHE_VERSION = '1.0.0'; // 缓存版本控制
 
   private constructor() {
     this.initStorage();
@@ -59,7 +61,8 @@ export class CacheManager {
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
-      expiresAt: Date.now() + expiry
+      expiresAt: Date.now() + expiry,
+      version: this.CACHE_VERSION
     };
 
     try {
@@ -76,6 +79,12 @@ export class CacheManager {
       performanceMonitor.endMeasure('cacheWrite', startTime, { key, error: true });
       return false;
     }
+  }
+
+  // 专门用于PDF文件的缓存方法，设置更长的过期时间
+  async setPDF<T>(key: string, data: T): Promise<boolean> {
+    const PDF_CACHE_EXPIRY = 365 * 24 * 60 * 60 * 1000; // 1年
+    return this.set(key, data, PDF_CACHE_EXPIRY);
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -100,6 +109,13 @@ export class CacheManager {
       if (entry.expiresAt < Date.now()) {
         await this.delete(key);
         performanceMonitor.endMeasure('cacheRead', startTime, { key, expired: true });
+        return null;
+      }
+
+      // 检查版本兼容性
+      if (entry.version !== this.CACHE_VERSION) {
+        await this.delete(key);
+        performanceMonitor.endMeasure('cacheRead', startTime, { key, versionMismatch: true });
         return null;
       }
 
@@ -200,7 +216,8 @@ export class CacheManager {
         }
       };
     } else {
-      // 清理 localStorage
+      // 清理 localStorage - 优化版本
+      const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key) {
@@ -209,7 +226,7 @@ export class CacheManager {
             try {
               const entry = JSON.parse(serialized) as CacheEntry<unknown>;
               if (entry.expiresAt < now) {
-                localStorage.removeItem(key);
+                keysToRemove.push(key);
               }
             } catch {
               // 忽略无效的 JSON
@@ -217,6 +234,8 @@ export class CacheManager {
           }
         }
       }
+      // 批量删除过期项
+      keysToRemove.forEach(key => localStorage.removeItem(key));
     }
   }
 }

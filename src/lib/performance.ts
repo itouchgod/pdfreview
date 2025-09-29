@@ -6,13 +6,7 @@ export interface PerformanceMetric {
 
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
-  private measurements: Record<string, PerformanceMetric[]> = {
-    pdfLoad: [],
-    search: [],
-    pageRender: [],
-    cacheHit: [],
-    cacheMiss: []
-  };
+  private measurements: Record<string, PerformanceMetric[]> = {};
   private verboseLogging: boolean = false;
 
   private constructor() {
@@ -30,8 +24,7 @@ export class PerformanceMonitor {
     return PerformanceMonitor.instance;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  startMeasure(category: string, metadata?: Record<string, any>): number {
+  startMeasure(category: string): number {
     return performance.now();
   }
 
@@ -126,13 +119,7 @@ export class PerformanceMonitor {
     if (category) {
       this.measurements[category] = [];
     } else {
-      this.measurements = {
-        pdfLoad: [],
-        search: [],
-        pageRender: [],
-        cacheHit: [],
-        cacheMiss: []
-      };
+      this.measurements = {};
     }
   }
 

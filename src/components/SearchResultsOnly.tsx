@@ -18,13 +18,9 @@ interface SmartSearchResult {
 interface SearchResultsOnlyProps {
   onPageJump?: (pageNumber: number) => void;
   onSectionChange?: SectionChangeHandler;
-  currentSection?: string;
   selectedPDF?: string;
-  initialSearchTerm?: string;
-  preloadedTextData?: any;
   sharedSearchResults?: SmartSearchResult[];
   sharedSearchTerm?: string;
-  sharedSearchMode?: 'current' | 'global';
   currentResultIndex?: number;
   onResultIndexChange?: (index: number) => void;
 }
@@ -32,13 +28,9 @@ interface SearchResultsOnlyProps {
 export default function SearchResultsOnly({ 
   onPageJump, 
   onSectionChange, 
-  // currentSection, // eslint-disable-line @typescript-eslint/no-unused-vars
   selectedPDF, 
-  // initialSearchTerm, // eslint-disable-line @typescript-eslint/no-unused-vars
-  // preloadedTextData, // eslint-disable-line @typescript-eslint/no-unused-vars
   sharedSearchResults = [],
   sharedSearchTerm = '',
-  // sharedSearchMode, // eslint-disable-line @typescript-eslint/no-unused-vars
   currentResultIndex = 0,
   onResultIndexChange
 }: SearchResultsOnlyProps) {

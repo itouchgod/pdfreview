@@ -96,8 +96,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           // 从网络加载
           const response = await fetch(pdfUrl);
           pdfData = await response.arrayBuffer();
-          // 缓存 PDF 数据
-          await cacheManager.set(`pdf:${pdfUrl}`, pdfData);
+          // 缓存 PDF 数据（使用长期缓存，因为PDF文件不会变化）
+          await cacheManager.setPDF(`pdf:${pdfUrl}`, pdfData);
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: false });
         }
 
@@ -114,8 +114,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           setCurrentPage(targetPage);
         }
         
-        // 确保在设置loading=false之前所有状态都已更新
-        await new Promise(resolve => setTimeout(resolve, 100));
         setLoading(false);
         
       } catch (err) {

@@ -24,7 +24,6 @@ interface SmartSearchBoxProps {
   onClearSearch: () => void;
   onUpdateURL?: (params: Record<string, string>) => void;
   onLoadingStatusChange?: (status: { isLoading: boolean; progress: number }) => void;
-  currentSection?: string;
   showSearchInHeader?: boolean;
   initialSearchTerm?: string;
   preloadedTextData?: Record<string, string>;
@@ -42,7 +41,6 @@ export default function SmartSearchBox({
   onSearchResults,
   onUpdateURL,
   onLoadingStatusChange,
-  // currentSection,
   showSearchInHeader = false,
   initialSearchTerm = '',
   preloadedTextData = {},
@@ -76,6 +74,7 @@ export default function SmartSearchBox({
 
     // 尝试从缓存获取搜索结果
     const cacheKey = `search:${searchTerm}`;
+    const SEARCH_CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7天
     const cachedResults = await cacheManager.get<SmartSearchResult[]>(cacheKey);
     
     if (cachedResults) {
@@ -147,7 +146,7 @@ export default function SmartSearchBox({
       );
 
       // 缓存搜索结果
-      await cacheManager.set(cacheKey, results, 3600000); // 1小时过期
+      await cacheManager.set(cacheKey, results, SEARCH_CACHE_EXPIRY); // 7天过期
       performanceMonitor.endMeasure('search', startTime, { 
         resultCount: results.length,
         cached: false 
