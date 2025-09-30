@@ -15,6 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [isClient, setIsClient] = useState(false);
 
   // 获取系统主题偏好
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -45,8 +46,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 标记客户端已挂载
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // 初始化主题
   useEffect(() => {
+    if (!isClient) return;
+    
     // 从localStorage读取保存的主题
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
@@ -54,33 +62,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       setTheme('system');
     }
-  }, []);
+  }, [isClient]);
 
   // 监听主题变化
   useEffect(() => {
+    if (!isClient) return;
+    
     const newResolvedTheme = resolveTheme(theme);
     setResolvedTheme(newResolvedTheme);
     applyTheme(newResolvedTheme);
     
     // 保存到localStorage
     localStorage.setItem('theme', theme);
-  }, [theme, resolveTheme]);
+  }, [theme, resolveTheme, isClient]);
 
   // 监听系统主题变化
   useEffect(() => {
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
-      const handleChange = () => {
-        const newResolvedTheme = resolveTheme(theme);
-        setResolvedTheme(newResolvedTheme);
-        applyTheme(newResolvedTheme);
-      };
+    if (!isClient || theme !== 'system') return;
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleChange = () => {
+      const newResolvedTheme = resolveTheme(theme);
+      setResolvedTheme(newResolvedTheme);
+      applyTheme(newResolvedTheme);
+    };
 
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-  }, [theme, resolveTheme]);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme, resolveTheme, isClient]);
 
   const value: ThemeContextType = {
     theme,

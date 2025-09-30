@@ -110,9 +110,17 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // 标记客户端已挂载
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 初始化时检查缓存
   useEffect(() => {
+    if (!isClient) return;
+    
     const cachedData = getCachedData();
     if (cachedData && Object.keys(cachedData.textData).length > 0) {
       setTextData(cachedData.textData);
@@ -124,7 +132,7 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
         progress: 100
       });
     }
-  }, []);
+  }, [isClient]);
 
   const startLoading = useCallback(async () => {
     // 检查是否已有缓存数据

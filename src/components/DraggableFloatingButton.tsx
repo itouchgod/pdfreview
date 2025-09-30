@@ -29,56 +29,62 @@ export default function DraggableFloatingButton({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const numberButtonRef = useRef<HTMLDivElement>(null);
 
+  // 标记客户端已挂载
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // 初始化位置 - 默认在右侧中央
   useEffect(() => {
-    if (!isInitialized && typeof window !== 'undefined') {
-      const savedPosition = localStorage.getItem('floating-button-position');
-      if (savedPosition) {
-        try {
-          const parsed = JSON.parse(savedPosition);
-          // 验证保存的位置是否仍然有效
-          if (parsed.x >= 0 && parsed.y >= 0 && 
-              parsed.x <= window.innerWidth - 100 && 
-              parsed.y <= window.innerHeight - 200) {
-            setPosition(parsed);
-          } else {
-            // 如果保存的位置无效，使用默认位置
-            setPosition({ x: window.innerWidth - 100, y: window.innerHeight / 2 });
-          }
-        } catch {
-          // 如果解析失败，使用默认位置
+    if (!isClient || isInitialized) return;
+    
+    const savedPosition = localStorage.getItem('floating-button-position');
+    if (savedPosition) {
+      try {
+        const parsed = JSON.parse(savedPosition);
+        // 验证保存的位置是否仍然有效
+        if (parsed.x >= 0 && parsed.y >= 0 && 
+            parsed.x <= window.innerWidth - 100 && 
+            parsed.y <= window.innerHeight - 200) {
+          setPosition(parsed);
+        } else {
+          // 如果保存的位置无效，使用默认位置
           setPosition({ x: window.innerWidth - 100, y: window.innerHeight / 2 });
         }
-      } else {
-        // 默认位置：右侧中央
+      } catch {
+        // 如果解析失败，使用默认位置
         setPosition({ x: window.innerWidth - 100, y: window.innerHeight / 2 });
       }
-      setIsInitialized(true);
+    } else {
+      // 默认位置：右侧中央
+      setPosition({ x: window.innerWidth - 100, y: window.innerHeight / 2 });
     }
-  }, [isInitialized]);
+    setIsInitialized(true);
+  }, [isClient, isInitialized]);
 
   // 保存位置到localStorage
   const savePosition = useCallback((pos: Position) => {
-    if (typeof window !== 'undefined') {
+    if (isClient) {
       localStorage.setItem('floating-button-position', JSON.stringify(pos));
     }
-  }, []);
+  }, [isClient]);
 
   // 重置到默认位置
   const resetToDefaultPosition = useCallback(() => {
-    if (typeof window !== 'undefined') {
+    if (isClient) {
       const defaultPos = { x: window.innerWidth - 100, y: window.innerHeight / 2 };
       setPosition(defaultPos);
       savePosition(defaultPos);
     }
-  }, [savePosition]);
+  }, [savePosition, isClient]);
 
   // 边界检测和调整
   const constrainPosition = useCallback((pos: Position): Position => {
-    if (!containerRef.current) return pos;
+    if (!containerRef.current || !isClient) return pos;
 
     const container = containerRef.current;
     const rect = container.getBoundingClientRect();
@@ -88,7 +94,7 @@ export default function DraggableFloatingButton({
       x: Math.max(margin, Math.min(window.innerWidth - rect.width - margin, pos.x)),
       y: Math.max(margin, Math.min(window.innerHeight - rect.height - margin, pos.y))
     };
-  }, []);
+  }, [isClient]);
 
   // 处理鼠标按下
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -173,6 +179,8 @@ export default function DraggableFloatingButton({
 
   // 窗口大小变化时重新调整位置
   useEffect(() => {
+    if (!isClient) return;
+    
     const handleResize = () => {
       const constrainedPosition = constrainPosition(position);
       setPosition(constrainedPosition);
@@ -181,7 +189,7 @@ export default function DraggableFloatingButton({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [position, constrainPosition, savePosition]);
+  }, [position, constrainPosition, savePosition, isClient]);
 
   // 计算绝对页码
   const absolutePage = (() => {
@@ -190,8 +198,8 @@ export default function DraggableFloatingButton({
     return calculator.toAbsolutePage(currentPage);
   })();
 
-  if (!isInitialized) {
-    return null; // 避免闪烁
+  if (!isClient || !isInitialized) {
+    return null; // 避免闪烁和水合错误
   }
 
   return (

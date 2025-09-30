@@ -29,21 +29,30 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowWidth, setWindowWidth] = useState(1024);
+  const [isClient, setIsClient] = useState(false);
 
   // 初始化性能监控和缓存
   const performanceMonitor = PerformanceMonitor.getInstance();
   const cacheManager = CacheManager.getInstance();
 
+  // 标记客户端已挂载并初始化窗口宽度
+  useEffect(() => {
+    setIsClient(true);
+    setWindowWidth(window.innerWidth);
+  }, []);
+
   // 处理窗口大小变化
   useEffect(() => {
+    if (!isClient) return;
+    
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isClient]);
 
   // 动态加载 PDF.js
   useEffect(() => {
