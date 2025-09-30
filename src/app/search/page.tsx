@@ -500,16 +500,16 @@ function SearchContent() {
         </div>
       </main>
 
-      <footer className="hidden sm:block mt-auto py-6 text-center text-sm text-gray-500 border-t border-gray-200">
-        <div className="max-w-full mx-auto px-4">
-          <div className="flex justify-center items-center space-x-4">
+      <footer className="hidden sm:block mt-auto py-4 sm:py-6 border-t border-border">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex justify-center items-center space-x-4 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-5 relative">
+              <div className="w-3 h-4 sm:w-4 sm:h-5 relative">
                 <Image 
                   src="/brand-icon.svg" 
                   alt="IMPA Logo" 
                   fill
-                  sizes="16px"
+                  sizes="12px"
                   className="object-contain"
                   unoptimized
                 />
@@ -519,7 +519,7 @@ function SearchContent() {
             <span>•</span>
             <span>8th Edition 2023</span>
             <span>•</span>
-            <span>Internal Use Only</span>
+            <span className="text-muted-foreground/70">Internal Use Only</span>
           </div>
         </div>
       </footer>

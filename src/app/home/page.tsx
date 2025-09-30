@@ -157,10 +157,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Loading Progress - 放在页脚上边框 */}
+        {/* Loading Progress - 与页脚保持一致的高度和样式 */}
         {loadingStatus.isLoading && !isReady && (
           <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg">
-            <div className="max-w-md mx-auto px-4 py-4">
+            <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-card-foreground">
                   {loadingStatus.currentSection ? 'Loading IMPA data...' : 'Preparing to load...'}
