@@ -212,7 +212,8 @@ function SearchContent() {
       });
     });
     
-    return results;
+    // 按绝对页码排序，确保第一个结果是最早出现的页码
+    return results.sort((a, b) => a.page - b.page);
   }, []);
 
   // 从URL参数获取搜索词
@@ -234,16 +235,18 @@ function SearchContent() {
     
     const searchResults = searchInAllSections(searchQuery, textData);
     if (searchResults && searchResults.length > 0) {
+      // 检查是否为新的搜索（搜索词变化）
+      const isNewSearch = searchQuery !== sharedSearchTerm;
+      
       // 批量更新搜索状态
       setSharedSearchResults(searchResults);
       setSharedSearchTerm(searchQuery);
       setHasSearchResults(true);
       setIsSearchActive(true);
+      setCurrentResultIndex(0);
       
-      // 只在初始加载时跳转到第一个结果
-      const isInitialLoad = !sharedSearchResults.length;
-      if (isInitialLoad) {
-        setCurrentResultIndex(0);
+      // 只在新的搜索时跳转到第一个搜索结果
+      if (isNewSearch) {
         const firstResult = searchResults[0];
         if (firstResult) {
           const calculator = PageCalculator.fromPath(firstResult.sectionPath);
@@ -262,7 +265,7 @@ function SearchContent() {
       setHasSearchResults(false);
       setCurrentResultIndex(0);
     }
-  }, [searchQuery, textData, searchInAllSections, navigateToPDF, sharedSearchResults.length]);
+  }, [searchQuery, textData, searchInAllSections, navigateToPDF, sharedSearchTerm]);
 
   // 键盘快捷键支持
   useEffect(() => {

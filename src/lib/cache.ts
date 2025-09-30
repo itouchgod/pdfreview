@@ -26,6 +26,12 @@ export class CacheManager {
   }
 
   private async initStorage() {
+    // 检查是否在浏览器环境中
+    if (typeof window === 'undefined') {
+      this.storage = 'localStorage';
+      return;
+    }
+    
     // 检查 IndexedDB 支持
     if ('indexedDB' in window) {
       try {
