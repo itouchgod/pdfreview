@@ -500,25 +500,23 @@ function SearchContent() {
         </div>
       </main>
 
-      <footer className="hidden sm:block mt-auto py-4 sm:py-6 border-t border-border">
+      <footer className="hidden sm:block mt-auto py-4 border-t border-border">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex justify-center items-center space-x-4 text-xs sm:text-sm text-muted-foreground">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-4 sm:w-4 sm:h-5 relative">
-                <Image 
-                  src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
-                  fill
-                  sizes="12px"
-                  className="object-contain"
-                  unoptimized
-                />
-              </div>
-              <span>Marine Stores Guide</span>
+          <div className="flex justify-center items-center space-x-3 text-xs text-muted-foreground/80">
+            <div className="w-4 h-4 relative">
+              <Image 
+                src="/brand-icon.svg" 
+                alt="IMPA Logo" 
+                fill
+                sizes="16px"
+                className="object-contain"
+                unoptimized
+              />
             </div>
-            <span>•</span>
+            <span className="font-medium">Marine Stores Guide</span>
+            <span className="text-muted-foreground/60">•</span>
             <span>8th Edition 2023</span>
-            <span>•</span>
+            <span className="text-muted-foreground/60">•</span>
             <span className="text-muted-foreground/70">Internal Use Only</span>
           </div>
         </div>
