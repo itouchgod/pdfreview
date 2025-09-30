@@ -16,6 +16,15 @@ interface SmartSearchResult {
   category: string;
 }
 
+interface GroupedResult {
+  key: string;
+  page: number;
+  sectionPath: string;
+  sectionName: string;
+  results: SmartSearchResult[];
+  count: number;
+}
+
 interface SearchResultsOnlyProps {
   onPageJump?: (pageNumber: number) => void;
   onSectionChange?: SectionChangeHandler;
@@ -24,6 +33,9 @@ interface SearchResultsOnlyProps {
   sharedSearchTerm?: string;
   currentResultIndex?: number;
   onResultIndexChange?: (index: number) => void;
+  onPreviousResult?: () => void;
+  onNextResult?: () => void;
+  groupedResults?: GroupedResult[];
 }
 
 export default function SearchResultsOnly({ 
@@ -33,23 +45,28 @@ export default function SearchResultsOnly({
   sharedSearchResults = [],
   sharedSearchTerm = '',
   currentResultIndex = 0,
-  onResultIndexChange
+  onResultIndexChange,
+  onPreviousResult,
+  onNextResult,
+  groupedResults: externalGroupedResults
 }: SearchResultsOnlyProps) {
   // 使用外部传入的当前结果索引，如果没有则使用内部状态
   const [internalHighlightIndex, setInternalHighlightIndex] = useState(0);
   const highlightIndex = currentResultIndex !== undefined ? currentResultIndex : internalHighlightIndex;
   
-  // 使用共享的搜索结果
-  const results = sharedSearchResults;
-  const searchTerm = sharedSearchTerm;
-  
   // 调试信息已移除，避免循环渲染
 
   // 按页面分组搜索结果并排序
   const groupedResults = useMemo(() => {
+    // 如果外部传入了分组结果，直接使用
+    if (externalGroupedResults && externalGroupedResults.length > 0) {
+      return externalGroupedResults;
+    }
+    
+    // 否则自己计算分组结果
     const groups = new Map<string, SmartSearchResult[]>();
     
-    results.forEach(result => {
+    sharedSearchResults.forEach(result => {
       const key = `${result.sectionPath}-${result.page}`;
       if (!groups.has(key)) {
         groups.set(key, []);
@@ -69,21 +86,26 @@ export default function SearchResultsOnly({
     
     // 按绝对页码排序，确保搜索结果按页码顺序显示
     return groupedArray.sort((a, b) => a.page - b.page);
-  }, [results]);
+  }, [sharedSearchResults, externalGroupedResults]);
 
-  // 当搜索结果更新时，自动选中第一个结果
+  // 当搜索结果更新时，只在没有外部控制时自动选中第一个结果
   const lastSearchTermRef = useRef<string>('');
   useEffect(() => {
-    if (searchTerm && searchTerm !== lastSearchTermRef.current) {
-      lastSearchTermRef.current = searchTerm;
-      // 重置为第一个结果
-      if (onResultIndexChange) {
-        onResultIndexChange(0);
-      } else {
+    if (sharedSearchTerm && sharedSearchTerm !== lastSearchTermRef.current) {
+      lastSearchTermRef.current = sharedSearchTerm;
+      // 只有在没有外部索引控制时才重置为第一个结果
+      if (!onResultIndexChange) {
         setInternalHighlightIndex(0);
       }
     }
-  }, [searchTerm, onResultIndexChange]);
+  }, [sharedSearchTerm, onResultIndexChange]);
+
+  // 同步外部 currentResultIndex 到内部状态
+  useEffect(() => {
+    if (currentResultIndex !== undefined && currentResultIndex !== internalHighlightIndex) {
+      setInternalHighlightIndex(currentResultIndex);
+    }
+  }, [currentResultIndex, internalHighlightIndex]);
 
   // 跳转到指定结果（仅用于点击跳转）
   const goToResult = useCallback((index: number) => {
@@ -116,7 +138,6 @@ export default function SearchResultsOnly({
       // 计算在目标章节中的相对页码
       const targetRelativePage = targetCalculator.getRelativePageFromResult(firstResult);
       
-      
       // 切换到目标章节和页码
       onSectionChange(firstResult.sectionPath, targetRelativePage);
     } else {
@@ -137,13 +158,17 @@ export default function SearchResultsOnly({
 
   // 导航到上一个/下一个结果
   const goToPrevious = () => {
-    if (highlightIndex > 0) {
+    if (onPreviousResult) {
+      onPreviousResult();
+    } else if (highlightIndex > 0) {
       goToResult(highlightIndex - 1);
     }
   };
 
   const goToNext = () => {
-    if (highlightIndex < groupedResults.length - 1) {
+    if (onNextResult) {
+      onNextResult();
+    } else if (highlightIndex < groupedResults.length - 1) {
       goToResult(highlightIndex + 1);
     }
   };
@@ -151,7 +176,7 @@ export default function SearchResultsOnly({
   // 去除自动跳转逻辑，只保留手动点击跳转功能
 
   // 如果没有搜索词，显示提示信息
-  if (!searchTerm) {
+  if (!sharedSearchTerm) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-white">
         <div className="text-center">
@@ -174,7 +199,7 @@ export default function SearchResultsOnly({
             <Search className="h-8 w-8 text-red-400" />
           </div>
           <p className="text-sm text-gray-700 font-medium">No results found, please try different keywords</p>
-          <p className="text-xs text-gray-500 mt-1">Search term: &ldquo;{searchTerm}&rdquo;</p>
+          <p className="text-xs text-gray-500 mt-1">Search term: &ldquo;{sharedSearchTerm}&rdquo;</p>
         </div>
       </div>
     );
@@ -187,17 +212,17 @@ export default function SearchResultsOnly({
         <div className="flex items-center space-x-3">
           <button
             onClick={goToPrevious}
-            disabled={highlightIndex === 0}
+            disabled={highlightIndex === 0 || groupedResults.length === 0}
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-sm font-medium text-card-foreground px-3 py-1 bg-card rounded-full shadow-sm">
-            {highlightIndex + 1} / {groupedResults.length}
+            {groupedResults.length > 0 ? `${highlightIndex + 1} / ${groupedResults.length}` : '0 / 0'}
           </span>
           <button
             onClick={goToNext}
-            disabled={highlightIndex === groupedResults.length - 1}
+            disabled={highlightIndex >= groupedResults.length - 1 || groupedResults.length === 0}
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronRight className="h-4 w-4" />

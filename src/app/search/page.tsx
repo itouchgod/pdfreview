@@ -34,13 +34,6 @@ function SearchContent() {
     return calculator ? calculator.getTotalPages() : 1;
   });
 
-  const handleTextExtracted = () => {
-    // Text extracted for search functionality
-  };
-
-  const handleSearchResults = () => {
-    // Search results handled
-  };
 
   const handleClearSearch = () => {
     setSharedSearchResults([]);
@@ -49,6 +42,35 @@ function SearchContent() {
     setHasSearchResults(false);
     setCurrentResultIndex(0);
   };
+
+  // 通用的分组函数
+  const getGroupedResults = useCallback(() => {
+    const groups = new Map();
+    sharedSearchResults.forEach(result => {
+      const key = `${result.sectionPath}-${result.page}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key).push(result);
+    });
+    
+    // 将分组结果转换为数组并排序
+    const groupedArray = Array.from(groups.entries()).map(([key, groupResults]) => ({
+      key,
+      page: groupResults[0].page,
+      sectionPath: groupResults[0].sectionPath,
+      sectionName: groupResults[0].sectionName,
+      results: groupResults,
+      count: groupResults.length
+    }));
+    
+    // 按绝对页码排序，确保搜索结果按页码顺序显示
+    return groupedArray.sort((a, b) => a.page - b.page);
+  }, [sharedSearchResults]);
+
+  const getGroupedResultsCount = useCallback(() => {
+    return getGroupedResults().length;
+  }, [getGroupedResults]);
 
   // 导航到上一个搜索结果
   const goToPreviousResult = () => {
@@ -61,7 +83,8 @@ function SearchContent() {
 
   // 导航到下一个搜索结果
   const goToNextResult = () => {
-    if (currentResultIndex < sharedSearchResults.length - 1) {
+    const groupedCount = getGroupedResultsCount();
+    if (currentResultIndex < groupedCount - 1) {
       const newIndex = currentResultIndex + 1;
       setCurrentResultIndex(newIndex);
       jumpToResult(newIndex);
@@ -96,17 +119,19 @@ function SearchContent() {
 
   // 跳转到指定结果
   const jumpToResult = useCallback(async (index: number) => {
-    if (index < 0 || index >= sharedSearchResults.length) return;
+    const groupedResults = getGroupedResults();
     
-    const result = sharedSearchResults[index];
+    if (index < 0 || index >= groupedResults.length) return;
+    
+    const result = groupedResults[index];
     if (!result || !result.sectionPath) return;
 
     const calculator = PageCalculator.fromPath(result.sectionPath);
     if (!calculator) return;
-    const relativePage = calculator.getRelativePageFromResult(result);
+    const relativePage = calculator.getRelativePageFromResult(result.results[0]);
     
     await navigateToPDF(result.sectionPath, relativePage);
-  }, [sharedSearchResults, navigateToPDF]);
+  }, [getGroupedResults, navigateToPDF]);
 
   // 页面跳转
   const handlePageJump = useCallback((pageNumber: number) => {
@@ -165,14 +190,20 @@ function SearchContent() {
       return;
     }
 
+    // 检查是否为新的搜索（搜索词变化）
+    const isNewSearch = searchTerm !== sharedSearchTerm;
+
     // 批量更新搜索状态
     setSharedSearchResults(results);
     setSharedSearchTerm(searchTerm);
     setHasSearchResults(results.length > 0);
     setIsSearchActive(true);
-    setCurrentResultIndex(0);
-  }, [sharedSearchResults]);
-
+    
+    // 只在新的搜索时重置索引
+    if (isNewSearch) {
+      setCurrentResultIndex(0);
+    }
+  }, [sharedSearchResults, sharedSearchTerm]);
 
   // 搜索函数
   const searchInAllSections = useCallback((query: string, sectionsText: Record<string, string>) => {
@@ -243,10 +274,10 @@ function SearchContent() {
       setSharedSearchTerm(searchQuery);
       setHasSearchResults(true);
       setIsSearchActive(true);
-      setCurrentResultIndex(0);
       
-      // 只在新的搜索时跳转到第一个搜索结果
+      // 只在新的搜索时重置索引并跳转到第一个搜索结果
       if (isNewSearch) {
+        setCurrentResultIndex(0);
         const firstResult = searchResults[0];
         if (firstResult) {
           const calculator = PageCalculator.fromPath(firstResult.sectionPath);
@@ -312,7 +343,7 @@ function SearchContent() {
             
             <div className="w-full max-w-2xl">
               <SmartSearchBox
-                onSearchResults={handleSearchResults}
+                onSearchResults={() => {}}
                 onClearSearch={handleClearSearch}
                 onPageJump={handlePageJump}
                 onSectionChange={handleSectionChange}
@@ -381,7 +412,7 @@ function SearchContent() {
                     ref={pdfViewerRef}
                     pdfUrl={selectedPDF}
                     initialPage={targetPage || 1}
-                    onTextExtracted={handleTextExtracted}
+                    onTextExtracted={() => {}}
                     onPageChange={handlePageChange}
                   />
                   
@@ -461,7 +492,7 @@ function SearchContent() {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={goToPreviousResult}
-                        disabled={currentResultIndex === 0}
+                        disabled={currentResultIndex === 0 || getGroupedResultsCount() === 0}
                         className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         title="Previous result"
                       >
@@ -470,11 +501,11 @@ function SearchContent() {
                         </svg>
                       </button>
                       <span className="text-xs text-muted-foreground px-2 py-1 bg-card rounded-full">
-                        {currentResultIndex + 1} / {sharedSearchResults.length}
+                        {getGroupedResultsCount() > 0 ? `${currentResultIndex + 1} / ${getGroupedResultsCount()}` : '0 / 0'}
                       </span>
                       <button
                         onClick={goToNextResult}
-                        disabled={currentResultIndex === sharedSearchResults.length - 1}
+                        disabled={currentResultIndex >= getGroupedResultsCount() - 1 || getGroupedResultsCount() === 0}
                         className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         title="Next result"
                       >
@@ -495,6 +526,9 @@ function SearchContent() {
                     sharedSearchTerm={sharedSearchTerm}
                     currentResultIndex={currentResultIndex}
                     onResultIndexChange={setCurrentResultIndex}
+                    onPreviousResult={goToPreviousResult}
+                    onNextResult={goToNextResult}
+                    groupedResults={getGroupedResults()}
                   />
                 </div>
               </div>
