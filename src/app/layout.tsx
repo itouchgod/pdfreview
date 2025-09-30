@@ -67,6 +67,33 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/icon-48x48.png" />
         <link rel="shortcut icon" href="/icon-48x48.png" type="image/png" />
         
+        {/* 早期水合错误抑制 */}
+        <Script
+          id="hydration-error-suppressor"
+          strategy="beforeInteractive"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `
+              // 立即抑制水合错误，防止浏览器扩展干扰
+              (function() {
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const message = args[0];
+                  if (typeof message === 'string' && 
+                      (message.includes('Hydration failed') || 
+                       message.includes('hydrated but some attributes') ||
+                       message.includes('server rendered HTML didn\\'t match') ||
+                       message.includes('throwOnHydrationMismatch'))) {
+                    // 静默处理水合错误
+                    return;
+                  }
+                  originalError.apply(console, args);
+                };
+              })();
+            `,
+          }}
+        />
+        
         {/* 注册 Service Worker - 使用 nonce */}
         <Script
           id="register-sw"

@@ -111,10 +111,12 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // 标记客户端已挂载
   useEffect(() => {
     setIsClient(true);
+    setMounted(true);
   }, []);
 
   // 初始化时检查缓存
@@ -266,6 +268,27 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
       progress: 0
     });
   }, []);
+
+  // 在服务器端或未挂载时，返回默认值以避免水合错误
+  if (!mounted) {
+    return (
+      <PDFTextContext.Provider value={{
+        textData: {},
+        loadingStatus: {
+          isLoading: false,
+          loadedSections: 0,
+          totalSections: PDF_CONFIG.sections.length,
+          progress: 0
+        },
+        isReady: false,
+        startLoading: () => {},
+        hasStartedLoading: false,
+        clearCache: () => {}
+      }}>
+        {children}
+      </PDFTextContext.Provider>
+    );
+  }
 
   return (
     <PDFTextContext.Provider value={{

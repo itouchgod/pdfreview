@@ -108,15 +108,17 @@
 
 ## 🔄 最新更新
 
-- 🔧 **水合错误修复**
+- 🔧 **水合错误修复（2024-12-19）**
   - 修复 React 水合不匹配错误，确保服务器端和客户端渲染一致
-  - 优化 ThemeContext，避免服务器端访问 localStorage
-  - 修复 PDFTextContext 中的客户端检查逻辑
-  - 改进 DraggableFloatingButton 的初始化流程
-  - 修复 PDFViewer 中的窗口宽度初始化问题
-  - 添加 HydrationErrorSuppressor 组件，智能抑制由浏览器扩展导致的水合错误
-  - 使用 suppressHydrationWarning 属性处理 body 标签的扩展属性问题
-  - 所有组件现在都正确处理服务器端渲染和客户端水合
+  - 优化 ThemeContext，添加 mounted 状态检查，避免服务器端访问 localStorage
+  - 修复 PDFTextContext 中的客户端检查逻辑，添加 mounted 状态管理
+  - 改进 HomePage 组件的挂载检查，添加 suppressHydrationWarning 属性和 DOM 保护
+  - 增强 HydrationErrorSuppressor 组件，更彻底地识别和抑制浏览器扩展导致的水合错误
+  - 在 layout.tsx 中添加早期水合错误抑制脚本，使用 beforeInteractive 策略
+  - 特别针对 YouTube 扩展（yt-ext-）和其他常见扩展的水合错误进行优化
+  - 添加 DOM 隔离和 z-index 保护，防止浏览器扩展修改页面内容
+  - 所有 Context 提供者现在都正确处理服务器端渲染和客户端水合
+  - 使用多层错误抑制机制，确保水合错误的完全消除
 - 🎯 **可拖动悬浮按钮**
   - 悬浮按钮可自由拖拽到页面任意位置
   - 位置自动保存到本地存储

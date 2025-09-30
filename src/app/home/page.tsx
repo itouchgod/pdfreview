@@ -46,7 +46,16 @@ export default function HomePage() {
   // 如果还没有挂载，返回一个加载状态
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+      <div 
+        className="min-h-screen bg-background flex flex-col items-center justify-center" 
+        suppressHydrationWarning
+        data-hydration-safe="true"
+        style={{ 
+          position: 'relative',
+          zIndex: 1,
+          isolation: 'isolate'
+        }}
+      >
         <div className="animate-pulse">
           <div className="h-8 w-32 bg-muted rounded mb-4"></div>
           <div className="h-12 w-64 bg-muted rounded"></div>
@@ -56,7 +65,16 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div 
+      className="min-h-screen bg-background flex flex-col"
+      suppressHydrationWarning
+      data-hydration-safe="true"
+      style={{ 
+        position: 'relative',
+        zIndex: 1,
+        isolation: 'isolate'
+      }}
+    >
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-4xl">
           {/* Logo and Search Box */}

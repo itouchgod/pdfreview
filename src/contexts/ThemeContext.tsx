@@ -16,6 +16,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // 获取系统主题偏好
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -49,6 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // 标记客户端已挂载
   useEffect(() => {
     setIsClient(true);
+    setMounted(true);
   }, []);
 
   // 初始化主题
@@ -97,6 +99,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme,
     resolvedTheme,
   };
+
+  // 在服务器端或未挂载时，返回默认值以避免水合错误
+  if (!mounted) {
+    return (
+      <ThemeContext.Provider value={{
+        theme: 'system',
+        setTheme: () => {},
+        resolvedTheme: 'light'
+      }}>
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={value}>
