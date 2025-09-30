@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageCalculator } from '@/utils/pageCalculator';
 import { SectionChangeHandler } from '@/types/pdf';
-import { PDF_CONFIG } from '@/config/pdf';
 
 interface SmartSearchResult {
   page: number;
