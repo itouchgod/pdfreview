@@ -129,7 +129,10 @@ export default function DraggableFloatingButton({
 
   // 处理触摸开始
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // 阻止页面滚动和默认触摸行为
     e.preventDefault();
+    e.stopPropagation();
+    
     const touch = e.touches[0];
     setIsDragging(true);
     setDragStart({
@@ -142,6 +145,9 @@ export default function DraggableFloatingButton({
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging) return;
 
+    // 阻止页面滚动
+    e.preventDefault();
+
     const touch = e.touches[0];
     const newPosition = {
       x: touch.clientX - dragStart.x,
@@ -153,8 +159,10 @@ export default function DraggableFloatingButton({
   }, [isDragging, dragStart, constrainPosition]);
 
   // 处理触摸结束
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (isDragging) {
+      // 阻止触摸结束时的默认行为
+      e.preventDefault();
       setIsDragging(false);
       savePosition(position);
     }
