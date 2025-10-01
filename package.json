@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "build:standalone": "next build && next export"
   },
   "dependencies": {
     "lucide-react": "^0.544.0",

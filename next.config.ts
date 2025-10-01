@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   
+  // 部署区域配置 - 香港东部
+  output: 'standalone',
+  
   // 图片优化
   images: {
     unoptimized: true, // PDF 图标不需要优化

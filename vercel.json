@@ -1,0 +1,43 @@
+{
+  "regions": ["hkg1"],
+  "functions": {
+    "src/app/**/*.tsx": {
+      "regions": ["hkg1"]
+    },
+    "src/app/**/*.ts": {
+      "regions": ["hkg1"]
+    }
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_REGION": "ap-east-1",
+      "NEXT_PUBLIC_ZONE": "hkg1",
+      "NEXT_PUBLIC_LOCATION": "Hong Kong (East)"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    }
+  ]
+}
