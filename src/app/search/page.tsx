@@ -537,7 +537,7 @@ function SearchContent() {
         </div>
       </main>
 
-      <footer className="hidden sm:block mt-auto py-4 border-t border-border">
+      <footer className="block mt-auto py-4 border-t border-border">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex justify-center items-center space-x-3 text-xs text-muted-foreground/80">
             <div className="w-4 h-4 relative">

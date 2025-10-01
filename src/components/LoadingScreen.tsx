@@ -120,7 +120,7 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
               className="object-contain"
             />
           </div>
-          <span className="font-medium">Marine Stores Guide</span>
+          <span className="font-medium hidden sm:inline">Marine Stores Guide</span>
           <span className="text-muted-foreground/50">•</span>
           <span>8th Edition 2023</span>
           <span className="text-muted-foreground/50">•</span>
