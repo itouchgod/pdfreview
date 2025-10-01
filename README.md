@@ -118,6 +118,13 @@
   - 使用类型断言解决 window 对象扩展属性的类型问题
   - 添加 HTMLElement 类型检查确保样式操作的安全性
   - 确保生产环境构建成功通过
+- 🛡️ **Chext扩展干扰完全解决（2024-12-19）**
+  - 大幅增强扩展检测能力，识别 Chext 扩展的所有相关脚本和元素
+  - 强化扩展隔离样式，完全隐藏扩展注入的元素和脚本
+  - 增强 MutationObserver 错误处理，修复参数类型验证问题
+  - 扩展错误抑制关键词列表，静默处理所有 Chext 相关错误和警告
+  - 无论是否检测到扩展都启用保护机制，确保网站稳定运行
+  - 解决 "Failed to execute 'observe' on 'MutationObserver'" 等关键错误
 - 🛡️ **浏览器扩展错误处理增强（2024-12-19）**
   - 新增 ExtensionIsolator 组件，专门检测和隔离浏览器扩展干扰
   - 增强 HydrationErrorSuppressor，支持更多扩展错误类型（Chext、YouTube扩展等）

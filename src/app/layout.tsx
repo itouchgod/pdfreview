@@ -88,7 +88,16 @@ export default async function RootLayout({
                   'ender metadata', 'mountUi return undefined', 'yt-ext-',
                   'cz-shortcut-listen', 'Skipping ads',
                   'Failed to execute \'observe\' on \'MutationObserver\'',
-                  'parameter 1 is not of type \'Node\''
+                  'parameter 1 is not of type \'Node\'',
+                  'Unexpected identifier \'observe\'',
+                  'appendChild\' on \'Node\'',
+                  'Failed to execute \'appendChild\' on \'Node\'',
+                  'vendors-326d2db556600f52.js',
+                  'webpack-f9bdc8f8e7ef5feb.js',
+                  'main-app-e131d669f65d8db7.js',
+                  'index.ts-loader3.js',
+                  'VM210:14',
+                  'VM531:14'
                 ];
                 
                 console.error = function(...args) {

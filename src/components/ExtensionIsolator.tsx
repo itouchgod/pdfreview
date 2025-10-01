@@ -173,10 +173,17 @@ export default function ExtensionIsolator() {
         'parameter 1 is not of type \'Node\'',
         'Unexpected identifier \'observe\'',
         'appendChild\' on \'Node\'',
+        'Failed to execute \'appendChild\' on \'Node\'',
         'Initialized driver at:',
         'Initialized chextloader at:',
         'searchs (7)',
-        'messages MessageEvent'
+        'messages MessageEvent',
+        'vendors-326d2db556600f52.js',
+        'webpack-f9bdc8f8e7ef5feb.js',
+        'main-app-e131d669f65d8db7.js',
+        'index.ts-loader3.js',
+        'VM210:14',
+        'VM531:14'
       ];
       
       console.error = function(...args) {
