@@ -108,25 +108,6 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
         )}
       </div>
 
-      {/* 底部装饰 */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="flex items-center space-x-3 text-xs text-muted-foreground/70 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-full border border-muted/20">
-          <div className="w-4 h-4 relative">
-            <Image 
-              src="/brand-icon.svg" 
-              alt="IMPA Logo" 
-              fill
-              sizes="16px"
-              className="object-contain"
-            />
-          </div>
-          <span className="font-medium hidden sm:inline">Marine Stores Guide</span>
-          <span className="text-muted-foreground/50">•</span>
-          <span>8th Edition 2023</span>
-          <span className="text-muted-foreground/50">•</span>
-          <span className="text-muted-foreground/60">Internal Use Only</span>
-        </div>
-      </div>
     </div>
   );
 }
