@@ -12,8 +12,14 @@ export default function ExtensionIsolator() {
     const detectExtensions = () => {
       const extensions = [];
       
-      // 检测 Chext 扩展
-      if ((window as any).chext || document.querySelector('[data-chext]')) {
+      // 检测 Chext 扩展 - 增强检测
+      if ((window as any).chext || 
+          document.querySelector('[data-chext]') ||
+          document.querySelector('script[src*="chext"]') ||
+          document.querySelector('script[src*="metadata.js"]') ||
+          document.querySelector('script[src*="contentscript.js"]') ||
+          document.querySelector('script[src*="chext_driver.js"]') ||
+          document.querySelector('script[src*="chext_loader.js"]')) {
         extensions.push('Chext');
       }
       
@@ -51,8 +57,18 @@ export default function ExtensionIsolator() {
         }
         
         /* 防止扩展注入的元素干扰 */
-        [data-extension] {
+        [data-extension],
+        [data-chext],
+        [id*="chext"],
+        [class*="chext"],
+        [id*="metadata"],
+        [class*="metadata"],
+        [id*="contentscript"],
+        [class*="contentscript"] {
           display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
         }
         
         /* 保护悬浮按钮 */
@@ -64,6 +80,15 @@ export default function ExtensionIsolator() {
         /* 保护搜索框 */
         [data-search] {
           z-index: 100 !important;
+        }
+        
+        /* 防止扩展脚本注入 */
+        script[src*="chext"],
+        script[src*="metadata.js"],
+        script[src*="contentscript.js"],
+        script[src*="chext_driver.js"],
+        script[src*="chext_loader.js"] {
+          display: none !important;
         }
       `;
       document.head.appendChild(style);
@@ -83,16 +108,28 @@ export default function ExtensionIsolator() {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node as Element;
               
-              // 检查是否是扩展注入的元素
+              // 检查是否是扩展注入的元素 - 增强检测
               if (element.id?.includes('chext') ||
+                  element.className?.includes('chext') ||
+                  element.id?.includes('metadata') ||
+                  element.className?.includes('metadata') ||
+                  element.id?.includes('contentscript') ||
+                  element.className?.includes('contentscript') ||
                   element.className?.includes('yt-ext') ||
                   element.getAttribute('data-extension') ||
-                  element.tagName?.toLowerCase().includes('extension')) {
+                  element.getAttribute('data-chext') ||
+                  element.tagName?.toLowerCase().includes('extension') ||
+                  element.getAttribute('src')?.includes('chext') ||
+                  element.getAttribute('src')?.includes('metadata.js') ||
+                  element.getAttribute('src')?.includes('contentscript.js')) {
                 
                 // 标记为扩展元素
                 element.setAttribute('data-extension', 'true');
                 if (element instanceof HTMLElement) {
                   element.style.display = 'none';
+                  element.style.visibility = 'hidden';
+                  element.style.opacity = '0';
+                  element.style.pointerEvents = 'none';
                 }
                 
                 console.warn('🔇 已隔离扩展注入的元素:', element.tagName, element.id || element.className);
@@ -103,19 +140,78 @@ export default function ExtensionIsolator() {
       });
 
       try {
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true
-        });
-        return observer;
+        // 确保 document.body 是有效的 Node
+        if (document.body instanceof Node) {
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+          return observer;
+        } else {
+          console.warn('🔇 document.body 不是有效的 Node');
+          return null;
+        }
       } catch (error) {
         console.warn('🔇 MutationObserver 初始化失败:', error);
         return null;
       }
     };
 
+    // 增强错误抑制机制
+    const enhanceErrorSuppression = () => {
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      // 扩展错误关键词列表 - 增强
+      const extensionKeywords = [
+        'chext_', 'metadata.js', 'contentscript.js', 'content.js',
+        'chext_driver.js', 'chext_loader.js', 'chrome-extension://',
+        'net::ERR_ABORTED', '404 (Not Found)', 'siteDubbingRules',
+        'ender metadata', 'mountUi return undefined', 'yt-ext-',
+        'cz-shortcut-listen', 'Skipping ads',
+        'Failed to execute \'observe\' on \'MutationObserver\'',
+        'parameter 1 is not of type \'Node\'',
+        'Unexpected identifier \'observe\'',
+        'appendChild\' on \'Node\'',
+        'Initialized driver at:',
+        'Initialized chextloader at:',
+        'searchs (7)',
+        'messages MessageEvent'
+      ];
+      
+      console.error = function(...args) {
+        const message = args[0];
+        if (typeof message === 'string') {
+          const isExtensionError = extensionKeywords.some(keyword => 
+            message.includes(keyword)
+          );
+          if (isExtensionError) {
+            return; // 静默处理扩展错误
+          }
+        }
+        originalError.apply(console, args);
+      };
+      
+      console.warn = function(...args) {
+        const message = args[0];
+        if (typeof message === 'string') {
+          const isExtensionWarning = extensionKeywords.some(keyword => 
+            message.includes(keyword)
+          );
+          if (isExtensionWarning) {
+            return; // 静默处理扩展警告
+          }
+        }
+        originalWarn.apply(console, args);
+      };
+    };
+
     // 执行扩展检测和隔离
     const extensions = detectExtensions();
+    
+    // 无论是否检测到扩展，都启用错误抑制
+    enhanceErrorSuppression();
+    
     if (extensions.length > 0) {
       console.info('🔍 检测到浏览器扩展:', extensions.join(', '));
       createIsolationStyles();
@@ -131,9 +227,21 @@ export default function ExtensionIsolator() {
           style.remove();
         }
       };
+    } else {
+      // 即使没有检测到扩展，也创建基础隔离样式
+      createIsolationStyles();
+      const observer = monitorExtensionInjection();
+      
+      return () => {
+        if (observer) {
+          observer.disconnect();
+        }
+        const style = document.getElementById('extension-isolation');
+        if (style) {
+          style.remove();
+        }
+      };
     }
-
-    return undefined;
   }, []);
 
   return null;
