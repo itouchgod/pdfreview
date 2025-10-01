@@ -1,13 +1,5 @@
 {
   "regions": ["hkg1"],
-  "functions": {
-    "src/app/**/*.tsx": {
-      "regions": ["hkg1"]
-    },
-    "src/app/**/*.ts": {
-      "regions": ["hkg1"]
-    }
-  },
   "build": {
     "env": {
       "NEXT_PUBLIC_REGION": "ap-east-1",

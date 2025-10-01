@@ -48,9 +48,11 @@ NEXT_PUBLIC_LOCATION=Hong Kong (East)
 
 ### vercel.json
 - ✅ 配置了香港东部区域 (hkg1)
-- ✅ 所有函数都部署到香港东部
 - ✅ 添加了安全头配置
 - ✅ 配置了 Service Worker 重写规则
+- ✅ 设置了构建环境变量
+
+**注意**: 在Vercel中，区域配置主要通过Dashboard设置，而不是在vercel.json中配置functions的regions
 
 ### next.config.ts
 - ✅ 启用了 standalone 输出模式
