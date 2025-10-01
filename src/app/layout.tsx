@@ -97,7 +97,10 @@ export default async function RootLayout({
                   'main-app-e131d669f65d8db7.js',
                   'index.ts-loader3.js',
                   'VM210:14',
-                  'VM531:14'
+                  'VM531:14',
+                  'VM56:14',
+                  'vendors-326d2db556600f52.js:1:126815',
+                  'vendors-326d2db556600f52.js:1:126622'
                 ];
                 
                 console.error = function(...args) {

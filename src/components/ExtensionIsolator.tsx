@@ -183,7 +183,10 @@ export default function ExtensionIsolator() {
         'main-app-e131d669f65d8db7.js',
         'index.ts-loader3.js',
         'VM210:14',
-        'VM531:14'
+        'VM531:14',
+        'VM56:14',
+        'vendors-326d2db556600f52.js:1:126815',
+        'vendors-326d2db556600f52.js:1:126622'
       ];
       
       console.error = function(...args) {
@@ -210,6 +213,42 @@ export default function ExtensionIsolator() {
           }
         }
         originalWarn.apply(console, args);
+      };
+
+      // 全局错误处理
+      const originalOnError = window.onerror;
+      window.onerror = function(message, source, lineno, colno, error) {
+        if (typeof message === 'string') {
+          const isExtensionError = extensionKeywords.some(keyword => 
+            message.includes(keyword) || 
+            (source && source.includes(keyword))
+          );
+          if (isExtensionError) {
+            return true; // 阻止错误传播
+          }
+        }
+        if (originalOnError) {
+          return originalOnError.apply(this, arguments);
+        }
+        return false;
+      };
+
+      // 全局未捕获的 Promise 错误处理
+      const originalOnUnhandledRejection = window.onunhandledrejection;
+      window.onunhandledrejection = function(event) {
+        const reason = event.reason;
+        if (typeof reason === 'string') {
+          const isExtensionError = extensionKeywords.some(keyword => 
+            reason.includes(keyword)
+          );
+          if (isExtensionError) {
+            event.preventDefault(); // 阻止错误传播
+            return;
+          }
+        }
+        if (originalOnUnhandledRejection) {
+          return originalOnUnhandledRejection.apply(this, arguments);
+        }
       };
     };
 

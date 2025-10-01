@@ -125,6 +125,9 @@
   - 扩展错误抑制关键词列表，静默处理所有 Chext 相关错误和警告
   - 无论是否检测到扩展都启用保护机制，确保网站稳定运行
   - 解决 "Failed to execute 'observe' on 'MutationObserver'" 等关键错误
+  - 增强早期错误抑制脚本，在页面加载前就过滤所有扩展相关错误
+  - 添加更多错误关键词，包括 "Failed to execute 'appendChild' on 'Node'" 等
+  - 完全静默处理扩展注入的 VM 脚本和 webpack 相关错误
 - 🛡️ **浏览器扩展错误处理增强（2024-12-19）**
   - 新增 ExtensionIsolator 组件，专门检测和隔离浏览器扩展干扰
   - 增强 HydrationErrorSuppressor，支持更多扩展错误类型（Chext、YouTube扩展等）
