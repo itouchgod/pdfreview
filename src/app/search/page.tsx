@@ -327,7 +327,7 @@ function SearchContent() {
       <header className="bg-background border-b border-border">
         <div className="max-w-full mx-auto px-4 py-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
-            <Link href="/home" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0">
               <div className="w-5 h-7 relative">
                 <Image 
                   src="/brand-icon.svg" 
