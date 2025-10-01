@@ -5,6 +5,7 @@ import { PDFTextProvider } from "@/contexts/PDFTextContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import DevToolsInit from "@/components/DevToolsInit";
 import HydrationErrorSuppressor from "@/components/HydrationErrorSuppressor";
+import ExtensionIsolator from "@/components/ExtensionIsolator";
 import Script from 'next/script';
 import { headers } from "next/headers";
 
@@ -74,20 +75,54 @@ export default async function RootLayout({
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
-              // 立即抑制水合错误，防止浏览器扩展干扰
+              // 立即抑制水合错误和扩展错误，防止浏览器扩展干扰
               (function() {
                 const originalError = console.error;
+                const originalWarn = console.warn;
+                
+                // 扩展错误关键词列表
+                const extensionKeywords = [
+                  'chext_', 'metadata.js', 'contentscript.js', 'content.js',
+                  'chext_driver.js', 'chext_loader.js', 'chrome-extension://',
+                  'net::ERR_ABORTED', '404 (Not Found)', 'siteDubbingRules',
+                  'ender metadata', 'mountUi return undefined', 'yt-ext-',
+                  'cz-shortcut-listen', 'Skipping ads'
+                ];
+                
                 console.error = function(...args) {
                   const message = args[0];
-                  if (typeof message === 'string' && 
-                      (message.includes('Hydration failed') || 
-                       message.includes('hydrated but some attributes') ||
-                       message.includes('server rendered HTML didn\\'t match') ||
-                       message.includes('throwOnHydrationMismatch'))) {
-                    // 静默处理水合错误
-                    return;
+                  if (typeof message === 'string') {
+                    // 检查水合错误
+                    const isHydrationError = 
+                      message.includes('Hydration failed') || 
+                      message.includes('hydrated but some attributes') ||
+                      message.includes('server rendered HTML didn\\'t match') ||
+                      message.includes('throwOnHydrationMismatch');
+                    
+                    // 检查扩展错误
+                    const isExtensionError = extensionKeywords.some(keyword => 
+                      message.includes(keyword)
+                    );
+                    
+                    if (isHydrationError || isExtensionError) {
+                      // 静默处理这些错误
+                      return;
+                    }
                   }
                   originalError.apply(console, args);
+                };
+                
+                console.warn = function(...args) {
+                  const message = args[0];
+                  if (typeof message === 'string') {
+                    const isExtensionWarning = extensionKeywords.some(keyword => 
+                      message.includes(keyword)
+                    );
+                    if (isExtensionWarning) {
+                      return; // 静默处理扩展警告
+                    }
+                  }
+                  originalWarn.apply(console, args);
                 };
               })();
             `,
@@ -120,6 +155,7 @@ export default async function RootLayout({
       </head>
       <body data-nonce={nonce} suppressHydrationWarning={true}>
         <HydrationErrorSuppressor />
+        <ExtensionIsolator />
         <ThemeProvider>
           <PDFTextProvider>
             <DevToolsInit />

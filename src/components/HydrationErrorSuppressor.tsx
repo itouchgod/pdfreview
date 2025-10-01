@@ -31,6 +31,15 @@ export default function HydrationErrorSuppressor() {
           const isExtensionError = 
             message.includes('cz-shortcut-listen') || 
             message.includes('yt-ext-') ||
+            message.includes('chext_') ||
+            message.includes('metadata.js') ||
+            message.includes('contentscript.js') ||
+            message.includes('content.js') ||
+            message.includes('chext_driver.js') ||
+            message.includes('chext_loader.js') ||
+            message.includes('chrome-extension://') ||
+            message.includes('net::ERR_ABORTED') ||
+            message.includes('404 (Not Found)') ||
             message.includes('data-') ||
             message.includes('aria-') ||
             message.includes('role=') ||
@@ -41,7 +50,10 @@ export default function HydrationErrorSuppressor() {
             message.includes('yt-ext-info-bar') ||
             message.includes('animate-pulse') ||
             message.includes('min-h-screen') ||
-            message.includes('bg-background');
+            message.includes('bg-background') ||
+            message.includes('siteDubbingRules') ||
+            message.includes('ender metadata') ||
+            message.includes('mountUi return undefined');
             
           if (isExtensionError) {
             // 静默处理这些由扩展导致的错误
