@@ -13,19 +13,19 @@ export default function ExtensionIsolator() {
       const extensions = [];
       
       // 检测 Chext 扩展
-      if (window.chext || document.querySelector('[data-chext]')) {
+      if ((window as any).chext || document.querySelector('[data-chext]')) {
         extensions.push('Chext');
       }
       
       // 检测 YouTube 相关扩展
       if (document.querySelector('[data-yt-ext]') || 
           document.querySelector('.yt-ext-') ||
-          window.ytExt) {
+          (window as any).ytExt) {
         extensions.push('YouTube Extension');
       }
       
       // 检测其他常见扩展
-      if (window.chrome && window.chrome.runtime) {
+      if ((window as any).chrome && (window as any).chrome.runtime) {
         extensions.push('Chrome Extension');
       }
       
@@ -91,7 +91,9 @@ export default function ExtensionIsolator() {
                 
                 // 标记为扩展元素
                 element.setAttribute('data-extension', 'true');
-                element.style.display = 'none';
+                if (element instanceof HTMLElement) {
+                  element.style.display = 'none';
+                }
                 
                 console.warn('🔇 已隔离扩展注入的元素:', element.tagName, element.id || element.className);
               }
