@@ -217,7 +217,7 @@ export default function ExtensionIsolator() {
 
       // 全局错误处理
       const originalOnError = window.onerror;
-      window.onerror = function(message, source, lineno, colno, error) {
+      window.onerror = function(message, source, _lineno, _colno, _error) {
         if (typeof message === 'string') {
           const isExtensionError = extensionKeywords.some(keyword => 
             message.includes(keyword) || 
@@ -228,7 +228,7 @@ export default function ExtensionIsolator() {
           }
         }
         if (originalOnError) {
-          return originalOnError.apply(this, arguments);
+          return originalOnError.apply(this, [message, source, _lineno, _colno, _error]);
         }
         return false;
       };
@@ -247,7 +247,7 @@ export default function ExtensionIsolator() {
           }
         }
         if (originalOnUnhandledRejection) {
-          return originalOnUnhandledRejection.apply(this, arguments);
+          return originalOnUnhandledRejection.call(this, event);
         }
       };
     };
