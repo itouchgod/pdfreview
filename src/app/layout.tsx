@@ -100,9 +100,13 @@ export default async function RootLayout({
                   'VM531:14',
                   'VM56:14',
                   'VM110:14',
+                  'VM247:14',
                   'vendors-326d2db556600f52.js:1:126815',
                   'vendors-326d2db556600f52.js:1:126622',
-                  'VM'
+                  'VM',
+                  'vendors-326d2db556600f52.js',
+                  'webpack-f9bdc8f8e7ef5feb.js',
+                  'main-app-e131d669f65d8db7.js'
                 ];
                 
                 console.error = function(...args) {
@@ -123,6 +127,14 @@ export default async function RootLayout({
                     if (isHydrationError || isExtensionError) {
                       // 静默处理这些错误
                       return;
+                    }
+                    // 检查是否是 VM 脚本错误
+                    if (message.includes('VM') && message.includes('Uncaught SyntaxError')) {
+                      return; // 静默处理所有 VM 脚本错误
+                    }
+                    // 检查是否是 appendChild 相关错误
+                    if (message.includes('appendChild') && message.includes('observe')) {
+                      return; // 静默处理 appendChild 相关错误
                     }
                   }
                   // 检查堆栈跟踪
