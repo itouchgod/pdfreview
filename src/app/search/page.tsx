@@ -359,7 +359,7 @@ function SearchContent() {
         </div>
       </header>
 
-      <main className="max-w-full mx-auto px-4 py-1 pb-24 sm:pb-6">
+      <main className="max-w-full mx-auto px-4 py-1 pb-6">
         <div className={`flex flex-col lg:flex-row gap-2 ${
           isSearchActive && sharedSearchResults.length > 0 ? 'lg:gap-2' : ''
         }`}>
@@ -376,7 +376,7 @@ function SearchContent() {
                         navigateToPDF(section.filePath, 1);
                       }
                     }}
-                    className="appearance-none bg-transparent border-none outline-none cursor-pointer text-lg font-semibold text-primary hover:text-primary/80 focus:text-primary min-w-0 max-w-full pr-8 py-2 transition-colors duration-200 text-center"
+                    className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base sm:text-lg font-semibold text-primary hover:text-primary/80 focus:text-primary min-w-0 max-w-full pr-8 py-2 transition-colors duration-200 text-center"
                   >
                     {PDF_CONFIG.sections.map((section) => (
                       <option key={section.name} value={section.filePath}>
@@ -390,6 +390,44 @@ function SearchContent() {
                     </svg>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            {/* 手机端翻页按钮 - 移动到PDF选择器下方 */}
+            <div className="sm:hidden bg-card border-b border-border">
+              <div className="flex items-center justify-between px-4 py-3">
+                <button
+                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span className="text-sm font-medium">Prev</span>
+                </button>
+                
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Page</span>
+                  <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-lg">
+                  {(() => {
+                    const calculator = PageCalculator.fromPath(selectedPDF);
+                    if (!calculator) return currentPage;
+                    return calculator.toAbsolutePage(currentPage);
+                  })()}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
+                >
+                  <span className="text-sm font-medium">Next</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
             </div>
               
@@ -426,55 +464,6 @@ function SearchContent() {
                       isPreviousDisabled={currentPage <= 1}
                       isNextDisabled={currentPage >= totalPages}
                     />
-                  </div>
-                  
-                  <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-40 sm:hidden">
-                    <div className="flex items-center justify-between px-4 py-3">
-                      <button
-                        onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
-                        disabled={currentPage <= 1}
-                        className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span className="text-sm font-medium">Prev</span>
-                      </button>
-                      
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">Page</span>
-                        <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-lg">
-                        {(() => {
-                          const calculator = PageCalculator.fromPath(selectedPDF);
-                          if (!calculator) return currentPage;
-                          return calculator.toAbsolutePage(currentPage);
-                        })()}
-                        </span>
-                      </div>
-                      
-                      <button
-                        onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
-                        disabled={currentPage >= totalPages}
-                        className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
-                      >
-                        <span className="text-sm font-medium">Next</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    <div className="px-4 py-2 bg-muted border-t border-border">
-                      <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
-                        <Image 
-                          src="/brand-icon.svg" 
-                          alt="IMPA Logo" 
-                          width={12}
-                          height={16}
-                        />
-                        <span>IMPA Marine Stores Guide • 8th Edition 2023</span>
-                      </div>
-                    </div>
                   </div>
                 </>
               )}
@@ -550,7 +539,7 @@ function SearchContent() {
                 unoptimized
               />
             </div>
-            <span className="font-medium">Marine Stores Guide</span>
+            <span className="font-medium hidden sm:inline">Marine Stores Guide</span>
             <span className="text-muted-foreground/60">•</span>
             <span>8th Edition 2023</span>
             <span className="text-muted-foreground/60">•</span>
