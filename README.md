@@ -128,6 +128,9 @@
   - 增强早期错误抑制脚本，在页面加载前就过滤所有扩展相关错误
   - 添加更多错误关键词，包括 "Failed to execute 'appendChild' on 'Node'" 等
   - 完全静默处理扩展注入的 VM 脚本和 webpack 相关错误
+  - 新增全局错误处理机制，捕获 window.onerror 和 window.onunhandledrejection
+  - 添加 VM56:14 等新的扩展错误关键词，确保完全覆盖所有扩展干扰
+  - 修复 TypeScript 类型错误，确保生产环境构建成功
 - 🛡️ **浏览器扩展错误处理增强（2024-12-19）**
   - 新增 ExtensionIsolator 组件，专门检测和隔离浏览器扩展干扰
   - 增强 HydrationErrorSuppressor，支持更多扩展错误类型（Chext、YouTube扩展等）
