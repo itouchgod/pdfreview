@@ -247,7 +247,7 @@ export default function ExtensionIsolator() {
           }
         }
         if (originalOnUnhandledRejection) {
-          return originalOnUnhandledRejection(event);
+          return (originalOnUnhandledRejection as any)(event);
         }
       };
     };
