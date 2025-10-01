@@ -71,6 +71,12 @@ export default function ExtensionIsolator() {
 
     // 监控扩展注入的元素
     const monitorExtensionInjection = () => {
+      // 确保 document.body 存在
+      if (!document.body) {
+        console.warn('🔇 document.body 不存在，跳过扩展监控');
+        return null;
+      }
+
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -94,12 +100,16 @@ export default function ExtensionIsolator() {
         });
       });
 
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      return observer;
+      try {
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        return observer;
+      } catch (error) {
+        console.warn('🔇 MutationObserver 初始化失败:', error);
+        return null;
+      }
     };
 
     // 执行扩展检测和隔离
@@ -111,7 +121,9 @@ export default function ExtensionIsolator() {
       
       // 清理函数
       return () => {
-        observer.disconnect();
+        if (observer) {
+          observer.disconnect();
+        }
         const style = document.getElementById('extension-isolation');
         if (style) {
           style.remove();

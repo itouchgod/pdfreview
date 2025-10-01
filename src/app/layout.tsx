@@ -86,7 +86,9 @@ export default async function RootLayout({
                   'chext_driver.js', 'chext_loader.js', 'chrome-extension://',
                   'net::ERR_ABORTED', '404 (Not Found)', 'siteDubbingRules',
                   'ender metadata', 'mountUi return undefined', 'yt-ext-',
-                  'cz-shortcut-listen', 'Skipping ads'
+                  'cz-shortcut-listen', 'Skipping ads',
+                  'Failed to execute \'observe\' on \'MutationObserver\'',
+                  'parameter 1 is not of type \'Node\''
                 ];
                 
                 console.error = function(...args) {

@@ -53,7 +53,9 @@ export default function HydrationErrorSuppressor() {
             message.includes('bg-background') ||
             message.includes('siteDubbingRules') ||
             message.includes('ender metadata') ||
-            message.includes('mountUi return undefined');
+            message.includes('mountUi return undefined') ||
+            message.includes('Failed to execute \'observe\' on \'MutationObserver\'') ||
+            message.includes('parameter 1 is not of type \'Node\'');
             
           if (isExtensionError) {
             // 静默处理这些由扩展导致的错误
