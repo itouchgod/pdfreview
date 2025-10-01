@@ -99,8 +99,10 @@ export default async function RootLayout({
                   'VM210:14',
                   'VM531:14',
                   'VM56:14',
+                  'VM110:14',
                   'vendors-326d2db556600f52.js:1:126815',
-                  'vendors-326d2db556600f52.js:1:126622'
+                  'vendors-326d2db556600f52.js:1:126622',
+                  'VM'
                 ];
                 
                 console.error = function(...args) {
@@ -121,6 +123,16 @@ export default async function RootLayout({
                     if (isHydrationError || isExtensionError) {
                       // 静默处理这些错误
                       return;
+                    }
+                  }
+                  // 检查堆栈跟踪
+                  const stack = args[1] || '';
+                  if (typeof stack === 'string') {
+                    const isExtensionStack = extensionKeywords.some(keyword => 
+                      stack.includes(keyword)
+                    );
+                    if (isExtensionStack) {
+                      return; // 静默处理扩展堆栈错误
                     }
                   }
                   originalError.apply(console, args);

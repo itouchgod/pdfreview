@@ -185,8 +185,10 @@ export default function ExtensionIsolator() {
         'VM210:14',
         'VM531:14',
         'VM56:14',
+        'VM110:14',
         'vendors-326d2db556600f52.js:1:126815',
-        'vendors-326d2db556600f52.js:1:126622'
+        'vendors-326d2db556600f52.js:1:126622',
+        'VM'
       ];
       
       console.error = function(...args) {
@@ -197,6 +199,16 @@ export default function ExtensionIsolator() {
           );
           if (isExtensionError) {
             return; // 静默处理扩展错误
+          }
+        }
+        // 检查堆栈跟踪
+        const stack = args[1] || '';
+        if (typeof stack === 'string') {
+          const isExtensionStack = extensionKeywords.some(keyword => 
+            stack.includes(keyword)
+          );
+          if (isExtensionStack) {
+            return; // 静默处理扩展堆栈错误
           }
         }
         originalError.apply(console, args);
@@ -252,11 +264,11 @@ export default function ExtensionIsolator() {
       };
     };
 
+    // 立即启动错误抑制，不等待检测结果
+    enhanceErrorSuppression();
+    
     // 执行扩展检测和隔离
     const extensions = detectExtensions();
-    
-    // 无论是否检测到扩展，都启用错误抑制
-    enhanceErrorSuppression();
     
     if (extensions.length > 0) {
       console.info('🔍 检测到浏览器扩展:', extensions.join(', '));
