@@ -298,6 +298,45 @@ function SearchContent() {
     }
   }, [searchQuery, textData, searchInAllSections, navigateToPDF, sharedSearchTerm]);
 
+  // 跨章节键盘快捷键支持
+  const handleCrossSectionKeyNavigation = useCallback((direction: 'previous' | 'next') => {
+    const currentIndex = PDF_CONFIG.sections.findIndex(section => section.filePath === selectedPDF);
+    if (currentIndex === -1) return;
+
+    if (direction === 'next') {
+      // 下一页：如果到达当前章节底部，跳转到下一个章节的首页
+      const calculator = PageCalculator.fromPath(selectedPDF);
+      if (calculator && currentPage >= calculator.getTotalPages()) {
+        // 到达章节底部，跳转到下一个章节
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < PDF_CONFIG.sections.length) {
+          const nextSection = PDF_CONFIG.sections[nextIndex];
+          handleSectionChange(nextSection.filePath, 1); // 跳转到下一个章节的首页
+        }
+      } else {
+        // 在当前章节内翻页
+        pdfViewerRef.current?.jumpToPage(currentPage + 1);
+      }
+    } else {
+      // 上一页：如果到达当前章节顶部，跳转到上一个章节的最后一页
+      if (currentPage <= 1) {
+        // 到达章节顶部，跳转到上一个章节
+        const prevIndex = currentIndex - 1;
+        if (prevIndex >= 0) {
+          const prevSection = PDF_CONFIG.sections[prevIndex];
+          const prevCalculator = PageCalculator.fromPath(prevSection.filePath);
+          if (prevCalculator) {
+            const lastPage = prevCalculator.getTotalPages();
+            handleSectionChange(prevSection.filePath, lastPage); // 跳转到上一个章节的最后一页
+          }
+        }
+      } else {
+        // 在当前章节内翻页
+        pdfViewerRef.current?.jumpToPage(currentPage - 1);
+      }
+    }
+  }, [selectedPDF, currentPage, handleSectionChange]);
+
   // 键盘快捷键支持
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -307,20 +346,16 @@ function SearchContent() {
       
       if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (currentPage > 1) {
-          pdfViewerRef.current?.jumpToPage(currentPage - 1);
-        }
+        handleCrossSectionKeyNavigation('previous');
       } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
         event.preventDefault();
-        if (currentPage < totalPages) {
-          pdfViewerRef.current?.jumpToPage(currentPage + 1);
-        }
+        handleCrossSectionKeyNavigation('next');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, totalPages]);
+  }, [handleCrossSectionKeyNavigation]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -397,8 +432,7 @@ function SearchContent() {
             <div className="sm:hidden bg-card border-b border-border">
               <div className="flex items-center justify-between px-4 py-3">
                 <button
-                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
-                  disabled={currentPage <= 1}
+                  onClick={() => handleCrossSectionKeyNavigation('previous')}
                   className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -419,8 +453,7 @@ function SearchContent() {
                 </div>
                 
                 <button
-                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
+                  onClick={() => handleCrossSectionKeyNavigation('next')}
                   className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                 >
                   <span className="text-sm font-medium">Next</span>
@@ -463,6 +496,7 @@ function SearchContent() {
                       onNextPage={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       isPreviousDisabled={currentPage <= 1}
                       isNextDisabled={currentPage >= totalPages}
+                      onSectionChange={handleSectionChange}
                     />
                   </div>
                 </>

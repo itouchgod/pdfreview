@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { PageCalculator } from '@/utils/pageCalculator';
+import { PDF_CONFIG } from '@/config/pdf';
 
 interface DraggableFloatingButtonProps {
   currentPage: number;
@@ -10,6 +11,7 @@ interface DraggableFloatingButtonProps {
   onNextPage: () => void;
   isPreviousDisabled: boolean;
   isNextDisabled: boolean;
+  onSectionChange?: (sectionPath: string, pageOrReset?: number | boolean) => void;
 }
 
 interface Position {
@@ -23,7 +25,8 @@ export default function DraggableFloatingButton({
   onPreviousPage,
   onNextPage,
   isPreviousDisabled,
-  isNextDisabled
+  isNextDisabled,
+  onSectionChange
 }: DraggableFloatingButtonProps) {
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -199,6 +202,47 @@ export default function DraggableFloatingButton({
     return () => window.removeEventListener('resize', handleResize);
   }, [position, constrainPosition, savePosition, isClient]);
 
+  // 跨章节翻页逻辑
+  const handleCrossSectionNavigation = useCallback((direction: 'previous' | 'next') => {
+    if (!onSectionChange) return;
+
+    const currentIndex = PDF_CONFIG.sections.findIndex(section => section.filePath === selectedPDF);
+    if (currentIndex === -1) return;
+
+    if (direction === 'next') {
+      // 下一页：如果到达当前章节底部，跳转到下一个章节的首页
+      const calculator = PageCalculator.fromPath(selectedPDF);
+      if (calculator && currentPage >= calculator.getTotalPages()) {
+        // 到达章节底部，跳转到下一个章节
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < PDF_CONFIG.sections.length) {
+          const nextSection = PDF_CONFIG.sections[nextIndex];
+          onSectionChange(nextSection.filePath, 1); // 跳转到下一个章节的首页
+        }
+      } else {
+        // 在当前章节内翻页
+        onNextPage();
+      }
+    } else {
+      // 上一页：如果到达当前章节顶部，跳转到上一个章节的最后一页
+      if (currentPage <= 1) {
+        // 到达章节顶部，跳转到上一个章节
+        const prevIndex = currentIndex - 1;
+        if (prevIndex >= 0) {
+          const prevSection = PDF_CONFIG.sections[prevIndex];
+          const prevCalculator = PageCalculator.fromPath(prevSection.filePath);
+          if (prevCalculator) {
+            const lastPage = prevCalculator.getTotalPages();
+            onSectionChange(prevSection.filePath, lastPage); // 跳转到上一个章节的最后一页
+          }
+        }
+      } else {
+        // 在当前章节内翻页
+        onPreviousPage();
+      }
+    }
+  }, [selectedPDF, currentPage, onSectionChange, onNextPage, onPreviousPage]);
+
   // 计算绝对页码
   const absolutePage = (() => {
     const calculator = PageCalculator.fromPath(selectedPDF);
@@ -224,8 +268,8 @@ export default function DraggableFloatingButton({
       <div className="flex flex-col items-center space-y-3 sm:space-y-4 lg:space-y-5">
         {/* 上一页按钮 */}
         <button
-          onClick={onPreviousPage}
-          disabled={isPreviousDisabled}
+          onClick={() => handleCrossSectionNavigation('previous')}
+          disabled={!onSectionChange && isPreviousDisabled}
           className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
           title="Previous Page (↑ or ←)"
         >
@@ -253,8 +297,8 @@ export default function DraggableFloatingButton({
         
         {/* 下一页按钮 */}
         <button
-          onClick={onNextPage}
-          disabled={isNextDisabled}
+          onClick={() => handleCrossSectionNavigation('next')}
+          disabled={!onSectionChange && isNextDisabled}
           className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
           title="Next Page (↓ or →)"
         >
