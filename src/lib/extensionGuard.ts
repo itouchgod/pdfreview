@@ -298,7 +298,7 @@ class ExtensionGuard {
         const elementId = element.id || '';
         const elementClass = typeof element.className === 'string' 
           ? element.className 
-          : element.className?.toString() || '';
+          : (element.className as DOMTokenList)?.toString() || '';
         this.log('🔇 已隔离扩展元素:', element.tagName, elementId || elementClass);
       }
     }
@@ -392,7 +392,7 @@ class ExtensionGuard {
       // 安全地处理 className，可能是字符串或 DOMTokenList
       const className = typeof element.className === 'string' 
         ? element.className.toLowerCase() 
-        : element.className?.toString().toLowerCase() || '';
+        : (element.className as DOMTokenList)?.toString().toLowerCase() || '';
       const src = element.getAttribute('src')?.toLowerCase() || '';
 
       return (

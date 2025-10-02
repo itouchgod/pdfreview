@@ -310,7 +310,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     setCurrentPage(page);
     onPageChange?.(page, totalPages);
     performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
-  }, [loading, pdf, onPageChange, performanceMonitor, pdfUrl, totalPages]);
+  }, [loading, pdf, onPageChange, performanceMonitor, totalPages]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({

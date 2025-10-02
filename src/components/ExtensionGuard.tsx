@@ -22,7 +22,7 @@ export default function ExtensionGuard({
 }: ExtensionGuardProps) {
   useEffect(() => {
     // 初始化扩展防护系统
-    const guard = initExtensionGuard({
+    initExtensionGuard({
       enableLogging,
       enableIsolation,
       enableErrorSuppression,
