@@ -64,17 +64,25 @@
       "name": "31-Safety_Protective_Gear",
       "title": "31, Safety Protective Gear",
       "description": "安全防护装备",
-      "start_page": 272,
+      "start_page": 274,
       "end_page": 298,
       "file_path": "sections/31-Safety_Protective_Gear.pdf"
     },
     {
-      "name": "33-Safety_Equipment",
-      "title": "33, Safety Equipment",
-      "description": "安全设备",
+      "name": "33-Safety_Equipment_part1",
+      "title": "33, Safety Equipment (Part 1)",
+      "description": "安全设备（第一部分）",
       "start_page": 299,
+      "end_page": 356,
+      "file_path": "sections/33-Safety_Equipment_part1.pdf"
+    },
+    {
+      "name": "33-Safety_Equipment_part2",
+      "title": "33, Safety Equipment (Part 2)",
+      "description": "安全设备（第二部分）",
+      "start_page": 357,
       "end_page": 415,
-      "file_path": "sections/33-Safety_Equipment.pdf"
+      "file_path": "sections/33-Safety_Equipment_part2.pdf"
     },
     {
       "name": "35-Hose_Couplings",
@@ -149,20 +157,36 @@
       "file_path": "sections/55-Cleaning_Material_Chemicals.pdf"
     },
     {
-      "name": "59-Pneumatic_Electrical_Tools",
-      "title": "59, Pneumatic & Electrical Tools",
-      "description": "气动和电动工具",
+      "name": "59-Pneumatic_Electrical_Tools_part1",
+      "title": "59, Pneumatic & Electrical Tools (Part 1)",
+      "description": "气动和电动工具（第一部分）",
       "start_page": 665,
-      "end_page": 755,
-      "file_path": "sections/59-Pneumatic_Electrical_Tools.pdf"
+      "end_page": 709,
+      "file_path": "sections/59-Pneumatic_Electrical_Tools_part1.pdf"
     },
     {
-      "name": "61-Hand_Tools",
-      "title": "61, Hand Tools",
-      "description": "手工工具",
+      "name": "59-Pneumatic_Electrical_Tools_part2",
+      "title": "59, Pneumatic & Electrical Tools (Part 2)",
+      "description": "气动和电动工具（第二部分）",
+      "start_page": 710,
+      "end_page": 755,
+      "file_path": "sections/59-Pneumatic_Electrical_Tools_part2.pdf"
+    },
+    {
+      "name": "61-Hand_Tools_part1",
+      "title": "61, Hand Tools (Part 1)",
+      "description": "手工工具（第一部分）",
       "start_page": 756,
+      "end_page": 808,
+      "file_path": "sections/61-Hand_Tools_part1.pdf"
+    },
+    {
+      "name": "61-Hand_Tools_part2",
+      "title": "61, Hand Tools (Part 2)",
+      "description": "手工工具（第二部分）",
+      "start_page": 809,
       "end_page": 861,
-      "file_path": "sections/61-Hand_Tools.pdf"
+      "file_path": "sections/61-Hand_Tools_part2.pdf"
     },
     {
       "name": "63-Cutting_Tools",
@@ -213,12 +237,20 @@
       "file_path": "sections/73-Pipe_Tube_Fittings.pdf"
     },
     {
-      "name": "75-Valves_Cocks",
-      "title": "75, Valves & Cocks",
-      "description": "阀门和旋塞",
+      "name": "75-Valves_Cocks_part1",
+      "title": "75, Valves & Cocks (Part 1)",
+      "description": "阀门和旋塞（第一部分）",
       "start_page": 1046,
+      "end_page": 1103,
+      "file_path": "sections/75-Valves_Cocks_part1.pdf"
+    },
+    {
+      "name": "75-Valves_Cocks_part2",
+      "title": "75, Valves & Cocks (Part 2)",
+      "description": "阀门和旋塞（第二部分）",
+      "start_page": 1104,
       "end_page": 1162,
-      "file_path": "sections/75-Valves_Cocks.pdf"
+      "file_path": "sections/75-Valves_Cocks_part2.pdf"
     },
     {
       "name": "77-Bearings",
@@ -229,12 +261,20 @@
       "file_path": "sections/77-Bearings.pdf"
     },
     {
-      "name": "79-Electrical_Equipment",
-      "title": "79, Electrical Equipment",
-      "description": "电气设备",
+      "name": "79-Electrical_Equipment_part1",
+      "title": "79, Electrical Equipment (Part 1)",
+      "description": "电气设备（第一部分）",
       "start_page": 1176,
+      "end_page": 1217,
+      "file_path": "sections/79-Electrical_Equipment_part1.pdf"
+    },
+    {
+      "name": "79-Electrical_Equipment_part2",
+      "title": "79, Electrical Equipment (Part 2)",
+      "description": "电气设备（第二部分）",
+      "start_page": 1218,
       "end_page": 1260,
-      "file_path": "sections/79-Electrical_Equipment.pdf"
+      "file_path": "sections/79-Electrical_Equipment_part2.pdf"
     },
     {
       "name": "81-Packing_Jointing",
