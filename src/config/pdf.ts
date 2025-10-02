@@ -81,19 +81,29 @@ export const PDF_CONFIG = {
       filePath: '/pdfs/sections/31-Safety_Protective_Gear.pdf',
       description: '安全防护装备',
       category: '安全设备',
-      startPage: 272,
+      startPage: 274,
       endPage: 298,
       size: '8.7MB'
     },
     {
-      name: '33-Safety_Equipment',
-      title: '33, Safety Equipment',
-      filePath: '/pdfs/sections/33-Safety_Equipment.pdf',
-      description: '安全设备',
+      name: '33-Safety_Equipment_part1',
+      title: '33, Safety Equipment (Part 1)',
+      filePath: '/pdfs/sections/33-Safety_Equipment_part1.pdf',
+      description: '安全设备（第一部分）',
       category: '安全设备',
       startPage: 299,
+      endPage: 356,
+      size: '17.5MB'
+    },
+    {
+      name: '33-Safety_Equipment_part2',
+      title: '33, Safety Equipment (Part 2)',
+      filePath: '/pdfs/sections/33-Safety_Equipment_part2.pdf',
+      description: '安全设备（第二部分）',
+      category: '安全设备',
+      startPage: 357,
       endPage: 415,
-      size: '35.0MB'
+      size: '17.5MB'
     },
     {
       name: '35-Hose_Couplings',
@@ -186,24 +196,44 @@ export const PDF_CONFIG = {
       size: '10.3MB'
     },
     {
-      name: '59-Pneumatic_Electrical_Tools',
-      title: '59, Pneumatic & Electrical Tools',
-      filePath: '/pdfs/sections/59-Pneumatic_Electrical_Tools.pdf',
-      description: '气动和电动工具',
+      name: '59-Pneumatic_Electrical_Tools_part1',
+      title: '59, Pneumatic & Electrical Tools (Part 1)',
+      filePath: '/pdfs/sections/59-Pneumatic_Electrical_Tools_part1.pdf',
+      description: '气动和电动工具（第一部分）',
       category: '工具设备',
       startPage: 665,
-      endPage: 755,
-      size: '28.3MB'
+      endPage: 709,
+      size: '14.2MB'
     },
     {
-      name: '61-Hand_Tools',
-      title: '61, Hand Tools',
-      filePath: '/pdfs/sections/61-Hand_Tools.pdf',
-      description: '手工工具',
+      name: '59-Pneumatic_Electrical_Tools_part2',
+      title: '59, Pneumatic & Electrical Tools (Part 2)',
+      filePath: '/pdfs/sections/59-Pneumatic_Electrical_Tools_part2.pdf',
+      description: '气动和电动工具（第二部分）',
+      category: '工具设备',
+      startPage: 710,
+      endPage: 755,
+      size: '14.1MB'
+    },
+    {
+      name: '61-Hand_Tools_part1',
+      title: '61, Hand Tools (Part 1)',
+      filePath: '/pdfs/sections/61-Hand_Tools_part1.pdf',
+      description: '手工工具（第一部分）',
       category: '工具设备',
       startPage: 756,
+      endPage: 808,
+      size: '15.2MB'
+    },
+    {
+      name: '61-Hand_Tools_part2',
+      title: '61, Hand Tools (Part 2)',
+      filePath: '/pdfs/sections/61-Hand_Tools_part2.pdf',
+      description: '手工工具（第二部分）',
+      category: '工具设备',
+      startPage: 809,
       endPage: 861,
-      size: '30.3MB'
+      size: '15.1MB'
     },
     {
       name: '63-Cutting_Tools',
@@ -266,14 +296,24 @@ export const PDF_CONFIG = {
       size: '11.0MB'
     },
     {
-      name: '75-Valves_Cocks',
-      title: '75, Valves & Cocks',
-      filePath: '/pdfs/sections/75-Valves_Cocks.pdf',
-      description: '阀门和旋塞',
+      name: '75-Valves_Cocks_part1',
+      title: '75, Valves & Cocks (Part 1)',
+      filePath: '/pdfs/sections/75-Valves_Cocks_part1.pdf',
+      description: '阀门和旋塞（第一部分）',
       category: '管道系统',
       startPage: 1046,
+      endPage: 1103,
+      size: '19.0MB'
+    },
+    {
+      name: '75-Valves_Cocks_part2',
+      title: '75, Valves & Cocks (Part 2)',
+      filePath: '/pdfs/sections/75-Valves_Cocks_part2.pdf',
+      description: '阀门和旋塞（第二部分）',
+      category: '管道系统',
+      startPage: 1104,
       endPage: 1162,
-      size: '37.9MB'
+      size: '18.9MB'
     },
     {
       name: '77-Bearings',
@@ -286,14 +326,24 @@ export const PDF_CONFIG = {
       size: '4.3MB'
     },
     {
-      name: '79-Electrical_Equipment',
-      title: '79, Electrical Equipment',
-      filePath: '/pdfs/sections/79-Electrical_Equipment.pdf',
-      description: '电气设备',
+      name: '79-Electrical_Equipment_part1',
+      title: '79, Electrical Equipment (Part 1)',
+      filePath: '/pdfs/sections/79-Electrical_Equipment_part1.pdf',
+      description: '电气设备（第一部分）',
       category: '电气系统',
       startPage: 1176,
+      endPage: 1217,
+      size: '13.0MB'
+    },
+    {
+      name: '79-Electrical_Equipment_part2',
+      title: '79, Electrical Equipment (Part 2)',
+      filePath: '/pdfs/sections/79-Electrical_Equipment_part2.pdf',
+      description: '电气设备（第二部分）',
+      category: '电气系统',
+      startPage: 1218,
       endPage: 1260,
-      size: '25.9MB'
+      size: '12.9MB'
     },
     {
       name: '81-Packing_Jointing',
@@ -353,7 +403,8 @@ export const PDF_CONFIG = {
     edition: '8th Edition',
     year: '2023',
     originalSize: '494.1MB',
-    totalPages: 1504,
+    totalPages: 1368, // 实际分割章节覆盖的页数 (39-1406)
+    originalTotalPages: 1504, // 原始PDF总页数
     description: '国际海事采购协会海洋用品指南'
   },
   

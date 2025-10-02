@@ -4,8 +4,7 @@ import "./globals.css";
 import { PDFTextProvider } from "@/contexts/PDFTextContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import DevToolsInit from "@/components/DevToolsInit";
-import HydrationErrorSuppressor from "@/components/HydrationErrorSuppressor";
-import ExtensionIsolator from "@/components/ExtensionIsolator";
+import ExtensionGuard from "@/components/ExtensionGuard";
 import Script from 'next/script';
 import { headers } from "next/headers";
 
@@ -68,99 +67,106 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/icon-48x48.png" />
         <link rel="shortcut icon" href="/icon-48x48.png" type="image/png" />
         
-        {/* 早期水合错误抑制 */}
+        {/* 早期扩展防护脚本 */}
         <Script
-          id="hydration-error-suppressor"
+          id="extension-guard-early"
           strategy="beforeInteractive"
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
-              // 立即抑制水合错误和扩展错误，防止浏览器扩展干扰
+              // 立即启动扩展防护，防止浏览器扩展干扰
               (function() {
                 const originalError = console.error;
                 const originalWarn = console.warn;
                 
-                // 扩展错误关键词列表
+                // 扩展错误关键词列表 - 全面覆盖
                 const extensionKeywords = [
                   'chext_', 'metadata.js', 'contentscript.js', 'content.js',
                   'chext_driver.js', 'chext_loader.js', 'chrome-extension://',
                   'net::ERR_ABORTED', '404 (Not Found)', 'siteDubbingRules',
                   'ender metadata', 'mountUi return undefined', 'yt-ext-',
                   'cz-shortcut-listen', 'Skipping ads',
-                  'Failed to execute \'observe\' on \'MutationObserver\'',
-                  'parameter 1 is not of type \'Node\'',
-                  'Unexpected identifier \'observe\'',
-                  'appendChild\' on \'Node\'',
-                  'Failed to execute \'appendChild\' on \'Node\'',
-                  'vendors-326d2db556600f52.js',
-                  'webpack-f9bdc8f8e7ef5feb.js',
-                  'main-app-e131d669f65d8db7.js',
-                  'index.ts-loader3.js',
-                  'VM210:14',
-                  'VM531:14',
-                  'VM56:14',
-                  'VM110:14',
-                  'VM247:14',
+                  'Failed to execute \\'observe\\' on \\'MutationObserver\\'',
+                  'parameter 1 is not of type \\'Node\\'',
+                  'Unexpected identifier \\'observe\\'',
+                  'appendChild\\' on \\'Node\\'',
+                  'Failed to execute \\'appendChild\\' on \\'Node\\'',
+                  'Failed to execute \\'appendChild\\' on \\'Node\\': Unexpected identifier \\'observe\\'',
+                  'Hydration failed', 'hydrated but some attributes',
+                  'server rendered HTML didn\\'t match', 'hydration mismatch',
+                  'throwOnHydrationMismatch',
+                  'vendors-326d2db556600f52.js', 'webpack-f9bdc8f8e7ef5feb.js',
+                  'main-app-e131d669f65d8db7.js', 'index.ts-loader3.js',
+                  'VM210:14', 'VM531:14', 'VM56:14', 'VM110:14', 'VM247:14',
                   'vendors-326d2db556600f52.js:1:126815',
-                  'vendors-326d2db556600f52.js:1:126622',
-                  'VM',
-                  'vendors-326d2db556600f52.js',
-                  'webpack-f9bdc8f8e7ef5feb.js',
-                  'main-app-e131d669f65d8db7.js'
+                  'vendors-326d2db556600f52.js:1:126622', 'VM'
                 ];
                 
-                console.error = function(...args) {
+                // VM 脚本模式匹配
+                const vmPatterns = [
+                  /VM\\d+:14/, /VM\\d+:\\d+/, /eval @ app-bootstrap\\.js/,
+                  /eval @ app-next-dev\\.js/, /vendors-\\w+\\.js/,
+                  /webpack-\\w+\\.js/, /main-app-\\w+\\.js/
+                ];
+                
+                function isExtensionError(args) {
                   const message = args[0];
-                  if (typeof message === 'string') {
-                    // 检查水合错误
-                    const isHydrationError = 
-                      message.includes('Hydration failed') || 
-                      message.includes('hydrated but some attributes') ||
-                      message.includes('server rendered HTML didn\\'t match') ||
-                      message.includes('throwOnHydrationMismatch');
-                    
-                    // 检查扩展错误
-                    const isExtensionError = extensionKeywords.some(keyword => 
-                      message.includes(keyword)
-                    );
-                    
-                    if (isHydrationError || isExtensionError) {
-                      // 静默处理这些错误
-                      return;
-                    }
-                    // 检查是否是 VM 脚本错误
-                    if (message.includes('VM') && message.includes('Uncaught SyntaxError')) {
-                      return; // 静默处理所有 VM 脚本错误
-                    }
-                    // 检查是否是 appendChild 相关错误
-                    if (message.includes('appendChild') && message.includes('observe')) {
-                      return; // 静默处理 appendChild 相关错误
-                    }
-                  }
+                  if (typeof message !== 'string') return false;
+                  
+                  // 检查关键词匹配
+                  const hasKeyword = extensionKeywords.some(keyword => 
+                    message.includes(keyword)
+                  );
+                  
+                  // 检查VM脚本模式
+                  const hasVMPattern = vmPatterns.some(pattern => 
+                    pattern.test(message)
+                  );
+                  
                   // 检查堆栈跟踪
                   const stack = args[1] || '';
-                  if (typeof stack === 'string') {
-                    const isExtensionStack = extensionKeywords.some(keyword => 
-                      stack.includes(keyword)
-                    );
-                    if (isExtensionStack) {
-                      return; // 静默处理扩展堆栈错误
-                    }
+                  const hasStackKeyword = typeof stack === 'string' && 
+                    extensionKeywords.some(keyword => stack.includes(keyword));
+                  
+                  return hasKeyword || hasVMPattern || hasStackKeyword;
+                }
+                
+                console.error = function(...args) {
+                  if (isExtensionError(args)) {
+                    return; // 静默处理扩展错误
                   }
                   originalError.apply(console, args);
                 };
                 
                 console.warn = function(...args) {
-                  const message = args[0];
-                  if (typeof message === 'string') {
-                    const isExtensionWarning = extensionKeywords.some(keyword => 
-                      message.includes(keyword)
-                    );
-                    if (isExtensionWarning) {
-                      return; // 静默处理扩展警告
-                    }
+                  if (isExtensionError(args)) {
+                    return; // 静默处理扩展警告
                   }
                   originalWarn.apply(console, args);
+                };
+                
+                // 全局错误处理
+                const originalOnError = window.onerror;
+                window.onerror = function(message, source, lineno, colno, error) {
+                  if (isExtensionError([message, source])) {
+                    return true; // 阻止错误传播
+                  }
+                  if (originalOnError) {
+                    return originalOnError.call(window, message, source, lineno, colno, error);
+                  }
+                  return false;
+                };
+                
+                // 未捕获的 Promise 错误处理
+                const originalOnUnhandledRejection = window.onunhandledrejection;
+                window.onunhandledrejection = function(event) {
+                  if (isExtensionError([event.reason])) {
+                    event.preventDefault();
+                    return;
+                  }
+                  if (originalOnUnhandledRejection) {
+                    return originalOnUnhandledRejection.call(window, event);
+                  }
                 };
               })();
             `,
@@ -192,8 +198,12 @@ export default async function RootLayout({
         
       </head>
       <body data-nonce={nonce} suppressHydrationWarning={true}>
-        <HydrationErrorSuppressor />
-        <ExtensionIsolator />
+        <ExtensionGuard 
+          enableLogging={process.env.NODE_ENV === 'development'}
+          enableIsolation={true}
+          enableErrorSuppression={true}
+          enableDOMProtection={true}
+        />
         <ThemeProvider>
           <PDFTextProvider>
             <DevToolsInit />
