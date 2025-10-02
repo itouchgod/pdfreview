@@ -202,44 +202,54 @@ export default function DraggableFloatingButton({
     return () => window.removeEventListener('resize', handleResize);
   }, [position, constrainPosition, savePosition, isClient]);
 
-  // 跨章节翻页逻辑
+  // 跨章节翻页逻辑 - 基于绝对页码
   const handleCrossSectionNavigation = useCallback((direction: 'previous' | 'next') => {
     if (!onSectionChange) return;
 
-    const currentIndex = PDF_CONFIG.sections.findIndex(section => section.filePath === selectedPDF);
-    if (currentIndex === -1) return;
+    // 获取当前绝对页码
+    const calculator = PageCalculator.fromPath(selectedPDF);
+    if (!calculator) return;
+    
+    const currentAbsolutePage = calculator.toAbsolutePage(currentPage);
+    const targetAbsolutePage = direction === 'next' ? currentAbsolutePage + 1 : currentAbsolutePage - 1;
 
-    if (direction === 'next') {
-      // 下一页：如果到达当前章节底部，跳转到下一个章节的首页
-      const calculator = PageCalculator.fromPath(selectedPDF);
-      if (calculator && currentPage >= calculator.getTotalPages()) {
-        // 到达章节底部，跳转到下一个章节
-        const nextIndex = currentIndex + 1;
-        if (nextIndex < PDF_CONFIG.sections.length) {
-          const nextSection = PDF_CONFIG.sections[nextIndex];
-          onSectionChange(nextSection.filePath, 1); // 跳转到下一个章节的首页
-        }
+    // 检查目标页码是否在有效范围内（39-1406），实现循环翻页
+    const firstSection = PDF_CONFIG.sections[0];
+    const minPage = firstSection.startPage;
+    
+    // 找到真正的最大页码
+    const maxPage = Math.max(...PDF_CONFIG.sections.map(section => section.endPage));
+    
+    let finalTargetPage = targetAbsolutePage;
+    
+    // 实现循环翻页
+    if (targetAbsolutePage < minPage) {
+      // 如果目标页码小于最小页码，跳转到最后一页
+      finalTargetPage = maxPage;
+    } else if (targetAbsolutePage > maxPage) {
+      // 如果目标页码大于最大页码，跳转到第一页
+      finalTargetPage = minPage;
+    }
+
+    // 查找目标页码所在的章节
+    const targetPageInfo = PageCalculator.findPageInfo(finalTargetPage);
+    
+    if (targetPageInfo) {
+      // 目标页码在某个章节中
+      if (targetPageInfo.section.filePath !== selectedPDF) {
+        // 需要切换章节
+        onSectionChange(targetPageInfo.section.filePath, targetPageInfo.relativePage);
       } else {
         // 在当前章节内翻页
-        onNextPage();
+        if (direction === 'next') {
+          onNextPage();
+        } else {
+          onPreviousPage();
+        }
       }
     } else {
-      // 上一页：如果到达当前章节顶部，跳转到上一个章节的最后一页
-      if (currentPage <= 1) {
-        // 到达章节顶部，跳转到上一个章节
-        const prevIndex = currentIndex - 1;
-        if (prevIndex >= 0) {
-          const prevSection = PDF_CONFIG.sections[prevIndex];
-          const prevCalculator = PageCalculator.fromPath(prevSection.filePath);
-          if (prevCalculator) {
-            const lastPage = prevCalculator.getTotalPages();
-            onSectionChange(prevSection.filePath, lastPage); // 跳转到上一个章节的最后一页
-          }
-        }
-      } else {
-        // 在当前章节内翻页
-        onPreviousPage();
-      }
+      // 目标页码超出范围，不执行任何操作
+      console.warn(`Target page ${finalTargetPage} is out of range`);
     }
   }, [selectedPDF, currentPage, onSectionChange, onNextPage, onPreviousPage]);
 
