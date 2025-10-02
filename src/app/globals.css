@@ -24,27 +24,27 @@
   --radius: 0.75rem;
 }
 
-/* 深色主题变量 */
+/* 深色主题变量 - 优化版 */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #1a1a1a;
-  --card-foreground: #ededed;
-  --popover: #1a1a1a;
-  --popover-foreground: #ededed;
-  --primary: #1e40af;
+  --background: #0f0f0f;
+  --foreground: #f8fafc;
+  --card: #1e1e1e;
+  --card-foreground: #f8fafc;
+  --popover: #1e1e1e;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #262626;
-  --secondary-foreground: #f5f5f5;
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #f5f5f5;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #e2e8f0;
+  --muted: #2a2a2a;
+  --muted-foreground: #94a3b8;
+  --accent: #2a2a2a;
+  --accent-foreground: #e2e8f0;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #404040;
-  --input: #404040;
-  --ring: #1e40af;
+  --border: #374151;
+  --input: #374151;
+  --ring: #3b82f6;
 }
 
 @theme inline {
@@ -78,6 +78,70 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* 黑夜模式特殊样式 */
+.dark body {
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+  background-attachment: fixed;
+}
+
+.dark .card {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(55, 65, 81, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* PDF选择器透明玻璃效果 */
+.pdf-selector-dropdown {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .pdf-selector-dropdown {
+  background: rgba(30, 30, 30, 0.3) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(55, 65, 81, 0.2) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* PDF选择器菜单项透明效果 */
+.pdf-selector-item {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+.pdf-selector-item:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .pdf-selector-item {
+  background: rgba(42, 42, 42, 0.2) !important;
+  border: 1px solid rgba(55, 65, 81, 0.1) !important;
+}
+
+.dark .pdf-selector-item:hover {
+  background: rgba(42, 42, 42, 0.4) !important;
+  border: 1px solid rgba(55, 65, 81, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 隐藏滚动条 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* 自定义动画 */
 @keyframes fade-in {
   from {
@@ -101,12 +165,25 @@ body {
   }
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.6s ease-out;
 }
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }
 
 /* 主题切换过渡效果 */

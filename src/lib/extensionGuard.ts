@@ -295,7 +295,11 @@ class ExtensionGuard {
     if (this.isExtensionElement(element)) {
       this.isolateElement(element);
       if (this.config.enableLogging) {
-        this.log('🔇 已隔离扩展元素:', element.tagName, element.id || element.className);
+        const elementId = element.id || '';
+        const elementClass = typeof element.className === 'string' 
+          ? element.className 
+          : element.className?.toString() || '';
+        this.log('🔇 已隔离扩展元素:', element.tagName, elementId || elementClass);
       }
     }
   }
@@ -383,25 +387,36 @@ class ExtensionGuard {
    * 检查是否是扩展元素
    */
   private isExtensionElement(element: Element): boolean {
-    const id = element.id?.toLowerCase() || '';
-    const className = element.className?.toLowerCase() || '';
-    const src = element.getAttribute('src')?.toLowerCase() || '';
+    try {
+      const id = element.id?.toLowerCase() || '';
+      // 安全地处理 className，可能是字符串或 DOMTokenList
+      const className = typeof element.className === 'string' 
+        ? element.className.toLowerCase() 
+        : element.className?.toString().toLowerCase() || '';
+      const src = element.getAttribute('src')?.toLowerCase() || '';
 
-    return (
-      id.includes('chext') ||
-      className.includes('chext') ||
-      id.includes('metadata') ||
-      className.includes('metadata') ||
-      id.includes('contentscript') ||
-      className.includes('contentscript') ||
-      className.includes('yt-ext') ||
-      element.hasAttribute('data-extension') ||
-      element.hasAttribute('data-chext') ||
-      element.hasAttribute('data-yt-ext') ||
-      src.includes('chext') ||
-      src.includes('metadata.js') ||
-      src.includes('contentscript.js')
-    );
+      return (
+        id.includes('chext') ||
+        className.includes('chext') ||
+        id.includes('metadata') ||
+        className.includes('metadata') ||
+        id.includes('contentscript') ||
+        className.includes('contentscript') ||
+        className.includes('yt-ext') ||
+        element.hasAttribute('data-extension') ||
+        element.hasAttribute('data-chext') ||
+        element.hasAttribute('data-yt-ext') ||
+        src.includes('chext') ||
+        src.includes('metadata.js') ||
+        src.includes('contentscript.js')
+      );
+    } catch (error) {
+      // 如果出现任何错误，静默处理，避免影响页面功能
+      if (this.config.enableLogging) {
+        console.warn('[ExtensionGuard] Error checking extension element:', error);
+      }
+      return false;
+    }
   }
 
   /**

@@ -6,12 +6,14 @@ import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
 import DraggableFloatingButton from '@/components/DraggableFloatingButton';
+import PDFSelector from '@/components/PDFSelector';
 import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import { PageCalculator } from '@/utils/pageCalculator';
 import { SectionChangeHandler } from '@/types/pdf';
+import { getGlassButtonBaseStyles, createGlassButtonHandlers, getIconStyles, getPageNumberStyles } from '@/lib/buttonStyles';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -410,30 +412,16 @@ function SearchContent() {
           <div className="flex-1 min-w-0 order-1 lg:order-1 lg:flex-[3] xl:flex-[4]">
             <div className="px-6 py-3 border-b border-border bg-card">
               <div className="flex items-center justify-center">
-                <div className="relative">
-                  <select
-                    value={selectedPDF || ''}
-                    onChange={(e) => {
-                      const section = PDF_CONFIG.sections.find(s => s.filePath === e.target.value);
-                      if (section) {
-                        // 切换章节时总是从第一页开始
-                        navigateToPDF(section.filePath, 1);
-                      }
-                    }}
-                    className="appearance-none bg-transparent border-none outline-none cursor-pointer text-base sm:text-lg font-semibold text-primary hover:text-primary/80 focus:text-primary min-w-0 max-w-full pr-8 py-2 transition-colors duration-200 text-center"
-                  >
-                    {PDF_CONFIG.sections.map((section) => (
-                      <option key={section.name} value={section.filePath}>
-                        {section.title || section.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <PDFSelector
+                  selectedPDF={selectedPDF}
+                  onSelectPDF={(pdfPath) => {
+                    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfPath);
+                    if (section) {
+                      // 切换章节时总是从第一页开始
+                      navigateToPDF(section.filePath, 1);
+                    }
+                  }}
+                />
               </div>
             </div>
             
@@ -521,30 +509,47 @@ function SearchContent() {
                     <h3 className="text-sm font-medium text-card-foreground">
                       Search Results ({sharedSearchResults.length})
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={goToPreviousResult}
-                        disabled={currentResultIndex === 0 || getGroupedResultsCount() === 0}
-                        className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-                        title="Previous result"
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <span className="text-xs text-muted-foreground px-2 py-1 bg-card rounded-full">
-                        {getGroupedResultsCount() > 0 ? `${currentResultIndex + 1} / ${getGroupedResultsCount()}` : '0 / 0'}
-                      </span>
-                      <button
-                        onClick={goToNextResult}
-                        disabled={currentResultIndex >= getGroupedResultsCount() - 1 || getGroupedResultsCount() === 0}
-                        className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-                        title="Next result"
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    <div className="flex items-center space-x-1.5">
+                      {(() => {
+                        const buttonConfig = getGlassButtonBaseStyles('sm');
+                        const handlers = createGlassButtonHandlers();
+                        const pageNumberConfig = getPageNumberStyles();
+                        return (
+                          <>
+                            <button
+                              onClick={goToPreviousResult}
+                              disabled={currentResultIndex === 0 || getGroupedResultsCount() === 0}
+                              className={buttonConfig.className}
+                              style={buttonConfig.style}
+                              onMouseEnter={handlers.onMouseEnter}
+                              onMouseLeave={handlers.onMouseLeave}
+                              title="Previous result"
+                            >
+                              <svg className={`${getIconStyles('sm')} group-hover:-translate-x-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            
+                            <span className={pageNumberConfig.className}>
+                              {getGroupedResultsCount() > 0 ? `${currentResultIndex + 1} / ${getGroupedResultsCount()}` : '0 / 0'}
+                            </span>
+                            
+                            <button
+                              onClick={goToNextResult}
+                              disabled={currentResultIndex >= getGroupedResultsCount() - 1 || getGroupedResultsCount() === 0}
+                              className={buttonConfig.className}
+                              style={buttonConfig.style}
+                              onMouseEnter={handlers.onMouseEnter}
+                              onMouseLeave={handlers.onMouseLeave}
+                              title="Next result"
+                            >
+                              <svg className={`${getIconStyles('sm')} group-hover:translate-x-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

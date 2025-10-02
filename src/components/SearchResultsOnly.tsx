@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageCalculator } from '@/utils/pageCalculator';
 import { SectionChangeHandler } from '@/types/pdf';
+import { getGlassButtonBaseStyles, createGlassButtonHandlers, getIconStyles } from '@/lib/buttonStyles';
 
 interface SmartSearchResult {
   page: number;
@@ -207,25 +208,43 @@ export default function SearchResultsOnly({
   return (
     <div className="flex flex-col h-full bg-background">
       {/* 导航控制 - 桌面端显示，手机端隐藏（因为手机端有专门的标题栏） */}
-      <div className="hidden lg:flex items-center justify-center px-4 py-3 bg-muted border-b border-border/30">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={goToPrevious}
-            disabled={highlightIndex === 0 || groupedResults.length === 0}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm font-medium text-card-foreground px-3 py-1 bg-card rounded-full shadow-sm">
-            {groupedResults.length > 0 ? `${highlightIndex + 1} / ${groupedResults.length}` : '0 / 0'}
-          </span>
-          <button
-            onClick={goToNext}
-            disabled={highlightIndex >= groupedResults.length - 1 || groupedResults.length === 0}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+      <div className="hidden lg:flex items-center justify-center px-4 py-2 bg-muted border-b border-border/30">
+        <div className="flex items-center space-x-2">
+          {(() => {
+            const buttonConfig = getGlassButtonBaseStyles('md');
+            const handlers = createGlassButtonHandlers();
+            return (
+              <>
+                <button
+                  onClick={goToPrevious}
+                  disabled={highlightIndex === 0 || groupedResults.length === 0}
+                  className={buttonConfig.className}
+                  style={buttonConfig.style}
+                  onMouseEnter={handlers.onMouseEnter}
+                  onMouseLeave={handlers.onMouseLeave}
+                  title="Previous Result (↑ or ←)"
+                >
+                  <ChevronLeft className={`${getIconStyles('md')} group-hover:-translate-x-0.5`} />
+                </button>
+                
+                <span className="text-xs font-medium text-slate-600 tracking-wide px-2 py-1 transition-all duration-200 hover:text-slate-800">
+                  {groupedResults.length > 0 ? `${highlightIndex + 1} / ${groupedResults.length}` : '0 / 0'}
+                </span>
+                
+                <button
+                  onClick={goToNext}
+                  disabled={highlightIndex >= groupedResults.length - 1 || groupedResults.length === 0}
+                  className={buttonConfig.className}
+                  style={buttonConfig.style}
+                  onMouseEnter={handlers.onMouseEnter}
+                  onMouseLeave={handlers.onMouseLeave}
+                  title="Next Result (↓ or →)"
+                >
+                  <ChevronRight className={`${getIconStyles('md')} group-hover:translate-x-0.5`} />
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
 

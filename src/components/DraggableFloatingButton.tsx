@@ -260,6 +260,71 @@ export default function DraggableFloatingButton({
     return calculator.toAbsolutePage(currentPage);
   })();
 
+  // 提取公共样式函数
+  const getButtonBaseStyles = () => ({
+    background: 'rgba(248, 250, 252, 0.85)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(51, 65, 85, 0.2)',
+    boxShadow: '0 8px 32px rgba(51, 65, 85, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+  });
+
+  const getButtonHoverStyles = () => ({
+    background: 'rgba(30, 58, 138, 0.2)',
+    border: '1px solid rgba(30, 58, 138, 0.5)',
+    boxShadow: '0 12px 40px rgba(30, 58, 138, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+    backdropFilter: 'blur(25px)',
+    WebkitBackdropFilter: 'blur(25px)'
+  });
+
+  const getPageNumberBaseStyles = () => ({
+    background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(30, 58, 138, 0.95) 100%)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+  });
+
+  const getPageNumberHoverStyles = () => ({
+    background: 'linear-gradient(135deg, rgba(30, 58, 138, 1) 0%, rgba(30, 58, 138, 1) 100%)',
+    border: '1px solid rgba(255, 255, 255, 0.4)',
+    boxShadow: '0 12px 40px rgba(30, 58, 138, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(25px)',
+    WebkitBackdropFilter: 'blur(25px)'
+  });
+
+  // 通用事件处理器
+  const handleButtonMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const styles = getButtonHoverStyles();
+    Object.assign(e.currentTarget.style, styles);
+  };
+
+  const handleButtonMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const styles = getButtonBaseStyles();
+    Object.assign(e.currentTarget.style, styles);
+  };
+
+  const handlePageNumberMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const styles = getPageNumberHoverStyles();
+    Object.assign(e.currentTarget.style, styles);
+  };
+
+  const handlePageNumberMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const styles = getPageNumberBaseStyles();
+    Object.assign(e.currentTarget.style, styles);
+  };
+
+  // 发光效果样式
+  const glowEffectStyles = {
+    background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(30, 58, 138, 0.3) 100%)',
+    boxShadow: '0 0 20px rgba(30, 58, 138, 0.5), 0 0 40px rgba(30, 58, 138, 0.3)'
+  };
+
+  const pageNumberGlowEffectStyles = {
+    background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(30, 58, 138, 0.4) 100%)',
+    boxShadow: '0 0 25px rgba(30, 58, 138, 0.7), 0 0 50px rgba(30, 58, 138, 0.5)'
+  };
+
   if (!isClient || !isInitialized) {
     return null; // 避免闪烁和水合错误
   }
@@ -271,19 +336,30 @@ export default function DraggableFloatingButton({
       style={{
         left: position.x,
         top: position.y,
-        transform: isDragging ? 'scale(1.05)' : 'scale(1)',
-        transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+        transform: isDragging ? 'scale(1.05) rotate(2deg)' : 'scale(1) rotate(0deg)',
+        transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        filter: isDragging ? 'brightness(1.1)' : 'brightness(1)'
       }}
     >
-      <div className="flex flex-col items-center space-y-3 sm:space-y-4 lg:space-y-5">
+      <div className="flex flex-col items-center space-y-2.5 sm:space-y-3 lg:space-y-3.5 animate-float">
         {/* 上一页按钮 */}
         <button
           onClick={() => handleCrossSectionNavigation('previous')}
           disabled={!onSectionChange && isPreviousDisabled}
-          className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
+          className="group relative w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center text-slate-600 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 overflow-hidden"
+          style={getButtonBaseStyles()}
+          onMouseEnter={handleButtonMouseEnter}
+          onMouseLeave={handleButtonMouseLeave}
           title="Previous Page (↑ or ←)"
         >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:-translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          {/* 玻璃效果背景 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/15 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* 悬停时的发光效果 */}
+          <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+               style={glowEffectStyles} />
+          
+          <svg className="relative w-4 h-4 sm:w-4.5 sm:h-4.5 lg:w-5 lg:h-5 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-slate-800 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
           </svg>
         </button>
@@ -291,16 +367,26 @@ export default function DraggableFloatingButton({
         {/* 页码显示区域 - 可拖动 */}
         <div
           ref={numberButtonRef}
-          className="w-11 h-7 sm:w-12 sm:h-8 lg:w-14 lg:h-9 bg-primary/95 backdrop-blur-sm hover:bg-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-move"
+          className="relative w-10 h-6 sm:w-11 sm:h-7 lg:w-12 lg:h-8 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 cursor-move overflow-hidden"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           onDoubleClick={resetToDefaultPosition}
-          title="拖拽移动位置，双击重置到默认位置"
+          title="Drag to move position, double-click to reset to default"
           style={{
-            cursor: isDragging ? 'grabbing' : 'grab'
+            cursor: isDragging ? 'grabbing' : 'grab',
+            ...getPageNumberBaseStyles()
           }}
+          onMouseEnter={handlePageNumberMouseEnter}
+          onMouseLeave={handlePageNumberMouseLeave}
         >
-          <span className="text-xs sm:text-xs lg:text-xs font-bold text-primary-foreground tracking-wide">
+          {/* 玻璃效果背景 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl" />
+          
+          {/* 悬停时的发光效果 */}
+          <div className="absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300" 
+               style={pageNumberGlowEffectStyles} />
+          
+          <span className="relative text-xs sm:text-xs lg:text-sm font-bold text-white tracking-wide drop-shadow-sm">
             {absolutePage}
           </span>
         </div>
@@ -309,16 +395,30 @@ export default function DraggableFloatingButton({
         <button
           onClick={() => handleCrossSectionNavigation('next')}
           disabled={!onSectionChange && isNextDisabled}
-          className="group w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-card/95 hover:bg-card border border-border hover:border-primary rounded-2xl shadow-lg hover:shadow-primary/20 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
+          className="group relative w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center text-slate-600 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-105 active:scale-95 overflow-hidden"
+          style={getButtonBaseStyles()}
+          onMouseEnter={handleButtonMouseEnter}
+          onMouseLeave={handleButtonMouseLeave}
           title="Next Page (↓ or →)"
         >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-all duration-300 group-hover:translate-y-1 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          {/* 玻璃效果背景 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/15 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* 悬停时的发光效果 */}
+          <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+               style={glowEffectStyles} />
+          
+          <svg className="relative w-4 h-4 sm:w-4.5 sm:h-4.5 lg:w-5 lg:h-5 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-slate-800 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
         
         {/* 提示文字 */}
-        <div className="hidden lg:block text-xs text-muted-foreground text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+        <div className="hidden lg:block text-xs text-slate-600/80 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap backdrop-blur-sm px-2 py-1 rounded-lg" 
+             style={{
+               background: 'rgba(248, 250, 252, 0.8)',
+               border: '1px solid rgba(51, 65, 85, 0.2)'
+             }}>
           ↑↓ or ←→ to navigate
         </div>
       </div>
