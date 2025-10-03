@@ -274,10 +274,8 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
       {/* Wheel Selector - Adaptive width and height */}
       {isOpen && (
         <div 
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[9999] rounded-xl shadow-2xl"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[9999] rounded-xl shadow-2xl w-[calc(100vw-2rem)] max-w-md lg:max-w-lg xl:max-w-xl"
           style={{ 
-            width: 'calc(100vw - 2rem)', // 手机端自适应屏幕宽度，左右各留1rem边距
-            maxWidth: '400px', // 桌面端最大宽度限制
             height: 'min(80vh, 1000px)', // 自适应窗口高度，最大1000px
             background: 'rgba(255, 255, 255, 0.85)',
             backdropFilter: 'blur(20px)',
@@ -324,7 +322,7 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
                       setIsOpen(false);
                     }}
                   >
-                    <span className={`text-sm sm:text-base font-medium text-left transition-colors duration-200 ${
+                    <span className={`text-sm sm:text-sm lg:text-sm font-medium text-left transition-colors duration-200 ${
                       isSelected 
                         ? 'text-slate-800 font-semibold' 
                         : 'text-slate-700 group-hover:text-slate-900'
