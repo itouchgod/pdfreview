@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, FileText } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import NoSSR from '@/components/NoSSR';
@@ -111,8 +112,52 @@ export default function HomePage() {
               </form>
             </div>
 
+            {/* 功能导航卡片 */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
+              {/* IMPA搜索卡片 */}
+              <Link
+                href="/search"
+                className="group p-6 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                      IMPA 搜索
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      搜索IMPA海洋用品指南内容
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              {/* 我的文档卡片 */}
+              <Link
+                href="/documents"
+                className="group p-6 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                      我的文档
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      上传和管理你的PDF文档
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
             {/* Common Keywords */}
             <div className="text-center">
+              <h3 className="text-lg font-medium text-foreground mb-4">常用搜索词</h3>
               <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
                 {commonKeywords.map((keyword, index) => (
                   <button

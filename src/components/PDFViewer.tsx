@@ -27,6 +27,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
   const [windowWidth, setWindowWidth] = useState(1024);
@@ -80,18 +81,19 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
       const startTime = performanceMonitor.startMeasure();
       
-      // 获取当前章节配置
-      const pageCalculator = PageCalculator.fromPath(pdfUrl);
-      if (!pageCalculator) {
-        setError('Invalid PDF section');
-        return;
-      }
-      
       // 立即重置所有状态
       setLoading(true);
+      setLoadingProgress(0);
       setError(null);
       setPdf(null);
-      setTotalPages(pageCalculator.getTotalPages());
+      setTotalPages(0);
+
+      // 设置超时机制，防止无限加载
+      const timeoutId = setTimeout(() => {
+        console.error('PDF loading timeout after 30 seconds');
+        setError('PDF加载超时，请重试');
+        setLoading(false);
+      }, 30000); // 30秒超时
 
       try {
         // 尝试从缓存加载
@@ -99,19 +101,25 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         let pdfData: ArrayBuffer;
 
         if (cachedPDF) {
+          setLoadingProgress(50);
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: true });
           pdfData = cachedPDF;
         } else {
           // 从网络加载
+          setLoadingProgress(20);
           const response = await fetch(pdfUrl);
+          setLoadingProgress(40);
           pdfData = await response.arrayBuffer();
+          setLoadingProgress(50);
           // 缓存 PDF 数据（使用长期缓存，因为PDF文件不会变化）
           await cacheManager.setPDF(`pdf:${pdfUrl}`, pdfData);
           performanceMonitor.endMeasure('pdf_load', startTime, { cached: false });
         }
 
+        setLoadingProgress(70);
         const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         
+        setLoadingProgress(90);
         // 设置新的PDF和页数
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
@@ -123,7 +131,20 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           setCurrentPage(targetPage);
         }
         
+        setLoadingProgress(100);
         setLoading(false);
+        
+        console.log('PDF loaded successfully:', {
+          totalPages: loadedPdf.numPages,
+          currentPage: currentPage,
+          pdfUrl: pdfUrl
+        });
+        
+        // 通知父组件页面变化
+        onPageChange?.(currentPage, loadedPdf.numPages);
+        
+        // 清除超时
+        clearTimeout(timeoutId);
         
       } catch (err) {
         console.error('Failed to load PDF:', err);
@@ -133,6 +154,9 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         setCurrentPage(1);
         setLoading(false);
         performanceMonitor.endMeasure('pdf_load', startTime, { error: true });
+        
+        // 清除超时
+        clearTimeout(timeoutId);
       }
     };
 
@@ -141,16 +165,16 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   // 渲染页面
   const renderPage = useCallback(async (pageNum: number) => {
+    console.log('Starting renderPage:', { pageNum, hasPdf: !!pdf, hasCanvas: !!canvasRef.current });
+    
     if (!pdf || !canvasRef.current) {
+      console.warn('Cannot render: missing PDF or canvas', { hasPdf: !!pdf, hasCanvas: !!canvasRef.current });
       return;
     }
 
     // 验证页码是否有效
-    const pageCalculator = PageCalculator.fromPath(pdfUrl);
-    if (!pageCalculator) {
-      return;
-    }
-    if (!pageCalculator.isValidRelativePage(pageNum)) {
+    if (pageNum < 1 || pageNum > pdf.numPages) {
+      console.warn(`Invalid page number: ${pageNum}. PDF has ${pdf.numPages} pages.`);
       return;
     }
 
@@ -178,9 +202,13 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         throw new Error('PDF object is not properly initialized');
       }
 
+      console.log('Getting page:', pageNum);
       const page = await pdf.getPage(pageNum);
+      console.log('Page obtained:', { pageNum, page });
+      
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
+      console.log('Canvas and context:', { canvas, context, parentElement: canvas.parentElement });
 
       if (!context || !canvas.parentElement) {
         throw new Error('Canvas context or parent element not available');
@@ -221,6 +249,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       context.imageSmoothingQuality = 'high';
 
       // 创建新的渲染任务
+      console.log('Creating render task:', { scaledViewport, canvasSize: { width: canvas.width, height: canvas.height } });
       const currentRenderTask = page.render({
         canvasContext: context,
         viewport: scaledViewport
@@ -230,8 +259,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       renderTaskRef.current = currentRenderTask;
 
       // 等待渲染完成
+      console.log('Waiting for render to complete...');
       try {
         await currentRenderTask.promise;
+        console.log('Render completed successfully for page:', pageNum);
         // 只有在当前任务仍然是活跃任务时才清理
         if (renderTaskRef.current === currentRenderTask) {
           renderTaskRef.current = null;
@@ -264,6 +295,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       }
     }
   }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl]);
+
+  // 当PDF加载完成后，自动渲染第一页
+  useEffect(() => {
+    if (pdf && currentPage && !loading && canvasRef.current) {
+      console.log('Auto-rendering page:', currentPage);
+      renderPage(currentPage);
+    }
+  }, [pdf, currentPage, loading, renderPage]);
 
   // 监听页面变化
   useEffect(() => {
@@ -344,10 +383,27 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 bg-muted rounded-lg">
-        <div className="text-center">
+      <div className="flex items-center justify-center h-full w-full bg-background">
+        <div className="text-center w-full max-w-sm">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading IMPA data...</p>
+          <p className="text-muted-foreground mb-3">正在加载文档...</p>
+          
+          {/* 进度条 */}
+          <div className="w-full bg-muted/30 rounded-full h-2 mb-3">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          
+          <p className="text-xs text-muted-foreground/70">
+            {loadingProgress < 50 ? '下载中...' : 
+             loadingProgress < 90 ? '解析中...' : 
+             '渲染中...'}
+          </p>
+          <p className="text-xs text-muted-foreground/50 mt-1">
+            大文件可能需要几秒钟，请耐心等待
+          </p>
         </div>
       </div>
     );
@@ -355,27 +411,57 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96 bg-destructive/10 rounded-lg">
+      <div className="flex items-center justify-center h-full w-full bg-background">
         <div className="text-center">
           <FileText className="h-8 w-8 text-destructive mx-auto mb-4" />
-          <p className="text-destructive">{error}</p>
+          <p className="text-destructive mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              setLoadingProgress(0);
+              // 重新触发加载
+              if (pdfjsLib && pdfUrl) {
+                const loadPDF = async () => {
+                  try {
+                    const response = await fetch(pdfUrl);
+                    const pdfData = await response.arrayBuffer();
+                    const loadedPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+                    setPdf(loadedPdf);
+                    setTotalPages(loadedPdf.numPages);
+                    setLoading(false);
+                    onPageChange?.(currentPage, loadedPdf.numPages);
+                  } catch (err) {
+                    console.error('Retry failed:', err);
+                    setError('重试失败，请检查文件是否有效');
+                    setLoading(false);
+                  }
+                };
+                loadPDF();
+              }
+            }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            重试
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full" style={{ margin: 0, padding: 0, textAlign: 'center' }}>
+    <div className="relative w-full h-full flex items-center justify-center" style={{ margin: 0, padding: 0 }}>
       <canvas 
         ref={canvasRef} 
-        className="block"
+        className="block max-w-full max-h-full"
         style={{ 
           display: 'block',
           margin: '0 auto',
           padding: 0,
-          border: 'none',
           outline: 'none',
-          verticalAlign: 'top'
+          verticalAlign: 'top',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
         } as React.CSSProperties}
       />
     </div>
