@@ -14,7 +14,6 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [maxWidth, setMaxWidth] = useState(320);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,26 +27,6 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
     setCurrentIndex(index >= 0 ? index : 0);
   }, [selectedPDF]);
 
-  // 计算最长文本的宽度
-  useEffect(() => {
-    if (isOpen) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.font = '16px system-ui, -apple-system, sans-serif'; // text-base 对应 16px
-        let maxTextWidth = 0;
-        
-        PDF_CONFIG.sections.forEach(section => {
-          const text = section.title || section.name;
-          const textWidth = context.measureText(text).width;
-          maxTextWidth = Math.max(maxTextWidth, textWidth);
-        });
-        
-        // 加上左右padding (32px) 和一些额外空间
-        setMaxWidth(Math.min(Math.max(maxTextWidth + 64, 200), 400));
-      }
-    }
-  }, [isOpen]);
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -164,44 +143,52 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
     }, 50); // 每50ms滚动一次
   };
 
+  // 滚动按钮样式配置
+  const scrollButtonConfig = {
+    baseStyles: {
+      height: '150px',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      transition: 'all 0.3s ease'
+    },
+    enabled: {
+      background: 'rgba(255, 255, 255, 0.9)',
+      border: '1px solid rgba(51, 65, 85, 0.4)',
+      boxShadow: '0 4px 16px rgba(51, 65, 85, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+      hoverBg: 'rgba(255, 255, 255, 0.95)',
+      hoverBorder: 'rgba(51, 65, 85, 0.5)',
+      hoverShadow: '0 6px 20px rgba(51, 65, 85, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.7)'
+    },
+    disabled: {
+      background: 'rgba(248, 250, 252, 0.6)',
+      border: '1px solid rgba(148, 163, 184, 0.3)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+    }
+  };
+
   // 获取滚动按钮样式
   const getScrollButtonStyles = (isEnabled: boolean) => ({
-    height: '150px',
-    background: isEnabled 
-      ? 'rgba(255, 255, 255, 0.9)' 
-      : 'rgba(248, 250, 252, 0.6)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    border: isEnabled 
-      ? '1px solid rgba(51, 65, 85, 0.4)' 
-      : '1px solid rgba(148, 163, 184, 0.3)',
-    boxShadow: isEnabled 
-      ? '0 4px 16px rgba(51, 65, 85, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' 
-      : '0 2px 8px rgba(0, 0, 0, 0.08)',
-    transition: 'all 0.3s ease'
+    ...scrollButtonConfig.baseStyles,
+    ...(isEnabled ? scrollButtonConfig.enabled : scrollButtonConfig.disabled)
   });
 
-  // 获取滚动按钮className
-  const getScrollButtonClassName = (isEnabled: boolean, isUp: boolean = false) => 
-    `group relative w-12 flex items-center justify-center rounded-xl transition-all duration-300 ${
-      isUp ? 'mb-4' : ''
-    } ${
-      isEnabled
-        ? 'text-slate-700 hover:text-slate-800 hover:scale-105 active:scale-95'
-        : 'text-slate-400 cursor-not-allowed'
-    }`;
-
-  // 获取图标className
-  const getIconClassName = (isEnabled: boolean) => 
-    `w-6 h-6 transition-all duration-200 ${
-      isEnabled ? 'group-hover:scale-105' : ''
-    }`;
-
-  // 获取悬停效果组件
-  const getHoverEffect = (isEnabled: boolean) => 
-    isEnabled ? (
-      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-slate-500/8 to-slate-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    ) : null;
+  // 处理按钮悬停效果
+  const handleButtonHover = (e: React.MouseEvent<HTMLButtonElement>, isEnabled: boolean, isEnter: boolean) => {
+    if (!isEnabled) return;
+    
+    if (isEnter) {
+      // 悬停状态
+      e.currentTarget.style.background = scrollButtonConfig.enabled.hoverBg;
+      e.currentTarget.style.border = `1px solid ${scrollButtonConfig.enabled.hoverBorder}`;
+      e.currentTarget.style.boxShadow = scrollButtonConfig.enabled.hoverShadow;
+    } else {
+      // 正常状态
+      const styles = getScrollButtonStyles(isEnabled);
+      e.currentTarget.style.background = styles.background as string;
+      e.currentTarget.style.border = styles.border as string;
+      e.currentTarget.style.boxShadow = styles.boxShadow as string;
+    }
+  };
 
   // 监听滚动状态变化
   useEffect(() => {
@@ -220,6 +207,27 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
     if (isOpen) {
       // 锁定主窗口滚动
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+      
+      // 防止触摸滚动（只阻止菜单外部的滚动）
+      const handleTouchMove = (e: TouchEvent) => {
+        // 如果触摸事件发生在菜单内部，允许滚动
+        if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+          return;
+        }
+        e.preventDefault();
+      };
+      
+      // 防止鼠标滚轮滚动（只阻止菜单外部的滚动）
+      const handleWheel = (e: WheelEvent) => {
+        // 如果滚轮事件发生在菜单内部，允许滚动
+        if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+          return;
+        }
+        e.preventDefault();
+      };
       
       // 防止键盘滚动
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -228,16 +236,25 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
         }
       };
 
+      // 添加事件监听器，使用 passive: false 确保可以阻止默认行为
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('wheel', handleWheel, { passive: false });
       document.addEventListener('keydown', handleKeyDown);
       
       return () => {
+        // 恢复滚动位置和样式
+        const scrollY = document.body.style.top;
         document.body.style.overflow = 'unset';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('wheel', handleWheel);
         document.removeEventListener('keydown', handleKeyDown);
-        stopContinuousScroll(); // 合并清理逻辑
+        stopContinuousScroll();
       };
-    } else {
-      // 恢复主窗口滚动
-      document.body.style.overflow = 'unset';
     }
   }, [isOpen]);
 
@@ -335,33 +352,25 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
                 onMouseDown={startContinuousScrollUp}
                 onMouseUp={stopContinuousScroll}
                 disabled={!canScrollUp}
-                className={getScrollButtonClassName(canScrollUp, true)}
-                style={{
-                  ...getScrollButtonStyles(canScrollUp),
-                  '--hover-bg': canScrollUp ? 'rgba(255, 255, 255, 0.95)' : 'rgba(248, 250, 252, 0.6)',
-                  '--hover-border': canScrollUp ? 'rgba(51, 65, 85, 0.5)' : 'rgba(148, 163, 184, 0.3)',
-                  '--hover-shadow': canScrollUp ? '0 6px 20px rgba(51, 65, 85, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.7)' : '0 2px 8px rgba(0, 0, 0, 0.08)'
-                } as React.CSSProperties & { [key: string]: string }}
-                onMouseEnter={(e) => {
-                  if (canScrollUp) {
-                    e.currentTarget.style.background = 'var(--hover-bg)';
-                    e.currentTarget.style.border = '1px solid var(--hover-border)';
-                    e.currentTarget.style.boxShadow = 'var(--hover-shadow)';
-                  }
-                }}
+                className={`group relative w-12 flex items-center justify-center rounded-xl transition-all duration-300 mb-4 ${
+                  canScrollUp
+                    ? 'text-slate-700 hover:text-slate-800 hover:scale-105 active:scale-95'
+                    : 'text-slate-400 cursor-not-allowed'
+                }`}
+                style={getScrollButtonStyles(canScrollUp)}
+                onMouseEnter={(e) => handleButtonHover(e, canScrollUp, true)}
                 onMouseLeave={(e) => {
                   stopContinuousScroll();
-                  if (canScrollUp) {
-                    const styles = getScrollButtonStyles(canScrollUp);
-                    e.currentTarget.style.background = styles.background as string;
-                    e.currentTarget.style.border = styles.border as string;
-                    e.currentTarget.style.boxShadow = styles.boxShadow as string;
-                  }
+                  handleButtonHover(e, canScrollUp, false);
                 }}
                 title="向上滚动（按住连续滚动）"
               >
-                <ChevronUp className={getIconClassName(canScrollUp)} />
-                {getHoverEffect(canScrollUp)}
+                <ChevronUp className={`w-6 h-6 transition-all duration-200 ${
+                  canScrollUp ? 'group-hover:scale-105' : ''
+                }`} />
+                {canScrollUp && (
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-slate-500/8 to-slate-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                )}
               </button>
 
               {/* 向下滚动按钮 */}
@@ -370,33 +379,25 @@ export default function PDFSelector({ onSelectPDF, selectedPDF }: PDFSelectorPro
                 onMouseDown={startContinuousScrollDown}
                 onMouseUp={stopContinuousScroll}
                 disabled={!canScrollDown}
-                className={getScrollButtonClassName(canScrollDown)}
-                style={{
-                  ...getScrollButtonStyles(canScrollDown),
-                  '--hover-bg': canScrollDown ? 'rgba(255, 255, 255, 0.95)' : 'rgba(248, 250, 252, 0.6)',
-                  '--hover-border': canScrollDown ? 'rgba(51, 65, 85, 0.5)' : 'rgba(148, 163, 184, 0.3)',
-                  '--hover-shadow': canScrollDown ? '0 6px 20px rgba(51, 65, 85, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.7)' : '0 2px 8px rgba(0, 0, 0, 0.08)'
-                } as React.CSSProperties & { [key: string]: string }}
-                onMouseEnter={(e) => {
-                  if (canScrollDown) {
-                    e.currentTarget.style.background = 'var(--hover-bg)';
-                    e.currentTarget.style.border = '1px solid var(--hover-border)';
-                    e.currentTarget.style.boxShadow = 'var(--hover-shadow)';
-                  }
-                }}
+                className={`group relative w-12 flex items-center justify-center rounded-xl transition-all duration-300 ${
+                  canScrollDown
+                    ? 'text-slate-700 hover:text-slate-800 hover:scale-105 active:scale-95'
+                    : 'text-slate-400 cursor-not-allowed'
+                }`}
+                style={getScrollButtonStyles(canScrollDown)}
+                onMouseEnter={(e) => handleButtonHover(e, canScrollDown, true)}
                 onMouseLeave={(e) => {
                   stopContinuousScroll();
-                  if (canScrollDown) {
-                    const styles = getScrollButtonStyles(canScrollDown);
-                    e.currentTarget.style.background = styles.background as string;
-                    e.currentTarget.style.border = styles.border as string;
-                    e.currentTarget.style.boxShadow = styles.boxShadow as string;
-                  }
+                  handleButtonHover(e, canScrollDown, false);
                 }}
                 title="向下滚动（按住连续滚动）"
               >
-                <ChevronDown className={getIconClassName(canScrollDown)} />
-                {getHoverEffect(canScrollDown)}
+                <ChevronDown className={`w-6 h-6 transition-all duration-200 ${
+                  canScrollDown ? 'group-hover:scale-105' : ''
+                }`} />
+                {canScrollDown && (
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-slate-500/8 to-slate-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                )}
               </button>
             </div>
           </div>
