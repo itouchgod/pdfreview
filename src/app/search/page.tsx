@@ -358,6 +358,7 @@ function SearchContent() {
                     <DraggableFloatingButton
                       currentPage={currentPage}
                       selectedPDF={selectedPDF}
+                      totalPages={totalPages}
                       onPreviousPage={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                       onNextPage={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                       isPreviousDisabled={currentPage <= 1}

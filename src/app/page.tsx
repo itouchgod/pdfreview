@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, FileText, Upload, Home } from 'lucide-react';
+import { Search, FileText, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
@@ -41,19 +41,17 @@ export default function HomePage() {
   
   const router = useRouter();
   const pdfViewerRef = useRef<PDFViewerRef>(null);
-  const { loadingStatus, startLoading, isReady, hasStartedLoading } = usePDFText();
+  const { startLoading } = usePDFText();
 
   // 处理客户端挂载
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // 页面加载时开始加载PDF文本（只在首次访问时）
+  // 页面加载时开始加载PDF文本
   useEffect(() => {
-    if (!hasStartedLoading) {
-      startLoading();
-    }
-  }, [hasStartedLoading, startLoading]);
+    startLoading();
+  }, [startLoading]);
 
   // 处理文档选择
   const handleDocumentSelect = useCallback((document: UserDocument) => {
@@ -100,8 +98,7 @@ export default function HomePage() {
     setCurrentDocument(null);
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = () => {
     if (searchTerm.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
@@ -208,7 +205,6 @@ export default function HomePage() {
             {/* 悬浮按钮 - 全平台显示 */}
             <UserDocumentFloatingButton
               currentPage={currentPage}
-              selectedPDF={currentDocument.url}
               totalPages={totalPages}
               onPreviousPage={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
               onNextPage={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}

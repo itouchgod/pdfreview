@@ -137,7 +137,6 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
     }
     setTextData({});
     setHasLoaded(false);
-    setHasStartedLoading(false);
     setLoadingStatus({
       isLoading: false,
       loadedSections: 0,
