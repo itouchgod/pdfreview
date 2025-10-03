@@ -1,7 +1,9 @@
 {
+  "name": "pdfr",
   "regions": ["hkg1"],
   "build": {
     "env": {
+      "NEXT_PUBLIC_APP_NAME": "PDFR",
       "NEXT_PUBLIC_REGION": "ap-east-1",
       "NEXT_PUBLIC_ZONE": "hkg1",
       "NEXT_PUBLIC_LOCATION": "Hong Kong (East)"
