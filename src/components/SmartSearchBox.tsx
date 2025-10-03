@@ -116,16 +116,8 @@ export default function SmartSearchBox({
                 const nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
                 context.push(...nextLines);
                 
-                // 使用 PageCalculator 计算相对页码
-                const pageCalculator = new PageCalculator(section);
-                
-                // 验证页码有效性
-                if (!pageCalculator.isValidAbsolutePage(pageNumber)) {
-                  // 静默跳过无效页码，避免控制台噪音
-                  continue;
-                }
-                
-                const relativePage = pageCalculator.toRelativePage(pageNumber);
+                // 通用PDF平台：简化处理，直接使用页码
+                const relativePage = pageNumber;
 
 
                 results.push({
@@ -134,7 +126,7 @@ export default function SmartSearchBox({
                   text: line.trim(),
                   index: results.length,
                   context: context.join('\n').trim(),
-                  sectionName: section.name,
+                  sectionName: sectionPath.split('/').pop() || 'Document',
                   sectionPath: sectionPath,
                   category: 'search'
                 });

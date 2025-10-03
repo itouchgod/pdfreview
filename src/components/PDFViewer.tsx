@@ -32,6 +32,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   const [pdfjsLib, setPdfjsLib] = useState<any>(null);
   const [windowWidth, setWindowWidth] = useState(1024);
   const [isClient, setIsClient] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
 
   // 初始化性能监控和缓存
   const performanceMonitor = PerformanceMonitor.getInstance();
@@ -178,6 +179,17 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
 
+    // 检查是否正在渲染，如果是则等待
+    if (isRendering) {
+      console.log('Another render is in progress, waiting...');
+      // 等待当前渲染完成
+      while (isRendering) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+
+    setIsRendering(true);
+
     const startTime = performanceMonitor.startMeasure();
 
     try {
@@ -185,6 +197,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
+          // 等待取消完成
+          await new Promise(resolve => setTimeout(resolve, 50));
         } catch {
           // 忽略取消时的错误
         }
@@ -214,15 +228,21 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         throw new Error('Canvas context or parent element not available');
       }
 
-      // 等待一小段时间确保之前的渲染完全停止
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // 清空Canvas内容，确保没有残留的渲染
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 等待更长时间确保之前的渲染完全停止
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 简化的缩放逻辑：只计算一次缩放比例
+      // 改进的缩放逻辑：保持PDF宽高比
       const viewport = page.getViewport({ scale: 1 });
       const containerWidth = canvas.parentElement.clientWidth || windowWidth;
+      const containerHeight = canvas.parentElement.clientHeight || window.innerHeight;
       
-      // 计算缩放比例：确保PDF宽度适配容器宽度
-      const scale = Math.max(0.5, Math.min(containerWidth / viewport.width, 3.0));
+      // 计算缩放比例：确保PDF适配容器，保持宽高比
+      const scaleX = containerWidth / viewport.width;
+      const scaleY = containerHeight / viewport.height;
+      const scale = Math.max(0.5, Math.min(Math.min(scaleX, scaleY), 3.0));
       
       // 获取设备像素比
       const devicePixelRatio = window.devicePixelRatio || 1;
@@ -235,11 +255,14 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       canvas.width = scaledViewport.width * devicePixelRatio;
       canvas.height = scaledViewport.height * devicePixelRatio;
       
-      // 设置Canvas显示样式
+      // 设置Canvas显示样式，保持宽高比
       canvas.style.width = scaledViewport.width + 'px';
       canvas.style.height = scaledViewport.height + 'px';
       canvas.style.display = 'block';
       canvas.style.margin = '0 auto';
+      canvas.style.maxWidth = '100%';
+      canvas.style.maxHeight = '100%';
+      canvas.style.objectFit = 'contain';
       
       // 设置高DPI缩放
       context.scale(devicePixelRatio, devicePixelRatio);
@@ -293,8 +316,11 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         console.error('Failed to render page:', err);
         performanceMonitor.endMeasure('page_render', startTime, { error: true });
       }
+    } finally {
+      // 确保渲染锁被重置
+      setIsRendering(false);
     }
-  }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl]);
+  }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl, isRendering]);
 
   // 当PDF加载完成后，自动渲染第一页
   useEffect(() => {
@@ -308,7 +334,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   useEffect(() => {
     if (pdf && currentPage && !loading) {
       // 获取当前章节配置
-      const pageCalculator = PageCalculator.fromPath(pdfUrl);
+      const pageCalculator = PageCalculator.fromPath(pdfUrl, totalPages);
       if (!pageCalculator) {
         return;
       }
@@ -450,10 +476,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center" style={{ margin: 0, padding: 0 }}>
+    <div className="relative w-full h-full flex items-center justify-center" style={{ margin: 0, padding: 0, overflow: 'auto' }}>
       <canvas 
         ref={canvasRef} 
-        className="block max-w-full max-h-full"
+        className="block"
         style={{ 
           display: 'block',
           margin: '0 auto',
@@ -461,7 +487,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
           outline: 'none',
           verticalAlign: 'top',
           backgroundColor: '#ffffff',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain'
         } as React.CSSProperties}
       />
     </div>

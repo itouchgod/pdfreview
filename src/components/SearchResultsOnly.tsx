@@ -128,28 +128,16 @@ export default function SearchResultsOnly({
     
     // 如果需要切换章节
     if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
-      // 获取目标章节的页码计算器
-      const targetCalculator = PageCalculator.fromPath(firstResult.sectionPath);
-      if (!targetCalculator) {
-        console.error('Invalid section:', firstResult.sectionPath);
-        return;
-      }
-
-      // 计算在目标章节中的相对页码
-      const targetRelativePage = targetCalculator.getRelativePageFromResult(firstResult);
+      // 通用PDF平台：简化处理，直接使用页码
+      const targetRelativePage = firstResult.page || 1;
       
       // 切换到目标章节和页码
       onSectionChange(firstResult.sectionPath, targetRelativePage);
     } else {
       // 在当前章节内跳转
       if (onPageJump) {
-        const currentCalculator = PageCalculator.fromPath(selectedPDF);
-        if (!currentCalculator) {
-          console.error('Invalid current section:', selectedPDF);
-          return;
-        }
-        
-        const targetPage = currentCalculator.getRelativePageFromResult(firstResult);
+        // 通用PDF平台：简化处理，直接使用页码
+        const targetPage = firstResult.page || 1;
         
         onPageJump(targetPage);
       }
