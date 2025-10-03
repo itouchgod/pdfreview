@@ -94,7 +94,7 @@ export default function DocumentsPage() {
                     <div className="w-8 h-8 relative">
                       <Image 
                         src="/brand-icon.svg" 
-                        alt="PDFReview Logo" 
+                        alt="PDFR Logo" 
                         fill
                         sizes="32px"
                         className="object-contain"
@@ -106,7 +106,7 @@ export default function DocumentsPage() {
                   
                   <div className="flex items-center space-x-2">
                     <FileText className="h-5 w-5 text-primary" />
-                    <h1 className="text-xl font-bold text-foreground">PDFReview</h1>
+                    <h1 className="text-xl font-bold text-foreground">PDFR</h1>
                   </div>
                 </div>
 
@@ -124,7 +124,7 @@ export default function DocumentsPage() {
                     className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Search className="h-4 w-4" />
-                    <span className="hidden sm:inline">IMPA搜索</span>
+                    <span className="hidden sm:inline">文档搜索</span>
                   </Link>
                   
                   <ThemeToggle />
@@ -279,7 +279,7 @@ export default function DocumentsPage() {
                     unoptimized
                   />
                 </div>
-                <span className="font-medium">PDFReview</span>
+                <span className="font-medium">PDFR</span>
                 <span className="text-muted-foreground/60">•</span>
                 <span>用户文档管理平台</span>
                 <span className="text-muted-foreground/60">•</span>

@@ -214,7 +214,7 @@ export default function UserDocumentFloatingButton({
     return () => window.removeEventListener('resize', handleResize);
   }, [position, constrainPosition, savePosition, isClient]);
 
-  // 提取公共样式函数 - 与IMPA页面完全一致
+  // 提取公共样式函数
   const getButtonBaseStyles = () => ({
     background: 'rgba(248, 250, 252, 0.85)',
     backdropFilter: 'blur(20px)',

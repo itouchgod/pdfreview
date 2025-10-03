@@ -59,7 +59,7 @@ export function initDevTools() {
     },
     help: () => {
       console.log(`
-🛠️ IMPA 开发者工具
+🛠️ PDF预览平台 开发者工具
 
 性能监控:
   devTools.performance.enableVerbose()  - 启用详细性能日志
@@ -84,7 +84,7 @@ export function initDevTools() {
 
   // 显示欢迎信息
   console.log(`
-🎯 IMPA 开发者工具已加载
+🎯 PDF预览平台 开发者工具已加载
 
 输入 devTools.help() 查看可用命令
 输入 devTools.performance.enableVerbose() 启用详细性能日志

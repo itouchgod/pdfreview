@@ -1,7 +1,7 @@
 {
-  "name": "IMPA Marine Stores Guide",
-  "short_name": "IMPA",
-  "description": "IMPA Marine Stores Guide 8th Edition 2023 - Smart Search Platform",
+  "name": "PDFR - PDF Preview Platform",
+  "short_name": "PDFR",
+  "description": "Universal PDF Preview and Search Platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

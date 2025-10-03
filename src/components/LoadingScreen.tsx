@@ -27,7 +27,7 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
             <div className="w-8 h-8 relative">
               <Image 
                 src="/brand-icon.svg" 
-                alt="IMPA Logo" 
+                alt="PDFR Logo" 
                 fill
                 sizes="32px"
                 className="object-contain"
@@ -36,7 +36,7 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
               />
             </div>
             <h2 className="text-lg font-normal text-foreground/80 tracking-wide">
-              Loading IMPA data...
+              Loading PDF data...
             </h2>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
             </div>
           </div>
           
-          {/* 移动的IMPA logo - 独立定位 */}
+          {/* 移动的PDF logo - 独立定位 */}
           <div 
             className="absolute -top-3 w-8 h-8 transition-all duration-1000 ease-out z-20"
             style={{ 
@@ -73,7 +73,7 @@ export default function LoadingScreen({ className = '' }: LoadingScreenProps) {
               <div className="w-5 h-5 relative z-10">
                 <Image 
                   src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
+                  alt="PDFR Logo" 
                   fill
                   sizes="20px"
                   className="object-contain"

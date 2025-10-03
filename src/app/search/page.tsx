@@ -7,17 +7,14 @@ import SmartSearchBox from '@/components/SmartSearchBox';
 import SearchResultsOnly from '@/components/SearchResultsOnly';
 import DraggableFloatingButton from '@/components/DraggableFloatingButton';
 import PDFSelector from '@/components/PDFSelector';
-import { PDF_CONFIG } from '@/config/pdf';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
-import { PageCalculator } from '@/utils/pageCalculator';
-import { SectionChangeHandler } from '@/types/pdf';
 import { getGlassButtonBaseStyles, createGlassButtonHandlers, getIconStyles, getPageNumberStyles } from '@/lib/buttonStyles';
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const [selectedPDF, setSelectedPDF] = useState<string>(PDF_CONFIG.sections[0].filePath);
+  const [selectedPDF, setSelectedPDF] = useState<string>('');
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   
   // 用于在header和sidebar之间共享搜索结果
@@ -31,11 +28,7 @@ function SearchContent() {
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(() => {
-    const calculator = PageCalculator.fromPath(selectedPDF);
-    return calculator ? calculator.getTotalPages() : 1;
-  });
-
+  const [totalPages, setTotalPages] = useState(1);
 
   const handleClearSearch = () => {
     setSharedSearchResults([]);
@@ -95,21 +88,12 @@ function SearchContent() {
 
   // 统一的PDF导航函数
   const navigateToPDF = useCallback(async (pdfPath: string, pageNumber?: number) => {
-    const calculator = PageCalculator.fromPath(pdfPath);
-    if (!calculator) {
-      console.error('Section not found:', pdfPath);
-      return;
-    }
-
     // 如果没有提供页码，使用当前页码
-    const validPage = typeof pageNumber === 'number'
-      ? calculator.getValidRelativePage(pageNumber)
-      : calculator.getValidRelativePage(currentPage);
+    const validPage = typeof pageNumber === 'number' ? pageNumber : currentPage;
 
     // 批量更新所有状态
     if (pdfPath !== selectedPDF) {
       setSelectedPDF(pdfPath);
-      setTotalPages(calculator.getTotalPages());
     }
 
     // 更新页码状态并跳转
@@ -127,10 +111,7 @@ function SearchContent() {
     const result = groupedResults[index];
     if (!result || !result.sectionPath) return;
 
-    const calculator = PageCalculator.fromPath(result.sectionPath);
-    if (!calculator) return;
-    const relativePage = calculator.getRelativePageFromResult(result.results[0]);
-    
+    const relativePage = result.results[0].page || 1;
     await navigateToPDF(result.sectionPath, relativePage);
   }, [getGroupedResults, navigateToPDF]);
 
@@ -143,15 +124,10 @@ function SearchContent() {
     }
   }, []);
 
-    // 章节切换
-  const handleSectionChange: SectionChangeHandler = useCallback((sectionPath: string, pageOrReset?: number | boolean) => {
+  // 章节切换
+  const handleSectionChange = useCallback((sectionPath: string, pageOrReset?: number | boolean) => {
     // 如果是布尔值，转换为页码
     const targetPage = typeof pageOrReset === 'boolean' ? (pageOrReset ? 1 : undefined) : pageOrReset;
-    const calculator = PageCalculator.fromPath(sectionPath);
-    if (!calculator) {
-      console.error('Section not found:', sectionPath);
-      return;
-    }
     // 直接传递目标页码
     navigateToPDF(sectionPath, targetPage);
   }, [navigateToPDF]);
@@ -206,48 +182,6 @@ function SearchContent() {
     }
   }, [sharedSearchResults, sharedSearchTerm]);
 
-  // 搜索函数
-  const searchInAllSections = useCallback((query: string, sectionsText: Record<string, string>) => {
-    const results: any[] = [];
-    const searchTerm = query.toLowerCase();
-    const searchTerms = searchTerm.split(' ').filter(Boolean);
-
-    Object.entries(sectionsText).forEach(([sectionPath, text]) => {
-      const lines = text.split('\n');
-      let pageNumber = 1;
-      
-      lines.forEach((line) => {
-        const pageMatch = line.match(/--- 第 (\d+) 页 ---/);
-        if (pageMatch) {
-          pageNumber = parseInt(pageMatch[1]);
-          return;
-        }
-        
-        const matches = searchTerms.every(term => 
-          line.toLowerCase().includes(term)
-        );
-        
-        if (matches) {
-          const pageInfo = PageCalculator.findPageInfo(pageNumber);
-          if (pageInfo && pageInfo.section.filePath === sectionPath) {
-            results.push({
-              page: pageNumber, // 保存绝对页码
-              text: line.trim(),
-              index: results.length,
-              context: line.trim(),
-              sectionName: pageInfo.section.name,
-              sectionPath: sectionPath,
-              category: 'search'
-            });
-          }
-        }
-      });
-    });
-    
-    // 按绝对页码排序，确保第一个结果是最早出现的页码
-    return results.sort((a, b) => a.page - b.page);
-  }, []);
-
   // 从URL参数获取搜索词
   const searchQuery = searchParams?.get('q') || '';
 
@@ -265,7 +199,22 @@ function SearchContent() {
       return;
     }
     
-    const searchResults = searchInAllSections(searchQuery, textData);
+    // 简化的搜索逻辑
+    const searchResults: any[] = [];
+    Object.entries(textData).forEach(([sectionPath, text]) => {
+      if (text.toLowerCase().includes(searchQuery.toLowerCase())) {
+        searchResults.push({
+          page: 1,
+          text: text.substring(0, 200) + '...',
+          index: searchResults.length,
+          context: text.substring(0, 200) + '...',
+          sectionName: sectionPath.split('/').pop() || 'Document',
+          sectionPath: sectionPath,
+          category: 'search'
+        });
+      }
+    });
+    
     if (searchResults && searchResults.length > 0) {
       // 检查是否为新的搜索（搜索词变化）
       const isNewSearch = searchQuery !== sharedSearchTerm;
@@ -281,12 +230,8 @@ function SearchContent() {
         setCurrentResultIndex(0);
         const firstResult = searchResults[0];
         if (firstResult) {
-          const calculator = PageCalculator.fromPath(firstResult.sectionPath);
-          if (calculator) {
-            const relativePage = calculator.getRelativePageFromResult(firstResult);
-            // 直接切换到正确的章节和页面
-            navigateToPDF(firstResult.sectionPath, relativePage);
-          }
+          // 直接切换到正确的文档
+          navigateToPDF(firstResult.sectionPath, 1);
         }
       }
     } else {
@@ -297,76 +242,7 @@ function SearchContent() {
       setHasSearchResults(false);
       setCurrentResultIndex(0);
     }
-  }, [searchQuery, textData, searchInAllSections, navigateToPDF, sharedSearchTerm]);
-
-  // 跨章节键盘快捷键支持 - 基于绝对页码
-  const handleCrossSectionKeyNavigation = useCallback((direction: 'previous' | 'next') => {
-    // 获取当前绝对页码
-    const calculator = PageCalculator.fromPath(selectedPDF);
-    if (!calculator) return;
-    
-    const currentAbsolutePage = calculator.toAbsolutePage(currentPage);
-    const targetAbsolutePage = direction === 'next' ? currentAbsolutePage + 1 : currentAbsolutePage - 1;
-
-    // 检查目标页码是否在有效范围内（39-1406），实现循环翻页
-    const firstSection = PDF_CONFIG.sections[0];
-    const minPage = firstSection.startPage;
-    
-    // 找到真正的最大页码
-    const maxPage = Math.max(...PDF_CONFIG.sections.map(section => section.endPage));
-
-    let finalTargetPage = targetAbsolutePage;
-    
-    // 实现循环翻页
-    if (targetAbsolutePage < minPage) {
-      // 如果目标页码小于最小页码，跳转到最后一页
-      finalTargetPage = maxPage;
-    } else if (targetAbsolutePage > maxPage) {
-      // 如果目标页码大于最大页码，跳转到第一页
-      finalTargetPage = minPage;
-    }
-
-    // 查找目标页码所在的章节
-    const targetPageInfo = PageCalculator.findPageInfo(finalTargetPage);
-    
-    if (targetPageInfo) {
-      // 目标页码在某个章节中
-      if (targetPageInfo.section.filePath !== selectedPDF) {
-        // 需要切换章节
-        handleSectionChange(targetPageInfo.section.filePath, targetPageInfo.relativePage);
-      } else {
-        // 在当前章节内翻页
-        if (direction === 'next') {
-          pdfViewerRef.current?.jumpToPage(currentPage + 1);
-        } else {
-          pdfViewerRef.current?.jumpToPage(currentPage - 1);
-        }
-      }
-    } else {
-      // 目标页码超出范围，不执行任何操作
-      console.warn(`Target page ${finalTargetPage} is out of range`);
-    }
-  }, [selectedPDF, currentPage, handleSectionChange]);
-
-  // 键盘快捷键支持
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
-        return;
-      }
-      
-      if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        handleCrossSectionKeyNavigation('previous');
-      } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        handleCrossSectionKeyNavigation('next');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleCrossSectionKeyNavigation]);
+  }, [searchQuery, textData, navigateToPDF, sharedSearchTerm]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -377,7 +253,7 @@ function SearchContent() {
               <div className="w-5 h-7 relative">
                 <Image 
                   src="/brand-icon.svg" 
-                  alt="IMPA Logo" 
+                  alt="PDFR Logo" 
                   fill
                   sizes="20px"
                   className="object-contain"
@@ -415,11 +291,8 @@ function SearchContent() {
                 <PDFSelector
                   selectedPDF={selectedPDF}
                   onSelectPDF={(pdfPath) => {
-                    const section = PDF_CONFIG.sections.find(s => s.filePath === pdfPath);
-                    if (section) {
-                      // 切换章节时总是从第一页开始
-                      navigateToPDF(section.filePath, 1);
-                    }
+                    // 切换文档时总是从第一页开始
+                    navigateToPDF(pdfPath, 1);
                   }}
                 />
               </div>
@@ -429,7 +302,7 @@ function SearchContent() {
             <div className="sm:hidden bg-card border-b border-border">
               <div className="flex items-center justify-between px-4 py-3">
                 <button
-                  onClick={() => handleCrossSectionKeyNavigation('previous')}
+                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage - 1)}
                   className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -441,16 +314,12 @@ function SearchContent() {
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">Page</span>
                   <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-lg">
-                  {(() => {
-                    const calculator = PageCalculator.fromPath(selectedPDF);
-                    if (!calculator) return currentPage;
-                    return calculator.toAbsolutePage(currentPage);
-                  })()}
+                    {currentPage}
                   </span>
                 </div>
                 
                 <button
-                  onClick={() => handleCrossSectionKeyNavigation('next')}
+                  onClick={() => pdfViewerRef.current?.jumpToPage(currentPage + 1)}
                   className="flex items-center space-x-2 px-4 py-2 bg-secondary hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors duration-200 text-secondary-foreground"
                 >
                   <span className="text-sm font-medium">Next</span>
@@ -474,7 +343,7 @@ function SearchContent() {
                     <p className="text-sm text-muted-foreground/70">Try different keywords</p>
                   </div>
                 </div>
-              ) : (
+              ) : selectedPDF ? (
                 <>
                   <PDFViewer
                     ref={pdfViewerRef}
@@ -497,6 +366,18 @@ function SearchContent() {
                     />
                   </div>
                 </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-96">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-base text-muted-foreground font-medium mb-1">No PDF selected</p>
+                    <p className="text-sm text-muted-foreground/70">Please select a PDF document to view</p>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -580,18 +461,18 @@ function SearchContent() {
             <div className="w-4 h-4 relative">
               <Image 
                 src="/brand-icon.svg" 
-                alt="IMPA Logo" 
+                alt="PDF Logo" 
                 fill
                 sizes="16px"
                 className="object-contain"
                 unoptimized
               />
             </div>
-            <span className="font-medium hidden sm:inline">Marine Stores Guide</span>
+            <span className="font-medium hidden sm:inline">PDFR</span>
             <span className="text-muted-foreground/60">•</span>
-            <span>8th Edition 2023</span>
+            <span>v1.0.0</span>
             <span className="text-muted-foreground/60">•</span>
-            <span className="text-muted-foreground/70">Internal Use Only</span>
+            <span className="text-muted-foreground/70">Universal PDF Viewer</span>
           </div>
         </div>
       </footer>

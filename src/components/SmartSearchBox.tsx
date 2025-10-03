@@ -109,8 +109,8 @@ export default function SmartSearchBox({
             );
             
             if (matches) {
-              const section = PDF_CONFIG.sections.find(s => s.filePath === sectionPath);
-              if (section) {
+              // 通用PDF平台：简化处理，不需要查找特定章节
+              if (sectionPath) {
                 // 构建上下文
                 const context = [...contextBuffer];
                 const nextLines = lines.slice(lines.indexOf(line) + 1, lines.indexOf(line) + 3);
@@ -239,7 +239,7 @@ export default function SmartSearchBox({
             }
           }}
           onKeyPress={handleKeyPress}
-          placeholder="Search IMPA codes, names, or descriptions..."
+          placeholder="Search documents, names, or descriptions..."
           className="w-full pl-4 pr-20 py-3 bg-card border border-border rounded-full focus:outline-none focus:shadow-lg focus:border-primary transition-all duration-200 hover:shadow-md text-card-foreground placeholder:text-muted-foreground"
           disabled={isSearching}
         />

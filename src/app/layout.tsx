@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IMPA Marine Stores Guide",
-  description: "IMPA Marine Stores Guide 8th Edition 2023 - Smart Search Platform",
+  title: "PDFR - PDF Preview Platform",
+  description: "Universal PDF Preview and Search Platform",
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'IMPA',
+    title: 'PDFR',
   },
   formatDetection: {
     telephone: false,
@@ -55,10 +55,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
-        <meta name="application-name" content="IMPA" />
+        <meta name="application-name" content="PDFR" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="IMPA" />
+        <meta name="apple-mobile-web-app-title" content="PDFR" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#2563eb" />
         

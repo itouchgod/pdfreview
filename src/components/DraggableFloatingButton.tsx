@@ -7,6 +7,7 @@ import { PDF_CONFIG } from '@/config/pdf';
 interface DraggableFloatingButtonProps {
   currentPage: number;
   selectedPDF: string;
+  totalPages: number;
   onPreviousPage: () => void;
   onNextPage: () => void;
   isPreviousDisabled: boolean;
@@ -22,6 +23,7 @@ interface Position {
 export default function DraggableFloatingButton({
   currentPage,
   selectedPDF,
+  totalPages,
   onPreviousPage,
   onNextPage,
   isPreviousDisabled,
@@ -207,18 +209,15 @@ export default function DraggableFloatingButton({
     if (!onSectionChange) return;
 
     // 获取当前绝对页码
-    const calculator = PageCalculator.fromPath(selectedPDF);
+    const calculator = PageCalculator.fromPath(selectedPDF, totalPages);
     if (!calculator) return;
     
     const currentAbsolutePage = calculator.toAbsolutePage(currentPage);
     const targetAbsolutePage = direction === 'next' ? currentAbsolutePage + 1 : currentAbsolutePage - 1;
 
-    // 检查目标页码是否在有效范围内（39-1406），实现循环翻页
-    const firstSection = PDF_CONFIG.sections[0];
-    const minPage = firstSection.startPage;
-    
-    // 找到真正的最大页码
-    const maxPage = Math.max(...PDF_CONFIG.sections.map(section => section.endPage));
+    // 通用PDF平台：使用实际PDF页数
+    const minPage = 1;
+    const maxPage = totalPages || 1; // 使用实际总页数
     
     let finalTargetPage = targetAbsolutePage;
     
@@ -255,7 +254,7 @@ export default function DraggableFloatingButton({
 
   // 计算绝对页码
   const absolutePage = (() => {
-    const calculator = PageCalculator.fromPath(selectedPDF);
+    const calculator = PageCalculator.fromPath(selectedPDF, totalPages);
     if (!calculator) return currentPage;
     return calculator.toAbsolutePage(currentPage);
   })();
