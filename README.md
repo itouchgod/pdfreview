@@ -123,19 +123,14 @@
   - 修复ExtensionGuard类型错误，提升系统稳定性
   - **PDF章节选择器样式优化**：采用透明玻璃效果设计，与悬浮按钮风格统一
   - **黑夜模式视觉优化**：全新配色方案，渐变背景，增强玻璃效果和视觉层次
-- 📚 **PDF文件云端存储和查看功能（2024-12-19）**
-  - 成功将39个PDF文件（总计约400MB）上传到Cloudflare Pages
-  - 创建了自动化的PDF上传脚本（`scripts/upload_pdfs.py`）
+- 📚 **PDF文件存储和查看功能（2024-12-19）**
+  - 成功将39个PDF文件（总计约400MB）存储在本地静态目录
   - 生成了美观的文件列表展示页面，包含文件大小和统计信息
-  - 新的部署地址：https://98f17a84.impa-pdf-storage.pages.dev
-  - 自定义域名：https://ceb894f3.impa-pdf-storage.pages.dev
-  - 支持一键重新部署和文件管理
-  - **新增PDF查看器功能**：
-    - 创建了完整的在线PDF查看器（`public/pdf-viewer/index.html`）
-    - 支持在线预览、下载和新窗口打开
+  - **集成PDF查看器功能**：
+    - 在搜索页面中集成了完整的PDF预览功能
+    - 支持搜索高亮、页面跳转、文本提取
     - 响应式设计，支持桌面和移动端
-    - 提供命令行快速查看工具（`scripts/view_pdf.py`）
-    - 支持按编号快速查看特定PDF文件
+    - PDF文件通过Vercel静态文件服务提供访问
 - 🛡️ **统一扩展防护系统（2024-12-19）**
   - 创建了统一的 ExtensionGuard 模块，彻底解决浏览器扩展干扰问题
   - 集成错误抑制、DOM保护、扩展隔离和监控功能于一体
@@ -259,26 +254,14 @@
 
 ### PDF文件查看
 #### 在线查看器
-- 打开 `public/pdf-viewer/index.html` 文件
-- 从左侧列表选择要查看的PDF文件
-- 支持在线预览、下载和新窗口打开
+- 访问 `/search` 页面
+- 使用搜索框查找内容，或选择PDF章节
+- 支持在线预览、搜索高亮、页面跳转
 - 响应式设计，适配各种设备
 
-#### 命令行快速查看
-```bash
-# 查看31号文件（安全防护装备）
-python3 scripts/view_pdf.py 31
-
-# 列出所有可用文件
-python3 scripts/view_pdf.py list
-
-# 显示帮助信息
-python3 scripts/view_pdf.py help
-```
-
-#### 直接访问
-- **31号文件**: https://98f17a84.impa-pdf-storage.pages.dev/pdfs/31-Safety_Protective_Gear.pdf
-- **所有文件**: https://98f17a84.impa-pdf-storage.pages.dev
+#### PDF功能访问
+- **搜索页面**: `/search` - 集成PDF预览和搜索功能
+- **PDF文件**: `/pdfs/sections/` - 所有PDF文件目录
 
 ### 开发者工具（开发环境）
 在浏览器控制台中输入以下命令：

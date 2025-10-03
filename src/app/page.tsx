@@ -74,6 +74,8 @@ export default function HomePage() {
                   <div className="relative flex-1">
                     <input
                       type="text"
+                      id="search-input"
+                      name="search"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search name, code..."

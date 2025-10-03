@@ -221,6 +221,8 @@ export default function SmartSearchBox({
       <div className="relative group">
         <input
           type="text"
+          id="smart-search-input"
+          name="smart-search"
           value={searchTerm}
           onChange={(e) => {
             const newValue = e.target.value;

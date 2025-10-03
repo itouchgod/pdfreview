@@ -18,6 +18,9 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "public/sw.js",
+      "scripts/**",
+      "public/pdf.worker.min.js",
     ],
   },
   {
