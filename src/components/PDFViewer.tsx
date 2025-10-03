@@ -179,16 +179,15 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
 
-    // 检查是否正在渲染，如果是则等待
+    // 检查是否正在渲染，如果是则直接返回
     if (isRendering) {
-      console.log('Another render is in progress, waiting...');
-      // 等待当前渲染完成
-      while (isRendering) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      console.log('Another render is in progress, skipping this request');
+      return;
     }
 
+    // 设置渲染锁
     setIsRendering(true);
+    console.log('Starting render for page:', pageNum);
 
     const startTime = performanceMonitor.startMeasure();
 
@@ -319,20 +318,13 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     } finally {
       // 确保渲染锁被重置
       setIsRendering(false);
+      console.log('Render completed for page:', pageNum);
     }
-  }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl, isRendering]);
+  }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl]);
 
-  // 当PDF加载完成后，自动渲染第一页
+  // 统一的页面渲染逻辑
   useEffect(() => {
     if (pdf && currentPage && !loading && canvasRef.current) {
-      console.log('Auto-rendering page:', currentPage);
-      renderPage(currentPage);
-    }
-  }, [pdf, currentPage, loading, renderPage]);
-
-  // 监听页面变化
-  useEffect(() => {
-    if (pdf && currentPage && !loading) {
       // 获取当前章节配置
       const pageCalculator = PageCalculator.fromPath(pdfUrl, totalPages);
       if (!pageCalculator) {
@@ -344,6 +336,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
       // 添加延迟以避免快速连续的页面变化
       const debounceTimeout = setTimeout(() => {
+        console.log('Rendering page:', currentPage);
         renderPage(currentPage);
         onPageChange?.(currentPage, pageCalculator.getTotalPages());
       }, 100); // 100ms 延迟
@@ -357,7 +350,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         }
       };
     }
-  }, [pdf, currentPage, loading, renderPage, onPageChange, pdfUrl, totalPages]);
+  }, [pdf, currentPage, loading, onPageChange, pdfUrl, totalPages]);
 
   // 页面跳转
   const goToPage = useCallback((page: number) => {

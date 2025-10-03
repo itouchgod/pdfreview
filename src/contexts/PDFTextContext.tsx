@@ -28,7 +28,6 @@ interface PDFTextContextType {
   loadingStatus: LoadingStatus;
   isLoading: boolean;
   hasLoaded: boolean;
-  hasStartedLoading: boolean;
   isReady: boolean;
   startLoading: () => void;
   clearCache: () => void;
@@ -105,12 +104,11 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
   const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>({
     isLoading: false,
     loadedSections: 0,
-    totalSections: 0, // 通用PDF平台不需要预设章节
+    totalSections: 0,
     progress: 0
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(true); // 通用PDF平台不需要预加载
   const [isClient, setIsClient] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -118,77 +116,20 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setIsClient(true);
     setMounted(true);
-    
-    // 尝试从缓存加载数据
-    const cachedData = getCachedData();
-    if (cachedData && Object.keys(cachedData.textData).length > 0) {
-      setTextData(cachedData.textData);
-      setHasLoaded(true);
-      setLoadingStatus({
-        isLoading: false,
-        loadedSections: Object.keys(cachedData.textData).length,
-        totalSections: Object.keys(cachedData.textData).length,
-        progress: 100
-      });
-    }
-  }, [isClient]);
+    // 通用PDF平台不需要预加载数据
+  }, []);
 
   const startLoading = useCallback(async () => {
-    // 检查是否已有缓存数据
-    const cachedData = getCachedData();
-    if (cachedData && Object.keys(cachedData.textData).length > 0) {
-      setTextData(cachedData.textData);
-      setHasLoaded(true);
-      setLoadingStatus({
-        isLoading: false,
-        loadedSections: Object.keys(cachedData.textData).length,
-        totalSections: Object.keys(cachedData.textData).length,
-        progress: 100
-      });
-      return;
-    }
-
-    if (isLoading || hasLoaded || hasStartedLoading) {
-      return;
-    }
-
-    setHasStartedLoading(true);
-    setIsLoading(true);
+    // 通用PDF平台：不需要预加载数据
+    setTextData({});
+    setHasLoaded(true);
     setLoadingStatus({
-      isLoading: true,
+      isLoading: false,
       loadedSections: 0,
       totalSections: 0,
-      progress: 0
+      progress: 100
     });
-
-    try {
-      // 通用PDF平台：这里可以加载用户上传的PDF文本数据
-      // 目前返回空数据，等待用户上传文档
-      const newTextData: PDFTextData = {};
-      
-      setTextData(newTextData);
-      setHasLoaded(true);
-      setLoadingStatus({
-        isLoading: false,
-        loadedSections: 0,
-        totalSections: 0,
-        progress: 100
-      });
-      
-      // 缓存数据
-      setCachedData(newTextData);
-    } catch (error) {
-      console.error('Error loading PDF text data:', error);
-      setLoadingStatus({
-        isLoading: false,
-        loadedSections: 0,
-        totalSections: 0,
-        progress: 0
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, hasLoaded, hasStartedLoading]);
+  }, []);
 
   const clearCache = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -212,7 +153,6 @@ export function PDFTextProvider({ children }: { children: ReactNode }) {
     loadingStatus,
     isLoading,
     hasLoaded,
-    hasStartedLoading,
     isReady,
     startLoading,
     clearCache

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import NoSSR from '@/components/NoSSR';
-import LoadingScreen from '@/components/LoadingScreen';
+// LoadingScreen不再需要，因为不再加载IMPA数据
 import UserDocumentManager from '@/components/UserDocumentManager';
 import EnhancedSearchBox from '@/components/EnhancedSearchBox';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
@@ -117,9 +117,24 @@ export default function HomePage() {
     'share', 'export', 'print', 'zoom', 'navigate', 'bookmark'
   ];
 
-  // 如果还没有挂载或正在加载，显示加载界面
-  if (!mounted || (loadingStatus.isLoading && !isReady)) {
-    return <LoadingScreen />;
+  // 简化加载逻辑，不再需要复杂的加载屏幕
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 relative mx-auto mb-4">
+            <Image 
+              src="/brand-icon.svg" 
+              alt="PDFR Logo" 
+              fill
+              sizes="32px"
+              className="object-contain animate-pulse"
+            />
+          </div>
+          <p className="text-muted-foreground">Loading PDFR...</p>
+        </div>
+      </div>
+    );
   }
 
   // PDF查看器模式
