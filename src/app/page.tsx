@@ -275,53 +275,55 @@ export default function HomePage() {
               isNextDisabled={currentPage >= totalPages}
             />
             
-            {/* 移动端搜索图标 - 右上角 */}
-            <div className="lg:hidden absolute top-16 right-4 z-30">
-              <button
-                onClick={() => setShowSearchResults(!showSearchResults)}
-                className="p-2.5 bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg hover:bg-background transition-colors"
-                title={showSearchResults ? "隐藏搜索" : "显示搜索"}
-              >
-                <svg className="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-            
-            
-            {/* 页码显示 - 左下角 */}
-            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  min="1"
-                  max={totalPages}
-                  value={pageInput}
-                  onChange={(e) => {
-                    setPageInput(e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+            {/* 页码显示和搜索图标 - 小屏时在同一行 */}
+            <div className="absolute bottom-4 left-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2">
+              <div className="flex items-center justify-between">
+                {/* 页码输入区域 */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={pageInput}
+                    onChange={(e) => {
+                      setPageInput(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const page = parseInt(pageInput);
+                        if (page >= 1 && page <= totalPages) {
+                          pdfViewerRef.current?.jumpToPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      // 失去焦点时跳转到输入的页码
                       const page = parseInt(pageInput);
                       if (page >= 1 && page <= totalPages) {
                         pdfViewerRef.current?.jumpToPage(page);
+                      } else {
+                        // 如果输入无效，恢复到当前页码
+                        setPageInput(currentPage.toString());
                       }
-                    }
-                  }}
-                  onBlur={() => {
-                    // 失去焦点时跳转到输入的页码
-                    const page = parseInt(pageInput);
-                    if (page >= 1 && page <= totalPages) {
-                      pdfViewerRef.current?.jumpToPage(page);
-                    } else {
-                      // 如果输入无效，恢复到当前页码
-                      setPageInput(currentPage.toString());
-                    }
-                  }}
-                  className="w-12 px-2 py-1 text-sm text-center bg-background/50 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 hover:bg-background/80 transition-colors"
-                  title="输入页码跳转（Enter键或失去焦点时跳转）"
-                />
-                <span className="text-sm text-muted-foreground">/ {totalPages}</span>
+                    }}
+                    className="w-12 px-2 py-1 text-sm text-center bg-background/50 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 hover:bg-background/80 transition-colors"
+                    title="输入页码跳转（Enter键或失去焦点时跳转）"
+                  />
+                  <span className="text-sm text-muted-foreground">/ {totalPages}</span>
+                </div>
+                
+                {/* 搜索图标 - 仅在小屏时显示 */}
+                <div className="lg:hidden">
+                  <button
+                    onClick={() => setShowSearchResults(!showSearchResults)}
+                    className="p-2 bg-background/50 border border-border/50 rounded-full hover:bg-background/80 transition-colors"
+                    title={showSearchResults ? "隐藏搜索" : "显示搜索"}
+                  >
+                    <svg className="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -344,7 +346,7 @@ export default function HomePage() {
                           }
                         }}
                         placeholder="搜索..."
-                        className="w-full px-3 py-2 pr-16 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent"
+                        className="w-full px-3 py-2 pr-16 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
@@ -370,9 +372,6 @@ export default function HomePage() {
                       <button
                         onClick={() => {
                           setShowSearchResults(false);
-                          setSearchTerm('');
-                          setSearchResults([]);
-                          setHasSearchResults(false);
                         }}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
                         title="收缩搜索"
@@ -443,7 +442,7 @@ export default function HomePage() {
                           }
                         }}
                         placeholder="输入搜索关键词..."
-                        className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full pl-10 pr-10 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
                       />
                       {searchTerm && (
                         <button
