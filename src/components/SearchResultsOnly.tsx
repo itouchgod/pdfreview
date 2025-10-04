@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PageCalculator } from '@/utils/pageCalculator';
 import { SectionChangeHandler } from '@/types/pdf';
 import { getGlassButtonBaseStyles, createGlassButtonHandlers, getIconStyles } from '@/lib/buttonStyles';
 
@@ -11,16 +10,16 @@ interface SmartSearchResult {
   text: string;
   index: number;
   context: string;
-  sectionName: string;
-  sectionPath: string;
-  category: string;
+  sectionName?: string; // 可选，用户文档不需要
+  sectionPath?: string; // 可选，用户文档不需要
+  category?: string;    // 可选，用户文档不需要
 }
 
 interface GroupedResult {
   key: string;
   page: number;
-  sectionPath: string;
-  sectionName: string;
+  sectionPath?: string; // 可选，用户文档不需要
+  sectionName?: string; // 可选，用户文档不需要
   results: SmartSearchResult[];
   count: number;
 }
@@ -66,8 +65,8 @@ export default function SearchResultsOnly({
     // 否则自己计算分组结果
     const groups = new Map<string, SmartSearchResult[]>();
     
-    sharedSearchResults.forEach(result => {
-      const key = `${result.sectionPath}-${result.page}`;
+    sharedSearchResults.forEach((result, index) => {
+      const key = `${result.sectionPath}-${result.page}-${index}`;
       if (!groups.has(key)) {
         groups.set(key, []);
       }
@@ -79,7 +78,7 @@ export default function SearchResultsOnly({
       key,
       page: groupResults[0].page,
       sectionPath: groupResults[0].sectionPath,
-      sectionName: groupResults[0].sectionName,
+      sectionName: groupResults[0].sectionName || null,
       results: groupResults,
       count: groupResults.length
     }));
@@ -109,7 +108,9 @@ export default function SearchResultsOnly({
 
   // 跳转到指定结果（仅用于点击跳转）
   const goToResult = useCallback((index: number) => {
-    if (index < 0 || index >= groupedResults.length) return;
+    if (index < 0 || index >= groupedResults.length) {
+      return;
+    }
     
     // 更新外部状态或内部状态
     if (onResultIndexChange) {
@@ -122,24 +123,27 @@ export default function SearchResultsOnly({
     const firstResult = result.results[0];
     
     if (!selectedPDF) {
-      console.error('No PDF selected');
       return;
     }
     
-    // 如果需要切换章节
-    if (onSectionChange && firstResult.sectionPath !== selectedPDF) {
-      // 通用PDF平台：简化处理，直接使用页码
-      const targetRelativePage = firstResult.page || 1;
-      
-      // 切换到目标章节和页码
-      onSectionChange(firstResult.sectionPath, targetRelativePage);
-    } else {
-      // 在当前章节内跳转
+    // 获取目标页码 - 优先使用result.page，然后是firstResult.page
+    const targetPage = result.page || firstResult?.page || 1;
+    
+    // 对于用户上传的文档，直接跳转页面
+    if (selectedPDF && (selectedPDF.startsWith('blob:') || selectedPDF.startsWith('data:'))) {
+      // 用户文档，直接跳转到指定页码
       if (onPageJump) {
-        // 通用PDF平台：简化处理，直接使用页码
-        const targetPage = firstResult.page || 1;
-        
         onPageJump(targetPage);
+      }
+    } else {
+      // 预定义文档的章节切换逻辑（保留用于IMPA等预定义文档）
+      if (onSectionChange && firstResult?.sectionPath !== selectedPDF) {
+        onSectionChange(firstResult.sectionPath, targetPage);
+      } else {
+        // 在当前章节内跳转
+        if (onPageJump) {
+          onPageJump(targetPage);
+        }
       }
     }
   }, [groupedResults, selectedPDF, onSectionChange, onPageJump, onResultIndexChange]);
@@ -240,7 +244,7 @@ export default function SearchResultsOnly({
       <div className="flex-1 overflow-y-auto">
         {groupedResults.map((result, index) => (
           <div
-            key={result.key}
+            key={`${result.key}-${index}`}
             onClick={() => goToResult(index)}
             className={`group cursor-pointer transition-all duration-200 border-b border-border/20 last:border-b-0 ${
               index === highlightIndex 
@@ -261,22 +265,30 @@ export default function SearchResultsOnly({
                   </span>
                 </div>
                 
-                {/* 章节信息 - 更小的字体和紧凑间距 */}
+                {/* 搜索匹配文本内容 */}
                 <div className="flex-1 min-w-0">
                   <div className={`text-xs font-normal transition-colors duration-200 leading-tight ${
                     index === highlightIndex 
                       ? 'text-primary/90' 
                       : 'text-card-foreground group-hover:text-foreground'
                   }`}>
-                    {/* 手机端显示更紧凑的章节名称 */}
-                    <div className="block sm:hidden">
-                      {result.sectionName.length > 30 
-                        ? `${result.sectionName.substring(0, 30)}...` 
-                        : result.sectionName}
-                    </div>
-                    {/* 桌面端显示完整章节名称 */}
-                    <div className="hidden sm:block truncate">
-                      {result.sectionName}
+                    {/* 显示关键词上下文 */}
+                    <div className="truncate">
+                      {(() => {
+                        const firstResult = result.results[0];
+                        if (!firstResult) return 'No content found';
+                        
+                        // 优先显示context（关键词上下文），如果为空则显示text
+                        const displayText = firstResult.context || firstResult.text || 'No content found';
+                        
+                        // 如果文本太长，截断并添加省略号
+                        const maxLength = 100;
+                        if (displayText.length > maxLength) {
+                          return displayText.substring(0, maxLength) + '...';
+                        }
+                        
+                        return displayText;
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -11,7 +11,6 @@ import {
   HardDrive
 } from 'lucide-react';
 import Link from 'next/link';
-import PDFUploader from './PDFUploader';
 
 interface UserDocument {
   id: string;
@@ -269,19 +268,67 @@ export default function UserDocumentManager({
             {(showAllDocuments ? filteredDocuments : filteredDocuments.slice(0, 3)).map((document) => (
               <div
                 key={document.id}
-                className="p-3 bg-card rounded-lg border border-border hover:shadow-sm transition-shadow cursor-pointer"
-                onClick={() => handleViewDocument(document)}
+                className="p-3 bg-card rounded-lg border border-border hover:shadow-sm transition-shadow"
               >
                 <div className="flex items-center space-x-3">
                   <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-foreground truncate">
-                      {document.name}
-                    </h4>
+                    {editingDocument === document.id ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-2 py-1 text-xs text-green-600 hover:text-green-700"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-2 py-1 text-xs text-red-600 hover:text-red-700"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : (
+                      <h4 
+                        className="text-sm font-medium text-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => handleViewDocument(document)}
+                      >
+                        {document.name}
+                      </h4>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {formatFileSize(document.size)} • {formatDate(document.uploadTime)}
                     </p>
                   </div>
+                  {editingDocument !== document.id && (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleStartEdit(document)}
+                        className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                        title="重命名"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDocument(document.id)}
+                        className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                        title="删除文档"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -382,14 +429,6 @@ export default function UserDocumentManager({
         </div>
       </div>
 
-      {/* 上传区域 */}
-      <div className="mb-6">
-        <PDFUploader
-          onFileUploaded={handleFileUploaded}
-          onFileRemoved={handleFileRemoved}
-          maxFileSize={100} // 100MB
-        />
-      </div>
 
       {/* 文档列表 */}
       {filteredDocuments.length > 0 ? (

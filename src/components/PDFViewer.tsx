@@ -12,13 +12,14 @@ interface PDFViewerProps {
   initialPage?: number;
   onTextExtracted?: (text: string) => void;
   onPageChange?: (currentPage: number, totalPages: number) => void;
+  onLinkClick?: (pageNumber: number) => void;
 }
 
 export interface PDFViewerRef {
   jumpToPage: (pageNumber: number) => void;
 }
 
-const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPage = 1, onTextExtracted, onPageChange }, ref) => {
+const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPage = 1, onTextExtracted, onPageChange, onLinkClick }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -135,11 +136,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         setLoadingProgress(100);
         setLoading(false);
         
-        console.log('PDF loaded successfully:', {
-          totalPages: loadedPdf.numPages,
-          currentPage: currentPage,
-          pdfUrl: pdfUrl
-        });
+        console.log('PDF loaded successfully:', loadedPdf.numPages, 'pages');
         
         // 通知父组件页面变化
         onPageChange?.(currentPage, loadedPdf.numPages);
@@ -166,28 +163,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
 
   // 渲染页面
   const renderPage = useCallback(async (pageNum: number) => {
-    console.log('Starting renderPage:', { pageNum, hasPdf: !!pdf, hasCanvas: !!canvasRef.current });
     
     if (!pdf || !canvasRef.current) {
-      console.warn('Cannot render: missing PDF or canvas', { hasPdf: !!pdf, hasCanvas: !!canvasRef.current });
       return;
     }
 
     // 验证页码是否有效
     if (pageNum < 1 || pageNum > pdf.numPages) {
-      console.warn(`Invalid page number: ${pageNum}. PDF has ${pdf.numPages} pages.`);
       return;
     }
 
     // 检查是否正在渲染，如果是则直接返回
     if (isRendering) {
-      console.log('Another render is in progress, skipping this request');
       return;
     }
 
     // 设置渲染锁
     setIsRendering(true);
-    console.log('Starting render for page:', pageNum);
 
     const startTime = performanceMonitor.startMeasure();
 
@@ -215,13 +207,10 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         throw new Error('PDF object is not properly initialized');
       }
 
-      console.log('Getting page:', pageNum);
       const page = await pdf.getPage(pageNum);
-      console.log('Page obtained:', { pageNum, page });
       
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      console.log('Canvas and context:', { canvas, context, parentElement: canvas.parentElement });
 
       if (!context || !canvas.parentElement) {
         throw new Error('Canvas context or parent element not available');
@@ -271,7 +260,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       context.imageSmoothingQuality = 'high';
 
       // 创建新的渲染任务
-      console.log('Creating render task:', { scaledViewport, canvasSize: { width: canvas.width, height: canvas.height } });
       const currentRenderTask = page.render({
         canvasContext: context,
         viewport: scaledViewport
@@ -281,10 +269,8 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       renderTaskRef.current = currentRenderTask;
 
       // 等待渲染完成
-      console.log('Waiting for render to complete...');
       try {
         await currentRenderTask.promise;
-        console.log('Render completed successfully for page:', pageNum);
         // 只有在当前任务仍然是活跃任务时才清理
         if (renderTaskRef.current === currentRenderTask) {
           renderTaskRef.current = null;
@@ -309,6 +295,105 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         const text = textContent.items.map((item: any) => item.str).join(' ');
         onTextExtracted(text);
       }
+
+
+      // 处理页面链接
+      if (onLinkClick && canvasRef.current) {
+        try {
+          const annotations = await page.getAnnotations();
+          const linkAnnotations = annotations.filter((annotation: any) => annotation.subtype === 'Link');
+          
+          if (linkAnnotations.length > 0) {
+            
+            // 创建链接层
+            const linkLayer = document.createElement('div');
+            linkLayer.className = 'pdf-link-layer';
+            linkLayer.style.position = 'absolute';
+            linkLayer.style.top = '0';
+            linkLayer.style.left = '0';
+            linkLayer.style.width = '100%';
+            linkLayer.style.height = '100%';
+            linkLayer.style.pointerEvents = 'auto';
+            linkLayer.style.zIndex = '10';
+            
+            // 清除之前的链接层
+            const existingLinkLayer = canvasRef.current.parentElement?.querySelector('.pdf-link-layer');
+            if (existingLinkLayer) {
+              existingLinkLayer.remove();
+            }
+            
+            // 添加链接层到canvas的父元素
+            if (canvasRef.current.parentElement) {
+              canvasRef.current.parentElement.appendChild(linkLayer);
+            }
+            
+            // 为每个链接创建可点击区域
+            linkAnnotations.forEach((annotation: any, index: number) => {
+              if (annotation.rect) {
+                const linkElement = document.createElement('a');
+                linkElement.href = '#';
+                linkElement.style.position = 'absolute';
+                linkElement.style.left = `${annotation.rect[0]}px`;
+                linkElement.style.top = `${annotation.rect[1]}px`;
+                linkElement.style.width = `${annotation.rect[2] - annotation.rect[0]}px`;
+                linkElement.style.height = `${annotation.rect[3] - annotation.rect[1]}px`;
+                linkElement.style.cursor = 'pointer';
+                linkElement.style.backgroundColor = 'transparent';
+                linkElement.style.border = '1px solid transparent';
+                linkElement.title = `Link ${index + 1}`;
+                
+                // 处理链接点击
+                linkElement.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  
+                  // 解析目标页码
+                  if (annotation.dest) {
+                    let targetPage = null;
+                    
+                    if (Array.isArray(annotation.dest)) {
+                      // 直接页码数组
+                      if (annotation.dest[0] && typeof annotation.dest[0] === 'object' && annotation.dest[0].num) {
+                        targetPage = annotation.dest[0].num;
+                      } else if (typeof annotation.dest[0] === 'number') {
+                        targetPage = annotation.dest[0];
+                      }
+                    } else if (typeof annotation.dest === 'object' && annotation.dest.num) {
+                      // 目标对象
+                      targetPage = annotation.dest.num;
+                    }
+                    
+                    if (targetPage) {
+                      onLinkClick(targetPage);
+                    } else {
+                    }
+                  } else if (annotation.url) {
+                    // 外部链接
+                    window.open(annotation.url, '_blank');
+                  } else {
+                  }
+                });
+                
+                // 添加悬停效果
+                linkElement.addEventListener('mouseenter', () => {
+                  linkElement.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+                  linkElement.style.border = '1px solid rgba(0, 123, 255, 0.3)';
+                });
+                
+                linkElement.addEventListener('mouseleave', () => {
+                  linkElement.style.backgroundColor = 'transparent';
+                  linkElement.style.border = '1px solid transparent';
+                });
+                
+                linkLayer.appendChild(linkElement);
+              }
+            });
+          }
+        } catch (linkError) {
+          console.warn('Failed to process page links:', linkError);
+        }
+      }
     } catch (err: unknown) {
       // 只记录非取消错误
       if (err instanceof Error && err.name !== 'RenderingCancelledException') {
@@ -318,7 +403,6 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
     } finally {
       // 确保渲染锁被重置
       setIsRendering(false);
-      console.log('Render completed for page:', pageNum);
     }
   }, [pdf, windowWidth, onTextExtracted, performanceMonitor, pdfUrl]);
 
@@ -334,23 +418,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
         return;
       }
 
+      // 取消之前的渲染任务
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+
       // 添加延迟以避免快速连续的页面变化
       const debounceTimeout = setTimeout(() => {
-        console.log('Rendering page:', currentPage);
         renderPage(currentPage);
         onPageChange?.(currentPage, pageCalculator.getTotalPages());
-      }, 100); // 100ms 延迟
+      }, 100); // 恢复原来的延迟时间
 
       return () => {
         clearTimeout(debounceTimeout);
-        // 取消当前渲染任务
-        if (renderTaskRef.current) {
-          renderTaskRef.current.cancel();
-          renderTaskRef.current = null;
-        }
       };
     }
-  }, [pdf, currentPage, loading, onPageChange, pdfUrl, totalPages]);
+  }, [pdf, currentPage, loading, pdfUrl, totalPages]);
 
   // 页面跳转
   const goToPage = useCallback((page: number) => {
@@ -363,12 +447,23 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
       return;
     }
     
-    // 直接设置页码，不进行验证（因为调用方已经验证过了）
-    // 这样可以避免在章节切换时使用过时的pdfUrl进行验证
+    // 验证页码范围
+    if (page < 1 || page > totalPages) {
+      console.error('Invalid page number:', page, 'totalPages:', totalPages);
+      performanceMonitor.endMeasure('page_navigation', startTime, { error: true });
+      return;
+    }
+    
+    // 如果页码没有变化，不需要重新渲染
+    if (page === currentPage) {
+      performanceMonitor.endMeasure('page_navigation', startTime, { noChange: true });
+      return;
+    }
+    
     setCurrentPage(page);
     onPageChange?.(page, totalPages);
     performanceMonitor.endMeasure('page_navigation', startTime, { success: true });
-  }, [loading, pdf, onPageChange, performanceMonitor, totalPages]);
+  }, [loading, pdf, onPageChange, performanceMonitor, totalPages, currentPage]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -396,7 +491,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
             renderPage(currentPage);
           }
         }
-      }, 300); // 增加防抖时间
+      }, 300); // 恢复原来的防抖时间
     }
   }, [windowWidth, pdf, currentPage, renderPage]);
 
