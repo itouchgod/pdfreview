@@ -564,7 +564,7 @@ const PDFViewer = forwardRef<PDFViewerRef, PDFViewerProps>(({ pdfUrl, initialPag
   }
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center" style={{ margin: 0, padding: 0, overflow: 'auto' }}>
+    <div className="relative w-full h-full flex items-start justify-center" style={{ margin: 0, padding: 0, overflow: 'auto' }}>
       <canvas 
         ref={canvasRef} 
         className="block"

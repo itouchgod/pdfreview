@@ -199,8 +199,8 @@ export default function SearchResultsOnly({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* 导航控制 - 桌面端显示，手机端隐藏（因为手机端有专门的标题栏） */}
-      <div className="hidden lg:flex items-center justify-center px-4 py-2 bg-muted border-b border-border/30">
+      {/* 导航控制 - 所有屏幕尺寸都显示 */}
+      <div className="flex items-center justify-center px-4 py-2 bg-muted border-b border-border/30">
         <div className="flex items-center space-x-2">
           {(() => {
             const buttonConfig = getGlassButtonBaseStyles('md');
