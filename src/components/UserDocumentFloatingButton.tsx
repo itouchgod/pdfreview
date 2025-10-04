@@ -56,7 +56,7 @@ export default function UserDocumentFloatingButton({
           const isMobile = window.innerWidth < 768;
           setPosition({ 
             x: isMobile ? window.innerWidth - 80 : window.innerWidth - 100, 
-            y: window.innerHeight / 2 - 50 // 稍微向上偏移，避免被顶部控制栏遮挡
+            y: window.innerHeight / 3 // 垂直位置在屏幕1/3处
           });
         }
       } catch {
@@ -64,7 +64,7 @@ export default function UserDocumentFloatingButton({
         const isMobile = window.innerWidth < 768;
         setPosition({ 
           x: isMobile ? window.innerWidth - 80 : window.innerWidth - 100, 
-          y: window.innerHeight / 2 - 50 // 稍微向上偏移，避免被顶部控制栏遮挡
+          y: window.innerHeight / 3 // 垂直位置在屏幕1/3处
         });
       }
     } else {
@@ -72,7 +72,7 @@ export default function UserDocumentFloatingButton({
       const isMobile = window.innerWidth < 768;
       setPosition({ 
         x: isMobile ? window.innerWidth - 80 : window.innerWidth - 100, 
-        y: window.innerHeight / 2 - 50 // 稍微向上偏移，避免被顶部控制栏遮挡
+        y: window.innerHeight / 3 // 垂直位置在屏幕1/3处
       });
     }
     setIsInitialized(true);
@@ -90,7 +90,7 @@ export default function UserDocumentFloatingButton({
     const isMobile = window.innerWidth < 768;
     const defaultPos = { 
       x: isMobile ? window.innerWidth - 80 : window.innerWidth - 100, 
-      y: window.innerHeight / 2 - 50 // 稍微向上偏移，避免被顶部控制栏遮挡
+      y: window.innerHeight / 3 // 垂直位置在屏幕1/3处
     };
     setPosition(defaultPos);
     savePosition(defaultPos);
