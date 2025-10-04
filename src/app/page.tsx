@@ -171,10 +171,11 @@ export default function HomePage() {
   // 分组搜索结果
   const getGroupedResults = useCallback(() => {
     const groups = new Map();
-    searchResults.forEach(result => {
-      const key = `${result.section || 'Unknown'}-${result.page}-${result.index || Math.random()}`;
+    searchResults.forEach((result, index) => {
+      const key = `${result.section || 'Unknown'}-${result.page}-${index}`;
       if (!groups.has(key)) {
         groups.set(key, {
+          key: key,
           section: result.section || 'Unknown',
           sectionName: result.section || null,
           sectionPath: result.section || 'Unknown',
@@ -381,39 +382,137 @@ export default function HomePage() {
                         </svg>
                       </button>
                     </div>
+                    
                     {/* 搜索按钮 */}
                     <button
                       onClick={handleSearch}
                       disabled={!searchTerm.trim()}
-                      className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                      className="group relative px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-lg hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md disabled:shadow-none transform hover:scale-105 disabled:scale-100"
                     >
-                      搜索
+                      <div className="flex items-center space-x-1.5">
+                        <svg className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span>搜索</span>
+                      </div>
+                      {/* 悬停时的发光效果 */}
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                     </button>
+                    
+                    {/* 翻页控制 - 仅在有搜索结果时显示 */}
+                    {hasSearchResults && getGroupedResults().length > 0 && (
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={goToPreviousResult}
+                          disabled={currentResultIndex === 0}
+                          className="p-1.5 rounded border border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="上一个结果"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        
+                        <span className="text-xs text-muted-foreground px-1 min-w-[3rem] text-center">
+                          {currentResultIndex + 1}/{getGroupedResults().length}
+                        </span>
+                        
+                        <button
+                          onClick={goToNextResult}
+                          disabled={currentResultIndex >= getGroupedResults().length - 1}
+                          className="p-1.5 rounded border border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="下一个结果"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* 极简搜索结果 */}
                 <div className="flex-1 overflow-y-auto">
-                  {hasSearchResults ? (
-                    <div className="p-2">
-                      <SearchResultsOnly
-                        onPageJump={(pageNumber) => {
-                          pdfViewerRef.current?.jumpToPage(pageNumber);
-                        }}
-                        onSectionChange={() => {}}
-                        selectedPDF={currentDocument.url}
-                        sharedSearchResults={searchResults}
-                        sharedSearchTerm={searchTerm}
-                        currentResultIndex={currentResultIndex}
-                        onResultIndexChange={setCurrentResultIndex}
-                        onPreviousResult={goToPreviousResult}
-                        onNextResult={goToNextResult}
-                        groupedResults={getGroupedResults()}
-                      />
+                  {!searchTerm ? (
+                    <div className="flex items-center justify-center h-full p-4">
+                      <p className="text-sm text-muted-foreground">输入关键词搜索</p>
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="flex items-center justify-center h-full p-4">
+                      <p className="text-sm text-muted-foreground">未找到 "{searchTerm}" 的结果</p>
                     </div>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center p-4">
-                      <p className="text-sm text-muted-foreground">输入关键词搜索</p>
+                    <div className="p-2 space-y-2">
+                      {getGroupedResults().map((group, index) => (
+                        <div
+                          key={group.key}
+                          onClick={() => {
+                            pdfViewerRef.current?.jumpToPage(group.page);
+                            setCurrentResultIndex(index);
+                          }}
+                          className={`group cursor-pointer transition-all duration-200 border-b border-border/20 last:border-b-0 ${
+                            index === currentResultIndex 
+                              ? 'bg-primary/15 shadow-sm' 
+                              : 'hover:bg-accent/50'
+                          }`}
+                        >
+                          <div className="px-2 py-1.5">
+                            <div className="flex items-center space-x-1.5">
+                              {/* 页码标签 */}
+                              <div className="flex-shrink-0">
+                                <span className={`inline-flex items-center justify-center w-8 h-5 rounded text-xs font-semibold transition-all duration-200 ${
+                                  index === currentResultIndex 
+                                    ? 'bg-primary/80 text-primary-foreground shadow-sm' 
+                                    : 'bg-muted text-muted-foreground group-hover:bg-primary/30 group-hover:text-primary'
+                                }`}>
+                                  P{group.page}
+                                </span>
+                              </div>
+                              
+                              {/* 搜索匹配文本内容 */}
+                              <div className="flex-1 min-w-0">
+                                <div className={`text-xs font-normal transition-colors duration-200 leading-tight ${
+                                  index === currentResultIndex 
+                                    ? 'text-primary/90' 
+                                    : 'text-card-foreground group-hover:text-foreground'
+                                }`}>
+                                  <div className="truncate">
+                                    {(() => {
+                                      const firstResult = group.results[0];
+                                      if (!firstResult) return 'No content found';
+                                      
+                                      // 优先显示context（关键词上下文），如果为空则显示text
+                                      const displayText = firstResult.context || firstResult.text || 'No content found';
+                                      
+                                      // 如果文本太长，截断并添加省略号
+                                      const maxLength = 100;
+                                      if (displayText.length > maxLength) {
+                                        return displayText.substring(0, maxLength) + '...';
+                                      }
+                                      
+                                      return displayText;
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* 匹配数量 */}
+                              {group.count > 1 && (
+                                <div className="flex-shrink-0">
+                                  <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-medium transition-all duration-200 ${
+                                    index === currentResultIndex 
+                                      ? 'bg-primary/15 text-primary/80' 
+                                      : 'bg-muted text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground'
+                                  }`}>
+                                    {group.count}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -471,36 +570,22 @@ export default function HomePage() {
                 </div>
 
                 {/* 搜索结果内容 */}
-                {hasSearchResults ? (
-                  <>
-                    {/* 搜索结果内容 */}
-                    <div className="flex-1 overflow-y-auto p-1">
-                      <SearchResultsOnly
-                        onPageJump={(pageNumber) => {
-                          pdfViewerRef.current?.jumpToPage(pageNumber);
-                        }}
-                        onSectionChange={() => {}}
-                        selectedPDF={currentDocument.url}
-                        sharedSearchResults={searchResults}
-                        sharedSearchTerm={searchTerm}
-                        currentResultIndex={currentResultIndex}
-                        onResultIndexChange={setCurrentResultIndex}
-                        onPreviousResult={goToPreviousResult}
-                        onNextResult={goToNextResult}
-                        groupedResults={getGroupedResults()}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center p-6">
-                    <div className="text-center">
-                      <svg className="w-8 h-8 text-muted-foreground mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <p className="text-sm text-muted-foreground">输入关键词开始搜索</p>
-                    </div>
-                  </div>
-                )}
+                <div className="flex-1 overflow-y-auto p-1">
+                  <SearchResultsOnly
+                    onPageJump={(pageNumber) => {
+                      pdfViewerRef.current?.jumpToPage(pageNumber);
+                    }}
+                    onSectionChange={() => {}}
+                    selectedPDF={currentDocument.url}
+                    sharedSearchResults={searchResults}
+                    sharedSearchTerm={searchTerm}
+                    currentResultIndex={currentResultIndex}
+                    onResultIndexChange={setCurrentResultIndex}
+                    onPreviousResult={goToPreviousResult}
+                    onNextResult={goToNextResult}
+                    groupedResults={getGroupedResults()}
+                  />
+                </div>
               </div>
             </div>
           )}

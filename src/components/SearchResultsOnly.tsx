@@ -170,13 +170,13 @@ export default function SearchResultsOnly({
   // 如果没有搜索词，显示提示信息
   if (!sharedSearchTerm) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-white">
+      <div className="flex flex-col items-center justify-center h-full bg-background">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <p className="text-sm text-gray-500 font-medium">Search for content</p>
-          <p className="text-xs text-gray-400 mt-1">Use the search box above to find information</p>
+          <p className="text-sm text-foreground font-medium">搜索文档内容</p>
+          <p className="text-xs text-muted-foreground mt-1">在上方输入框中输入关键词进行搜索</p>
         </div>
       </div>
     );
@@ -185,13 +185,14 @@ export default function SearchResultsOnly({
   // 如果没有结果，显示无结果信息
   if (groupedResults.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-white">
+      <div className="flex flex-col items-center justify-center h-full bg-background">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-red-400" />
+          <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <p className="text-sm text-gray-700 font-medium">No results found, please try different keywords</p>
-          <p className="text-xs text-gray-500 mt-1">Search term: &ldquo;{sharedSearchTerm}&rdquo;</p>
+          <p className="text-sm text-foreground font-medium">未找到搜索结果</p>
+          <p className="text-xs text-muted-foreground mt-1">请尝试使用其他关键词</p>
+          <p className="text-xs text-muted-foreground mt-2">搜索词：&ldquo;{sharedSearchTerm}&rdquo;</p>
         </div>
       </div>
     );
