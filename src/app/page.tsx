@@ -2,17 +2,16 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, FileText, Upload } from 'lucide-react';
+import { Search, FileText, Upload, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import NoSSR from '@/components/NoSSR';
-// LoadingScreen不再需要，因为不再加载IMPA数据
 import UserDocumentManager from '@/components/UserDocumentManager';
-import EnhancedSearchBox from '@/components/EnhancedSearchBox';
 import PDFViewer, { PDFViewerRef } from '@/components/PDFViewer';
 import UserDocumentFloatingButton from '@/components/UserDocumentFloatingButton';
+import FileUploadModal from '@/components/FileUploadModal';
 
 interface UserDocument {
   id: string;
@@ -28,18 +27,15 @@ interface UserDocument {
 }
 
 export default function HomePage() {
-  const [searchTerm, setSearchTerm] = useState('');
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'home' | 'viewer'>('home');
   const [currentDocument, setCurrentDocument] = useState<UserDocument | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageInput, setPageInput] = useState('1');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [refreshDocuments, setRefreshDocuments] = useState(0);
   
-  const router = useRouter();
   const pdfViewerRef = useRef<PDFViewerRef>(null);
   const { startLoading } = usePDFText();
 
@@ -60,30 +56,6 @@ export default function HomePage() {
     setCurrentPage(1);
   }, []);
 
-  // 处理搜索
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setIsSearching(true);
-    
-    // 这里可以实现实际的搜索逻辑
-    // 目前只是模拟搜索
-    setTimeout(() => {
-      setSearchResults([]);
-      setIsSearching(false);
-    }, 1000);
-  }, []);
-
-  // 处理搜索清除
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
-    setSearchResults([]);
-    setIsSearching(false);
-  }, []);
-
-  // 处理历史选择
-  const handleHistorySelect = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
 
   // 处理页面变化
   const handlePageChange = useCallback((page: number, total: number) => {
@@ -98,21 +70,19 @@ export default function HomePage() {
     setCurrentDocument(null);
   }, []);
 
-  const handleSearchSubmit = () => {
-    if (searchTerm.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
-    }
-  };
+  // 处理文件上传
+  const handleFileUploaded = useCallback((file: any) => {
+    // 文件上传成功后，触发文档列表刷新
+    console.log('File uploaded:', file);
+    setRefreshDocuments(prev => prev + 1);
+  }, []);
 
-  const handleKeywordClick = (keyword: string) => {
-    router.push(`/search?q=${encodeURIComponent(keyword)}`);
-  };
+  // 处理文件移除
+  const handleFileRemoved = useCallback((fileId: string) => {
+    // 这里可以添加文件移除后的处理逻辑
+    console.log('File removed:', fileId);
+  }, []);
 
-  const commonKeywords = [
-    'document', 'pdf', 'search', 'view', 'read', 'download',
-    'upload', 'manage', 'organize', 'categorize', 'tag', 'bookmark',
-    'share', 'export', 'print', 'zoom', 'navigate', 'bookmark'
-  ];
 
   // 简化加载逻辑，不再需要复杂的加载屏幕
   if (!mounted) {
@@ -217,15 +187,15 @@ export default function HomePage() {
     );
   }
 
-  // 首页模式
+  // 首页模式 - 极简设计
   return (
     <NoSSR>
       <div className="min-h-screen bg-background flex flex-col">
-        {/* 头部导航 */}
-        <header className="bg-background border-b border-border sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* 极简头部 */}
+        <header className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-40">
+          <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 relative">
                   <Image 
                     src="/brand-icon.svg" 
@@ -237,148 +207,62 @@ export default function HomePage() {
                     unoptimized
                   />
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <h1 className="text-xl font-bold text-foreground">PDFR</h1>
-                </div>
+                <h1 className="text-xl font-semibold text-foreground">PDFR</h1>
               </div>
-
-              <div className="flex items-center space-x-4">
-                <Link
-                  href="/search"
-                  className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Search className="h-4 w-4" />
-                  <span className="hidden sm:inline">搜索</span>
-                </Link>
-                
-                <ThemeToggle />
-              </div>
+              <ThemeToggle />
             </div>
           </div>
         </header>
 
-        <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
-          <div className="space-y-8">
-            {/* 快速搜索区域 */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Search className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">快速搜索</h2>
-              </div>
-              
-              <form onSubmit={handleSearchSubmit} className="relative max-w-2xl">
-                <div className="flex items-center space-x-4">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      id="search-input"
-                      name="search"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="搜索文档内容、名称或标签..."
-                      className="w-full pl-6 pr-24 py-4 text-lg bg-background rounded-full border border-border focus:outline-none focus:shadow-lg focus:border-primary transition-all duration-200 hover:shadow-md text-foreground placeholder:text-muted-foreground"
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                      {/* 清除按钮 */}
-                      {searchTerm && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setSearchTerm('')}
-                            className="p-2 text-muted-foreground hover:text-foreground transition-colors duration-200"
-                          >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                          {/* 分隔线 */}
-                          <div className="h-6 w-px bg-border"></div>
-                        </>
-                      )}
-                      {/* 搜索按钮 */}
-                      <button
-                        type="submit"
-                        className="p-2 text-muted-foreground hover:text-primary transition-all duration-200"
-                      >
-                        <Search className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
+        {/* 主要内容区域 */}
+        <main className="flex-1 flex items-center justify-center px-6">
+          <div className="max-w-2xl w-full text-center space-y-8">
+            {/* 欢迎区域 */}
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold text-foreground">
+                简单、快速的 PDF 查看器
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                上传您的 PDF 文档，享受流畅的阅读体验
+              </p>
             </div>
 
-            {/* 高级搜索区域 */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Search className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">高级搜索</h2>
-              </div>
+            {/* 核心功能按钮 */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              >
+                <Upload className="h-5 w-5" />
+                <span>上传文档</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
               
-              <EnhancedSearchBox
-                onSearch={handleSearch}
-                onClear={handleClearSearch}
-                onHistorySelect={handleHistorySelect}
-                placeholder="搜索文档内容、名称或标签..."
-                showAdvancedOptions={true}
-              />
-              
-              {isSearching && (
-                <div className="mt-4 text-center">
-                  <div className="inline-flex items-center space-x-2 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span>正在搜索...</span>
-                  </div>
-                </div>
-              )}
-              
-              {searchQuery && !isSearching && (
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    搜索 &quot;{searchQuery}&quot; 的结果: {searchResults.length} 个匹配项
-                  </p>
-                </div>
-              )}
+              <Link
+                href="/search"
+                className="flex items-center space-x-2 px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors font-medium"
+              >
+                <Search className="h-5 w-5" />
+                <span>搜索文档</span>
+              </Link>
             </div>
 
-            {/* 文档管理区域 */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Upload className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">我的文档</h2>
-              </div>
-              
+            {/* 快速访问我的文档 */}
+            <div className="pt-8">
               <UserDocumentManager
                 onDocumentSelect={handleDocumentSelect}
+                showTitle={true}
+                compact={true}
+                refreshTrigger={refreshDocuments}
               />
-            </div>
-
-            {/* 常用功能 */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-foreground mb-4">常用功能</h3>
-                <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
-                  {commonKeywords.map((keyword, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleKeywordClick(keyword)}
-                      className="px-4 py-2 text-sm bg-secondary hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-full transition-colors border border-border hover:border-primary/50"
-                    >
-                      {keyword}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className="block mt-auto py-4 border-t border-border">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex justify-center items-center space-x-3 text-xs text-muted-foreground/80">
+        {/* 极简 Footer */}
+        <footer className="py-6 border-t border-border/50">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <div className="flex justify-center items-center space-x-2 text-sm text-muted-foreground">
               <div className="w-4 h-4 relative">
                 <Image 
                   src="/brand-icon.svg" 
@@ -388,15 +272,19 @@ export default function HomePage() {
                   className="object-contain"
                 />
               </div>
-              <span className="font-medium hidden sm:inline">PDFR</span>
-              <span className="text-muted-foreground/60">•</span>
-              <span>v1.0.0</span>
-              <span className="text-muted-foreground/60">•</span>
-              <span className="text-muted-foreground/70">Universal PDF Viewer</span>
+              <span>PDFR v1.0.0</span>
             </div>
           </div>
         </footer>
       </div>
+
+      {/* 文件上传模态框 */}
+      <FileUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onFileUploaded={handleFileUploaded}
+        onFileRemoved={handleFileRemoved}
+      />
     </NoSSR>
   );
 }

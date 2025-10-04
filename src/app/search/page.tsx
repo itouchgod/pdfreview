@@ -12,6 +12,19 @@ import Image from 'next/image';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import { getGlassButtonBaseStyles, createGlassButtonHandlers, getIconStyles, getPageNumberStyles } from '@/lib/buttonStyles';
 
+interface UserDocument {
+  id: string;
+  name: string;
+  originalName: string;
+  size: number;
+  url: string;
+  uploadTime: Date;
+  lastViewed?: Date;
+  viewCount: number;
+  category?: string;
+  tags: string[];
+}
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const [selectedPDF, setSelectedPDF] = useState<string>('');
@@ -25,10 +38,32 @@ function SearchContent() {
   const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   
+  // 用户文档管理
+  const [userDocuments, setUserDocuments] = useState<UserDocument[]>([]);
+  
   // 使用全局PDF文本数据
   const { textData } = usePDFText();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // 加载用户文档
+  useEffect(() => {
+    const savedDocuments = localStorage.getItem('user_documents');
+    if (savedDocuments) {
+      try {
+        const parsed = JSON.parse(savedDocuments);
+        const documentsWithDates = parsed.map((doc: any) => ({
+          ...doc,
+          uploadTime: new Date(doc.uploadTime),
+          lastViewed: doc.lastViewed ? new Date(doc.lastViewed) : undefined
+        }));
+        setUserDocuments(documentsWithDates);
+      } catch (error) {
+        console.error('Failed to load user documents:', error);
+        setUserDocuments([]);
+      }
+    }
+  }, []);
 
   const handleClearSearch = () => {
     setSharedSearchResults([]);
@@ -187,8 +222,6 @@ function SearchContent() {
 
   // 当URL中的搜索词变化时，自动执行搜索
   useEffect(() => {
-    if (!textData || !Object.keys(textData).length) return;
-    
     // 如果搜索词为空，批量更新状态
     if (!searchQuery) {
       setSharedSearchResults([]);
@@ -199,21 +232,48 @@ function SearchContent() {
       return;
     }
     
-    // 简化的搜索逻辑
     const searchResults: any[] = [];
-    Object.entries(textData).forEach(([sectionPath, text]) => {
-      if (text.toLowerCase().includes(searchQuery.toLowerCase())) {
-        searchResults.push({
-          page: 1,
-          text: text.substring(0, 200) + '...',
-          index: searchResults.length,
-          context: text.substring(0, 200) + '...',
-          sectionName: sectionPath.split('/').pop() || 'Document',
-          sectionPath: sectionPath,
-          category: 'search'
-        });
-      }
-    });
+    
+    // 搜索预定义章节的文本数据
+    if (textData && Object.keys(textData).length > 0) {
+      Object.entries(textData).forEach(([sectionPath, text]) => {
+        if (text.toLowerCase().includes(searchQuery.toLowerCase())) {
+          searchResults.push({
+            page: 1,
+            text: text.substring(0, 200) + '...',
+            index: searchResults.length,
+            context: text.substring(0, 200) + '...',
+            sectionName: sectionPath.split('/').pop() || 'Document',
+            sectionPath: sectionPath,
+            category: 'search'
+          });
+        }
+      });
+    }
+    
+    // 搜索用户文档
+    if (userDocuments.length > 0) {
+      userDocuments.forEach((document) => {
+        // 在文档名称和标签中搜索
+        const searchableText = [
+          document.name,
+          document.originalName,
+          ...document.tags
+        ].join(' ').toLowerCase();
+        
+        if (searchableText.includes(searchQuery.toLowerCase())) {
+          searchResults.push({
+            page: 1,
+            text: `文档: ${document.name}`,
+            index: searchResults.length,
+            context: `文档名称: ${document.name}${document.tags.length > 0 ? `\n标签: ${document.tags.join(', ')}` : ''}`,
+            sectionName: document.name,
+            sectionPath: document.url,
+            category: 'user_document'
+          });
+        }
+      });
+    }
     
     if (searchResults && searchResults.length > 0) {
       // 检查是否为新的搜索（搜索词变化）
@@ -242,7 +302,7 @@ function SearchContent() {
       setHasSearchResults(false);
       setCurrentResultIndex(0);
     }
-  }, [searchQuery, textData, navigateToPDF, sharedSearchTerm]);
+  }, [searchQuery, textData, userDocuments, navigateToPDF, sharedSearchTerm]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,6 +350,7 @@ function SearchContent() {
               <div className="flex items-center justify-center">
                 <PDFSelector
                   selectedPDF={selectedPDF}
+                  userDocuments={userDocuments}
                   onSelectPDF={(pdfPath) => {
                     // 切换文档时总是从第一页开始
                     navigateToPDF(pdfPath, 1);

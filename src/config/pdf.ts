@@ -24,6 +24,23 @@ export const PDF_CONFIG = {
     enableTextSelection: true,
     // 是否启用打印
     enablePrint: true
+  },
+
+  // 文件上传配置
+  uploadConfig: {
+    // 最大文件大小 (MB) - 设置为 null 表示无限制
+    maxFileSize: null,
+    // 支持的文件类型
+    acceptedTypes: ['.pdf'],
+    // 是否允许多文件上传
+    allowMultiple: true,
+    // 文件大小限制说明
+    sizeLimits: {
+      // 推荐大小 (MB)
+      recommended: 50,
+      // 警告大小 (MB) - 超过此大小会显示警告
+      warning: 100
+    }
   }
 };
 

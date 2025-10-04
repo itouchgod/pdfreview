@@ -208,6 +208,19 @@ export default function DraggableFloatingButton({
   const handleCrossSectionNavigation = useCallback((direction: 'previous' | 'next') => {
     if (!onSectionChange) return;
 
+    // 检查是否是用户上传的文档（通过 URL 判断）
+    const isUserDocument = selectedPDF.startsWith('blob:') || selectedPDF.startsWith('data:');
+    
+    if (isUserDocument) {
+      // 对于用户文档，直接使用简单的翻页逻辑
+      if (direction === 'next') {
+        onNextPage();
+      } else {
+        onPreviousPage();
+      }
+      return;
+    }
+
     // 获取当前绝对页码
     const calculator = PageCalculator.fromPath(selectedPDF, totalPages);
     if (!calculator) return;
@@ -254,6 +267,14 @@ export default function DraggableFloatingButton({
 
   // 计算绝对页码
   const absolutePage = (() => {
+    // 检查是否是用户上传的文档
+    const isUserDocument = selectedPDF.startsWith('blob:') || selectedPDF.startsWith('data:');
+    
+    if (isUserDocument) {
+      // 对于用户文档，直接返回当前页码
+      return currentPage;
+    }
+    
     const calculator = PageCalculator.fromPath(selectedPDF, totalPages);
     if (!calculator) return currentPage;
     return calculator.toAbsolutePage(currentPage);

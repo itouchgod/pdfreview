@@ -153,10 +153,6 @@ export default function SmartSearchBox({
 
   // 处理搜索
   const handleSearch = useCallback(async () => {
-    if (Object.keys(allSectionsText).length === 0) {
-      return;
-    }
-
     setIsSearching(true);
     if (onLoadingStatusChange) {
       onLoadingStatusChange({ isLoading: true, progress: 0 });
@@ -174,11 +170,22 @@ export default function SmartSearchBox({
         return;
       }
 
-      const results = await searchInAllSections(searchTerm);
-      onSearchResults(results);
-      
-      if (onSearchResultsUpdate) {
-        onSearchResultsUpdate(results, searchTerm);
+      // 如果有预定义章节的文本数据，执行搜索
+      if (Object.keys(allSectionsText).length > 0) {
+        const results = await searchInAllSections(searchTerm);
+        onSearchResults(results);
+        
+        if (onSearchResultsUpdate) {
+          onSearchResultsUpdate(results, searchTerm);
+        }
+      } else {
+        // 如果没有预定义章节数据，返回空结果
+        // 搜索页面的 useEffect 会处理用户文档的搜索
+        onSearchResults([]);
+        
+        if (onSearchResultsUpdate) {
+          onSearchResultsUpdate([], searchTerm);
+        }
       }
       
       if (onUpdateURL) {

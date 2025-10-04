@@ -3,24 +3,55 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, FileText } from 'lucide-react';
 
+interface UserDocument {
+  id: string;
+  name: string;
+  originalName: string;
+  size: number;
+  url: string;
+  uploadTime: Date;
+  lastViewed?: Date;
+  viewCount: number;
+  category?: string;
+  tags: string[];
+}
+
 interface PDFSelectorProps {
   selectedPDF: string;
+  userDocuments?: UserDocument[];
   onSelectPDF: (pdfPath: string) => void;
 }
 
-export default function PDFSelector({ selectedPDF, onSelectPDF }: PDFSelectorProps) {
+export default function PDFSelector({ selectedPDF, userDocuments = [], onSelectPDF }: PDFSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // 获取当前选中的文档名称
-  const currentDocumentName = selectedPDF ? selectedPDF.split('/').pop() || 'Unknown' : 'No document selected';
+  const getCurrentDocumentName = () => {
+    if (!selectedPDF) return 'No document selected';
+    
+    // 首先检查是否是用户文档
+    const userDoc = userDocuments.find(doc => doc.url === selectedPDF);
+    if (userDoc) {
+      return userDoc.name;
+    }
+    
+    // 否则使用路径中的文件名
+    return selectedPDF.split('/').pop() || 'Unknown';
+  };
+  
+  const currentDocumentName = getCurrentDocumentName();
   
   // 获取当前选中项的索引
   useEffect(() => {
-    // 通用PDF平台：简化处理
-    setCurrentIndex(0);
-  }, [selectedPDF]);
+    if (userDocuments.length > 0) {
+      const index = userDocuments.findIndex(doc => doc.url === selectedPDF);
+      setCurrentIndex(index >= 0 ? index : 0);
+    } else {
+      setCurrentIndex(0);
+    }
+  }, [selectedPDF, userDocuments]);
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -53,15 +84,21 @@ export default function PDFSelector({ selectedPDF, onSelectPDF }: PDFSelectorPro
         break;
       case 'ArrowDown':
         event.preventDefault();
-        // 通用PDF平台：简化处理
+        if (userDocuments.length > 0) {
+          setCurrentIndex((prev) => (prev + 1) % userDocuments.length);
+        }
         break;
       case 'ArrowUp':
         event.preventDefault();
-        // 通用PDF平台：简化处理
+        if (userDocuments.length > 0) {
+          setCurrentIndex((prev) => (prev - 1 + userDocuments.length) % userDocuments.length);
+        }
         break;
       case 'Enter':
         event.preventDefault();
-        // 通用PDF平台：简化处理
+        if (userDocuments.length > 0 && userDocuments[currentIndex]) {
+          handleSelect(userDocuments[currentIndex].url);
+        }
         break;
     }
   };
@@ -102,23 +139,31 @@ export default function PDFSelector({ selectedPDF, onSelectPDF }: PDFSelectorPro
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           <div className="py-1">
-            {selectedPDF ? (
-              <div
-                className="flex items-center space-x-3 px-4 py-3 hover:bg-accent cursor-pointer transition-colors"
-                onClick={() => handleSelect(selectedPDF)}
-              >
-                <div className="flex-shrink-0 w-5 h-5 text-primary">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground truncate">
-                    {currentDocumentName}
+            {userDocuments.length > 0 ? (
+              userDocuments.map((document, index) => (
+                <div
+                  key={document.id}
+                  className={`flex items-center space-x-3 px-4 py-3 hover:bg-accent cursor-pointer transition-colors ${
+                    index === currentIndex ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => handleSelect(document.url)}
+                >
+                  <div className="flex-shrink-0 w-5 h-5 text-primary">
+                    <FileText className="w-5 h-5" />
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    Current document
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground truncate">
+                      {document.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {document.uploadTime.toLocaleDateString()} • {Math.round(document.size / 1024)} KB
+                    </div>
                   </div>
+                  {document.url === selectedPDF && (
+                    <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full"></div>
+                  )}
                 </div>
-              </div>
+              ))
             ) : (
               <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                 No documents available

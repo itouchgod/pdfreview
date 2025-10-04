@@ -10,6 +10,7 @@ import {
   Calendar,
   HardDrive
 } from 'lucide-react';
+import Link from 'next/link';
 import PDFUploader from './PDFUploader';
 
 interface UserDocument {
@@ -28,11 +29,17 @@ interface UserDocument {
 interface UserDocumentManagerProps {
   onDocumentSelect: (document: UserDocument) => void;
   className?: string;
+  showTitle?: boolean;
+  compact?: boolean;
+  refreshTrigger?: number;
 }
 
 export default function UserDocumentManager({ 
   onDocumentSelect, 
-  className = '' 
+  className = '',
+  showTitle = false,
+  compact = false,
+  refreshTrigger = 0
 }: UserDocumentManagerProps) {
   const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<UserDocument[]>([]);
@@ -42,9 +49,10 @@ export default function UserDocumentManager({
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [showAllDocuments, setShowAllDocuments] = useState(false);
 
   // 从localStorage加载文档
-  useEffect(() => {
+  const loadDocuments = useCallback(() => {
     const savedDocuments = localStorage.getItem('user_documents');
     if (savedDocuments) {
       try {
@@ -59,6 +67,31 @@ export default function UserDocumentManager({
         console.error('Failed to load user documents:', error);
       }
     }
+  }, []);
+
+  // 初始加载
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
+
+  // 监听刷新触发器
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      loadDocuments();
+    }
+  }, [refreshTrigger, loadDocuments]);
+
+  // 添加事件监听器
+  useEffect(() => {
+    const handleExpandDocuments = () => {
+      setShowAllDocuments(true);
+    };
+
+    window.addEventListener('expandDocuments', handleExpandDocuments);
+
+    return () => {
+      window.removeEventListener('expandDocuments', handleExpandDocuments);
+    };
   }, []);
 
   // 保存文档到localStorage
@@ -219,6 +252,76 @@ export default function UserDocumentManager({
       minute: '2-digit'
     });
   };
+
+  // 如果是 compact 模式，显示简化版本
+  if (compact) {
+    return (
+      <div className={`w-full ${className}`}>
+        {showTitle && (
+          <div className="mb-4">
+            <h3 className="text-lg font-medium text-foreground">我的文档</h3>
+            <p className="text-sm text-muted-foreground">{documents.length} 个文档</p>
+          </div>
+        )}
+        
+        {filteredDocuments.length > 0 ? (
+          <div className="space-y-2">
+            {(showAllDocuments ? filteredDocuments : filteredDocuments.slice(0, 3)).map((document) => (
+              <div
+                key={document.id}
+                className="p-3 bg-card rounded-lg border border-border hover:shadow-sm transition-shadow cursor-pointer"
+                onClick={() => handleViewDocument(document)}
+              >
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-foreground truncate">
+                      {document.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {formatFileSize(document.size)} • {formatDate(document.uploadTime)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {filteredDocuments.length > 3 && !showAllDocuments && (
+              <div className="text-center pt-2">
+                <button
+                  onClick={() => setShowAllDocuments(true)}
+                  className="text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                  查看全部 {filteredDocuments.length} 个文档 →
+                </button>
+              </div>
+            )}
+            {showAllDocuments && filteredDocuments.length > 3 && (
+              <div className="text-center pt-2">
+                <button
+                  onClick={() => setShowAllDocuments(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  收起文档 ↑
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {documents.length === 0 ? '还没有上传任何文档' : '没有找到匹配的文档'}
+            </p>
+            {documents.length === 0 && (
+              <div className="text-sm text-muted-foreground">
+                点击上方的"上传文档"按钮开始使用
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full ${className}`}>
