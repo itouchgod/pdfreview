@@ -10,7 +10,6 @@ import {
   Calendar,
   HardDrive
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface UserDocument {
   id: string;

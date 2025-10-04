@@ -91,10 +91,7 @@ export class PDFTextExtractor {
         stopAtErrors: false,
         maxImageSize: 1024 * 1024, // 1MB
         isEvalSupported: false,
-        useSystemFonts: false,
-        // 添加重试机制
-        retryDelay: 1000,
-        maxRetries: 3
+        useSystemFonts: false
       });
 
       const pdf = await loadingTask.promise;
@@ -141,7 +138,7 @@ export class PDFTextExtractor {
       console.error('Failed to extract text from PDF:', error);
       
       // 如果是blob URL错误，清理相关缓存
-      if (pdfUrl.startsWith('blob:') && (
+      if (pdfUrl.startsWith('blob:') && error instanceof Error && (
         error.name === 'UnexpectedResponseException' || 
         error.message?.includes('ERR_FILE_NOT_FOUND') ||
         error.message?.includes('Failed to fetch')
@@ -197,7 +194,7 @@ export class PDFTextExtractor {
       const pageNum = parseInt(pageStr);
       const lines = pageText.split('\n');
       
-      lines.forEach((line, lineIndex) => {
+      lines.forEach((line: string, lineIndex: number) => {
         const lineLower = line.toLowerCase();
         
         // 检查是否包含所有搜索词

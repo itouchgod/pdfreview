@@ -137,7 +137,7 @@ export default function SearchResultsOnly({
       }
     } else {
       // 预定义文档的章节切换逻辑（保留用于IMPA等预定义文档）
-      if (onSectionChange && firstResult?.sectionPath !== selectedPDF) {
+      if (onSectionChange && firstResult?.sectionPath && firstResult.sectionPath !== selectedPDF) {
         onSectionChange(firstResult.sectionPath, targetPage);
       } else {
         // 在当前章节内跳转

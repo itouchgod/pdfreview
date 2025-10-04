@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import PDFUploader from './PDFUploader';
 import { PDF_CONFIG } from '@/config/pdf';
 
 interface UploadedFile {

@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, FileText, Upload, ArrowRight } from 'lucide-react';
+import { Upload, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { usePDFText } from '@/contexts/PDFTextContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import NoSSR from '@/components/NoSSR';
@@ -40,14 +39,12 @@ export default function HomePage() {
   // 搜索相关状态
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearchActive, setIsSearchActive] = useState(false);
   const [hasSearchResults, setHasSearchResults] = useState(false);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [showSearchInput, setShowSearchInput] = useState(false);
   
   const pdfViewerRef = useRef<PDFViewerRef>(null);
-  const { startLoading, textData } = usePDFText();
+  const { startLoading } = usePDFText();
   const pdfTextExtractor = PDFTextExtractor.getInstance();
 
   // 处理客户端挂载
@@ -82,13 +79,13 @@ export default function HomePage() {
   }, []);
 
   // 处理文件上传
-  const handleFileUploaded = useCallback((file: any) => {
+  const handleFileUploaded = useCallback(() => {
     // 文件上传成功后，触发文档列表刷新
     setRefreshDocuments(prev => prev + 1);
   }, []);
 
   // 处理文件移除
-  const handleFileRemoved = useCallback((fileId: string) => {
+  const handleFileRemoved = useCallback(() => {
     // 这里可以添加文件移除后的处理逻辑
   }, []);
 
@@ -97,7 +94,6 @@ export default function HomePage() {
     setSearchResults(results);
     setSearchTerm(searchQuery);
     setHasSearchResults(results.length > 0);
-    setIsSearchActive(true);
     setShowSearchResults(true);
     
     if (results.length > 0) {
@@ -110,14 +106,6 @@ export default function HomePage() {
     }
   }, []);
 
-  const handleClearSearch = useCallback(() => {
-    setSearchResults([]);
-    setSearchTerm('');
-    setIsSearchActive(false);
-    setHasSearchResults(false);
-    setCurrentResultIndex(0);
-    setShowSearchResults(false);
-  }, []);
 
   // 执行搜索
   const handleSearch = useCallback(async () => {
@@ -320,7 +308,7 @@ export default function HomePage() {
                       }
                     }
                   }}
-                  onBlur={(e) => {
+                  onBlur={() => {
                     // 失去焦点时跳转到输入的页码
                     const page = parseInt(pageInput);
                     if (page >= 1 && page <= totalPages) {
