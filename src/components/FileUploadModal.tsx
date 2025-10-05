@@ -60,7 +60,23 @@ export default function FileUploadModal({
 
   // 打开文件选择器
   const openFilePicker = () => {
-    fileInputRef.current?.click();
+    if (isMobile && fileInputRef.current) {
+      // 移动端优化：确保直接打开文件管理器
+      const input = fileInputRef.current;
+      
+      // 清除可能影响文件选择器行为的属性
+      input.removeAttribute('capture');
+      input.removeAttribute('webkitdirectory');
+      input.removeAttribute('directory');
+      
+      // 设置适当的accept属性，确保只显示PDF文件
+      input.setAttribute('accept', '.pdf,application/pdf');
+      
+      // 触发文件选择
+      input.click();
+    } else {
+      fileInputRef.current?.click();
+    }
   };
 
   // 处理文件选择
@@ -211,10 +227,10 @@ export default function FileUploadModal({
                 <Upload className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-medium text-foreground mb-2">
-                {isMobile ? '选择文件' : '拖拽文件到此处'}
+                {isMobile ? '选择PDF文件' : '拖拽文件到此处'}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {isMobile ? '点击下方按钮选择PDF文件' : '或者点击下方按钮选择文件'}
+                {isMobile ? '点击下方按钮打开文件管理器选择PDF文件' : '或者点击下方按钮选择文件'}
               </p>
               <button
                 onClick={openFilePicker}
@@ -309,7 +325,7 @@ export default function FileUploadModal({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf"
+        accept=".pdf,application/pdf"
         multiple
         onChange={handleFileSelect}
         className="hidden"
